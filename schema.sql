@@ -2,23 +2,39 @@
 
 -- Metadata about partners or users
 CREATE TABLE IF NOT EXISTS metadata (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    partner_id SERIAL PRIMARY KEY,
+    partner_name TEXT NOT NULL,
+    contact_name TEXT, 
+    contact_email TEXT, 
+    api_expiration_date DATE,
     query_credits_remaining INTEGER DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Log every API call
 CREATE TABLE IF NOT EXISTS calls (
-    id SERIAL PRIMARY KEY,
-    partner_id INTEGER REFERENCES metadata(id),
-    user_id INTEGER,
-    conversation_id INTEGER,
+    call_id SERIAL PRIMARY KEY,
+    partner_id INTEGER REFERENCES metadata(partner_id),
+    partner_payload JSONB, 
+    response_payload JSONB,
     endpoint TEXT NOT NULL,
-    question TEXT NOT NULL,
-    custom_data JSONB,
-    sql_query TEXT,
-    response_text TEXT,
     error TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS conversations (
+    conversation_id SERIAL PRIMARY KEY,
+    partner_id INTEGER REFERENCES metadata(partner_id),
+    user_id INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(), 
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+create table if not exists messages (
+    conversation_id INTEGER REFERENCES conversations(conversation_id),
+    message_id INTEGER,
+    partner_id INTEGER REFERENCES metadata(partner_id),
+    role TEXT,
+    content TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+)
