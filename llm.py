@@ -13,7 +13,7 @@ from azure.search.documents.models import VectorizedQuery, QueryType, QueryCapti
 from utils import serialize_response, get_azure_credential, get_token_provider, get_embedding, DecimalEncoder
 from config import SEARCH_ENDPOINT, SEARCH_INDEX_NAME, OPENAI_ENDPOINT, OPENAI_API_VERSION
 from prompts import (
-    SIMPLE_RESPONSE_INSTRUCTION,
+    MLB_SIMPLE_RESPONSE_INSTRUCTION,
     get_prompts,
 )
 from typing import Optional, List, Dict, Union
