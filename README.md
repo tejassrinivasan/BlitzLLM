@@ -12,15 +12,18 @@ Generates a text response based on the provided question and optional context.
 | `question` | `string` | The question or request to answer. **Required**. |
 | `custom_data` | `object` | Arbitrary JSON data used to augment the prompt. Optional. |
 | `partner_id` | `integer` | Identifier for the calling partner. Optional. |
-| `user_id` | `integer` | Identifier for the end user. Optional. |
-| `conversation_id` | `integer` | Conversation identifier. Defaults to `0`. |
 | `simple` | `boolean` | When `true`, request a short one-sentence answer. Defaults to `false`. |
 | `league` | `string` | League code (e.g. `"mlb"`). Defaults to `"mlb"`. |
 
 ### `POST /conversation`
 Provides a conversation style interface that keeps track of previous questions and answers.
 
-Fields are the same as `/generate-insights` and are represented by the `ConversationRequest` model.
+The request body accepts the same fields as `/generate-insights` plus:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user_id` | `integer` | Identifier for the end user. Optional. |
+| `conversation_id` | `integer` | Conversation identifier. Defaults to `0`. |
 
 ### `POST /feedback`
 Stores user feedback. The body must contain:

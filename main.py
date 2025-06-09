@@ -37,8 +37,6 @@ class InsightRequest(BaseModel):
     question: str
     custom_data: Optional[Dict[str, Any]] = None
     partner_id: Optional[int] = None  # optional partner identifier
-    user_id: Optional[int] = None
-    conversation_id: Optional[int] = 0
     simple: Optional[bool] = False
     league: Optional[str] = "mlb"
 
@@ -144,8 +142,8 @@ async def generate_insights(req: InsightRequest, api_key: str = Depends(verify_a
         )
         await log_partner_call(
             req.partner_id,
-            req.user_id,
-            req.conversation_id,
+            None,
+            None,
             "generate_insights",
             req.question,
             req.custom_data,
@@ -156,8 +154,8 @@ async def generate_insights(req: InsightRequest, api_key: str = Depends(verify_a
     except Exception as e:
         await log_partner_call(
             req.partner_id,
-            req.user_id,
-            req.conversation_id,
+            None,
+            None,
             "generate_insights",
             req.question,
             req.custom_data,
