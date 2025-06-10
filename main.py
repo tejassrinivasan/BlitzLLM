@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import boto3
 
-from fastapi import FastAPI, HTTPException, Header, Security, Depends
+from fastapi import FastAPI, HTTPException, Header, Security, Depends, BackgroundTasks
 from azure.identity import DefaultAzureCredential
 from azure.cosmos import CosmosClient
 from pydantic import BaseModel
@@ -134,15 +134,15 @@ async def delete_messages_from(conversation_id: int, start_id: int):
         start_id,
     )
 
-async def store_insight(partner_id: int | None, insight_id: str, data: dict):
-    """Store the insight JSON in S3 under the partner prefix."""
+async def store_response(partner_id: int | None, response_id: str, data: dict):
+    """Store the response JSON in S3 under the partner prefix."""
     s3 = boto3.client("s3")
     bucket = os.getenv("INSIGHTS_BUCKET", "blitz-insights")
     body = json.dumps({
         "response": data,
         "timestamp": datetime.utcnow().isoformat(),
     })
-    key = f"{partner_id}/{insight_id}.json" if partner_id else f"{insight_id}.json"
+    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
 
@@ -162,13 +162,9 @@ async def store_conversation_history(partner_id: int | None, conversation_id: in
 
 async def log_partner_call(
     partner_id: Optional[int],
-    user_id: Optional[int],
-    conversation_id: Optional[int],
     endpoint: str,
-    question: str,
-    custom_data: Optional[dict],
-    sql_query: Optional[str],
-    response_text: Optional[str],
+    partner_payload: dict,
+    response_payload: Optional[dict] = None,
     error: Optional[str] = None,
 ):
     """Store details of partner API calls for auditing."""
@@ -177,17 +173,13 @@ async def log_partner_call(
         return
     row = await pool.fetchrow(
         """
-        INSERT INTO calls (partner_id, user_id, conversation_id, endpoint, question, custom_data, sql_query, response_text, error)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING call_id
+        INSERT INTO calls (partner_id, partner_payload, response_payload, endpoint, error)
+        VALUES ($1, $2, $3, $4, $5) RETURNING call_id
         """,
         partner_id,
-        user_id,
-        conversation_id,
+        json.dumps(partner_payload) if partner_payload is not None else None,
+        json.dumps(response_payload) if response_payload is not None else None,
         endpoint,
-        question,
-        custom_data,
-        sql_query,
-        response_text,
         error,
     )
     return row["call_id"] if row else None
@@ -209,13 +201,9 @@ async def log_query(call_id: int, partner_id: Optional[int], sql_query: str, lea
     )
 
 
-@app.post("/generate-insights", status_code=201)
-async def generate_insights(req: InsightRequest, api_key: str = Depends(verify_api_key)):
-    """Endpoint for partners to generate insights from a question and custom data."""
+async def process_generate_insights(req: InsightRequest, partner_id: int, response_id: str):
+    """Background task to generate an insight and store it."""
     try:
-        partner_id = get_partner_id_from_api_key(api_key)
-        if not partner_id:
-            raise HTTPException(status_code=401, detail="Invalid or missing API Key")
         openai_client = llm.get_openai_client()
 
         quick = await llm.check_clarification(
@@ -226,72 +214,83 @@ async def generate_insights(req: InsightRequest, api_key: str = Depends(verify_a
             history_context="",
         )
         if quick.get("type") == "answer":
-            return {"insight": quick.get("answer")}
+            response = {"text": quick.get("answer")}
+        else:
+            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
+            live_data = None
+            if live_info.get("needs_live_data"):
+                live_data = await llm.fetch_upcoming_data(
+                    live_info.get("calls", []),
+                    live_info.get("keys", []),
+                    live_info.get("constraints"),
+                )
 
-        live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
-        live_data = None
-        if live_info.get("needs_live_data"):
-            live_data = await llm.fetch_upcoming_data(live_info.get("calls", []), live_info.get("keys", []), live_info.get("constraints"))
+            search_results = await llm.perform_search(req.message, {})
+            query_data = await llm.determine_sql_query(
+                req.message,
+                search_results,
+                0,
+                include_history=False,
+                league=req.league,
+            )
+            sql_query = query_data.get("query") if query_data else None
+            executed = None
+            if query_data and query_data.get("type") in ("sql_query", "previous_results"):
+                executed = await llm.execute_sql_query(
+                    sql_query,
+                    req.message,
+                    0,
+                    previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
+                )
 
-        search_results = await llm.perform_search(req.message, {})
-        query_data = await llm.determine_sql_query(req.message, search_results, 0, include_history=False, league=req.league)
-        sql_query = query_data.get("query") if query_data else None
-        executed = None
-        if query_data and query_data.get("type") in ("sql_query", "previous_results"):
-            executed = await llm.execute_sql_query(sql_query, req.message, 0, previous_results=query_data.get("results") if query_data.get("reuse_results") else None)
+            web_results = None
+            if req.search_the_web:
+                web_results = await llm.search_the_web(req.message)
+            response = await llm.generate_text_response(
+                req.message,
+                executed,
+                0,
+                live_data,
+                custom_data=req.custom_data,
+                simple=req.insight_length == "short",
+                include_history=False,
+                league=req.league,
+                search_results=web_results,
+            )
 
-        web_results = None
-        if req.search_the_web:
-            web_results = await llm.search_the_web(req.message)
-        response = await llm.generate_text_response(
-            req.message,
-            executed,
-            0,
-            live_data,
-            custom_data=req.custom_data,
-            simple=req.insight_length == "short",
-            include_history=False,
-            league=req.league,
-            search_results=web_results,
-        )
-        import uuid
-        insight_id = str(uuid.uuid4())
-        await store_insight(partner_id, insight_id, response)
+        await store_response(partner_id, response_id, response)
 
+        partner_payload = {
+            "question": req.message,
+            "custom_data": req.custom_data,
+            "sql_query": sql_query,
+        }
+        response_payload = {"text": response.get("text")} if response else None
         call_id = await log_partner_call(
             partner_id,
-            None,
-            None,
             "generate_insights",
-            req.message,
-            req.custom_data,
-            sql_query,
-            response.get("text") if response else None,
+            partner_payload,
+            response_payload,
         )
-        await log_query(call_id, partner_id, sql_query, req.league)
-        return {"insight_id": insight_id}
+        await log_query(call_id, partner_id, locals().get("sql_query"), req.league)
     except Exception as e:
-        partner_id = locals().get('partner_id', None)
+        partner_id = locals().get("partner_id", None)
+        partner_payload = {
+            "question": req.message,
+            "custom_data": req.custom_data,
+        }
         await log_partner_call(
             partner_id,
-            None,
-            None,
             "generate_insights",
-            req.message,
-            req.custom_data,
-            None,
+            partner_payload,
             None,
             str(e),
         )
-        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post("/conversation", status_code=201)
-async def conversation(req: ConversationRequest, api_key: str = Depends(verify_api_key)):
-    """Endpoint for conversational flow with optional clarification."""
+async def process_conversation(req: ConversationRequest, conv_id: int, response_id: str):
+    """Background task to process a conversation request."""
     try:
-        conv_id = await ensure_conversation(req.partner_id or 0, req.user_id or 0, req.conversation_id)
-
         if req.retry and req.message_id:
             await delete_messages_from(conv_id, req.message_id)
             next_msg_id = req.message_id
@@ -314,20 +313,25 @@ async def conversation(req: ConversationRequest, api_key: str = Depends(verify_a
             req.custom_data,
             league=req.league,
             history_context=formatted_history,
+            prompt_type="CONVERSATION",
         )
         if clarify.get("type") == "clarify":
+            partner_payload = {
+                "user_id": req.user_id,
+                "conversation_id": conv_id,
+                "message": req.message,
+                "custom_data": req.custom_data,
+            }
+            response_payload = {"clarify": clarify.get("question")}
             call_id = await log_partner_call(
                 req.partner_id,
-                req.user_id,
-                conv_id,
                 "conversation",
-                req.message,
-                req.custom_data,
-                None,
-                clarify.get("question"),
+                partner_payload,
+                response_payload,
             )
             await log_query(call_id, req.partner_id, None, req.league)
-            return {"clarify": clarify.get("question"), "conversation_id": conv_id}
+            return
+
         search_results = await llm.perform_search(req.message, {})
         query_data = await llm.determine_sql_query(
             req.message,
@@ -337,6 +341,7 @@ async def conversation(req: ConversationRequest, api_key: str = Depends(verify_a
             league=req.league,
             history_context=history_context_sql,
             previous_results=previous_results,
+            prompt_type="CONVERSATION",
         )
         sql_query = query_data.get("query") if query_data else None
         executed = await llm.execute_sql_query(sql_query, req.message, conv_id)
@@ -349,52 +354,100 @@ async def conversation(req: ConversationRequest, api_key: str = Depends(verify_a
             league=req.league,
             conversation_history=history,
             history_context=formatted_history,
+            prompt_type="CONVERSATION", 
         )
         await add_message(conv_id, req.partner_id or 0, next_msg_id + 1, "assistant", json.dumps(response))
         await store_conversation_history(req.partner_id or 0, conv_id)
+        await store_response(req.partner_id, response_id, {**(response or {}), "conversation_id": conv_id})
 
+        partner_payload = {
+            "user_id": req.user_id,
+            "conversation_id": conv_id,
+            "message": req.message,
+            "custom_data": req.custom_data,
+            "sql_query": sql_query,
+        }
+        response_payload = {"text": response.get("text")} if response else None
         call_id = await log_partner_call(
             req.partner_id,
-            req.user_id,
-            conv_id,
             "conversation",
-            req.message,
-            req.custom_data,
-            sql_query,
-            response.get("text") if response else None,
+            partner_payload,
+            response_payload,
         )
         await log_query(call_id, req.partner_id, sql_query, req.league)
-        response_with_id = response or {}
-        if isinstance(response_with_id, dict):
-            response_with_id["conversation_id"] = conv_id
-        return response_with_id
     except Exception as e:
+        partner_payload = {
+            "user_id": req.user_id,
+            "conversation_id": conv_id if 'conv_id' in locals() else req.conversation_id,
+            "message": req.message,
+            "custom_data": req.custom_data,
+        }
         await log_partner_call(
             req.partner_id,
-            req.user_id,
-            conv_id if 'conv_id' in locals() else req.conversation_id,
             "conversation",
-            req.message,
-            req.custom_data,
-            None,
+            partner_payload,
             None,
             str(e),
         )
-        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.get("/insights/{insight_id}")
-async def get_insight(insight_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
-    """Retrieve a stored insight from S3."""
+@app.post("/generate-insights", status_code=202)
+async def generate_insights(
+    req: InsightRequest,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(verify_api_key),
+):
+    """Schedule insight generation and return a response identifier."""
+    partner_id = get_partner_id_from_api_key(api_key)
+    if not partner_id:
+        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+    import uuid
+    response_id = str(uuid.uuid4())
+    try:
+        await store_response(partner_id, response_id, {"status": "processing"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
+
+    background_tasks.add_task(process_generate_insights, req, partner_id, response_id)
+
+    return {"response_id": response_id}
+
+
+@app.post("/conversation", status_code=202)
+async def conversation(
+    req: ConversationRequest,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(verify_api_key),
+):
+    """Schedule conversation processing and return identifiers."""
+    partner_id = get_partner_id_from_api_key(api_key)
+    if not partner_id:
+        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+    conv_id = await ensure_conversation(partner_id, req.user_id or 0, req.conversation_id)
+    import uuid
+    response_id = str(uuid.uuid4())
+    try:
+        await store_response(partner_id, response_id, {"status": "processing"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
+
+    background_tasks.add_task(process_conversation, req, conv_id, response_id)
+
+    return {"conversation_id": conv_id, "response_id": response_id}
+
+
+@app.get("/insights/{response_id}")
+async def get_insight(response_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
+    """Retrieve a stored response from S3."""
     s3 = boto3.client("s3")
     bucket = os.getenv("INSIGHTS_BUCKET", "blitz-insights")
-    key = f"{partner_id}/{insight_id}.json" if partner_id else f"{insight_id}.json"
+    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     try:
         obj = s3.get_object(Bucket=bucket, Key=key)
         data = json.loads(obj["Body"].read().decode())
         return data
     except Exception:
-        raise HTTPException(status_code=404, detail="Insight not found")
+        raise HTTPException(status_code=404, detail="Response not found")
 
 
 @app.post("/feedback")

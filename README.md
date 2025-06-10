@@ -5,7 +5,7 @@ BlitzLLM exposes a small set of REST endpoints used by B2B partners to query bas
 ## Endpoints
 
 ### `POST /generate-insights`
-Generates a text response based on the provided question and optional context.
+Generates a text response based on the provided question and optional context. The call returns immediately with a `response_id` while processing continues asynchronously.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -15,13 +15,13 @@ Generates a text response based on the provided question and optional context.
 | `simple` | `boolean` | When `true`, request a short one-sentence answer. Defaults to `false`. |
 | `league` | `string` | League code (e.g. `"mlb"`). Defaults to `"mlb"`. |
 
-The response will include a unique `insight_id` that can be polled later.
+The response will include a unique `response_id` that can be polled later.
 
-### `GET /insights/{insight_id}`
-Retrieve a previously generated insight. Include the `partner_id` as a query parameter if used when creating the insight.
+### `GET /insights/{response_id}`
+Retrieve a previously generated response. Include the `partner_id` as a query parameter if used when creating the response.
 
 ### `POST /conversation`
-Provides a conversation style interface that keeps track of previous questions and answers.
+Provides a conversation style interface that keeps track of previous questions and answers. The request schedules processing and returns a `response_id` immediately.
 
 The request body accepts the same fields as `/generate-insights` plus:
 
@@ -32,7 +32,7 @@ The request body accepts the same fields as `/generate-insights` plus:
 | `message_id` | `integer` | Message identifier for retries. Optional. |
 | `retry` | `boolean` | When `true`, retry the message at the given `message_id`. |
 
-The response includes the current `conversation_id`.
+The response includes the current `conversation_id` and a `response_id` that can be polled.
 
 ### `POST /feedback`
 Stores user feedback. The body must contain:

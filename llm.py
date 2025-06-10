@@ -180,6 +180,7 @@ async def check_clarification(
     custom_data: dict | None = None,
     league: str = "mlb",
     history_context: str | None = None,
+    prompt_type: str = "INSIGHT"
 ):
     """Determine if clarification is needed or provide a direct answer."""
     try:
@@ -190,7 +191,7 @@ async def check_clarification(
             history_context = ""
 
         custom_section = f"Partner custom data: {json.dumps(custom_data)}" if custom_data else ""
-        prompts = get_prompts(league)
+        prompts = get_prompts(league, prompt_type)
         prompt = prompts["CLARIFICATION_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
             user_prompt=user_prompt,
@@ -226,6 +227,7 @@ async def determine_live_endpoints(
     conversation_history: list | None = None,
     league: str = "mlb",
     history_context: str | None = None,
+    prompt_type: str = "INSIGHT"
 ):
     """Determine if the question needs upcoming API data and what calls to make."""
     try:
@@ -234,7 +236,7 @@ async def determine_live_endpoints(
         if history_context is None:
             history_context = ""
 
-        prompts = get_prompts(league)
+        prompts = get_prompts(league, prompt_type)
         user_prompt_context = prompts["LIVE_ENDPOINTS_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
             user_prompt=user_prompt
@@ -484,6 +486,7 @@ async def determine_sql_query(
     league: str = "mlb",
     history_context: str | None = None,
     previous_results: list | None = None,
+    prompt_type: str = "INSIGHT"
 ):
     """Determines if a SQL query against the historical database is needed and generates it if so."""
     try:
@@ -522,7 +525,7 @@ async def determine_sql_query(
         # Compose table descriptions (from the original code)
         table_descriptions = TABLE_DESCRIPTIONS.get(league, "")
         
-        prompts_set = get_prompts(league)
+        prompts_set = get_prompts(league, prompt_type)
         system_prompt = prompts_set["SQL_QUERY_SYSTEM_PROMPT"].format(
             history_context=history_context if history_context else "This is the beginning of the conversation.",
             similar_queries=similar_queries,
@@ -803,6 +806,7 @@ async def generate_response(
     league: str = "mlb",
     conversation_history: list | None = None,
     history_context: str | None = None,
+    prompt_type: str = "INSIGHT"
 ):
     """Generates the final natural language response based on the query results."""
     credential = None # Initialize credential to None
@@ -838,7 +842,7 @@ async def generate_response(
         custom_section = ""
         if custom_data:
             custom_section = f"Partner custom data: {json.dumps(custom_data)}\n"
-        prompts_set = get_prompts(league)
+        prompts_set = get_prompts(league, prompt_type)
         system_message = prompts_set["GENERATE_RESPONSE_SYSTEM"].format(custom_data_section=custom_section)
         system_message += f"\n\n**TODAY'S DATE:** {datetime.now().strftime('%Y-%m-%d')}"
 
