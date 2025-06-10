@@ -7,7 +7,7 @@ import contextlib
 from datetime import datetime
 from typing import Optional, Dict, Any
 import boto3
-
+import uuid
 from fastapi import FastAPI, HTTPException, Header, Security, Depends
 from azure.identity import DefaultAzureCredential
 from azure.cosmos import CosmosClient
@@ -21,23 +21,32 @@ from database_pool import (
     get_baseball_pool,
     set_partner_pool,
     set_baseball_pool,
+    get_partner_db_pool,
+    get_baseball_db_pool,
 )
-
+from dotenv import load_dotenv
 import llm
+
+load_dotenv()
 
 app = FastAPI(title="BlitzLLM B2B API")
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-def get_valid_api_keys():
-    keys = os.getenv("PARTNER_API_KEYS", "")
-    return [k.strip() for k in keys.split(",") if k.strip()]
-
 async def verify_api_key(api_key: str = Security(api_key_header)):
     partner_id = get_partner_id_from_api_key(api_key)
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+    return api_key
+
+def get_partner_id_from_api_key(api_key: str) -> int | None:
+    mapping = os.getenv("PARTNER_API_KEY_MAP", "{}")
+    try:
+        api_map = json.loads(mapping)
+        return api_map.get(api_key)
+    except Exception:
+        return None
 
 class InsightRequest(BaseModel):
     message: str
@@ -66,14 +75,16 @@ class FeedbackRequest(BaseModel):
 
 async def init_pools():
     """Initialize database connection pools on startup."""
-    partner_dsn = os.getenv("PARTNER_DB_DSN")
-    baseball_dsn = os.getenv("BASEBALL_DB_DSN")
-    if partner_dsn:
-        partner_pool = await asyncpg.create_pool(dsn=partner_dsn)
+    try:
+        partner_pool = await get_partner_db_pool()
         set_partner_pool(partner_pool)
-    if baseball_dsn:
-        baseball_pool = await asyncpg.create_pool(dsn=baseball_dsn)
+    except Exception as e:
+        print(f"Failed to initialize partner pool: {e}")
+    try:
+        baseball_pool = await get_baseball_db_pool()
         set_baseball_pool(baseball_pool)
+    except Exception as e:
+        print(f"Failed to initialize baseball pool: {e}")
 
 
 async def close_pools():
@@ -201,7 +212,7 @@ async def delete_messages_from(conversation_id: int, start_id: int):
 async def store_response(partner_id: int | None, response_id: str, data: dict):
     """Store the response JSON in S3 under the partner prefix."""
     s3 = boto3.client("s3")
-    bucket = os.getenv("INSIGHTS_BUCKET", "blitz-insights")
+    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     body = json.dumps({
         "response": data,
         "timestamp": datetime.utcnow().isoformat(),
@@ -263,6 +274,20 @@ async def log_query(call_id: int, partner_id: Optional[int], sql_query: str, lea
         False,
         league,
     )
+
+
+async def store_error_response(partner_id: int | None, response_id: str, error_message: str, status_code: int = 500):
+    """Store an error response in S3 under the partner prefix."""
+    s3 = boto3.client("s3")
+    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
+    body = json.dumps({
+        "status": "error",
+        "error_message": error_message,
+        "status_code": status_code,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
+    s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
 
 async def process_generate_insights(req: InsightRequest, partner_id: int, response_id: str):
@@ -338,7 +363,8 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
         )
         await log_query(call_id, partner_id, locals().get("sql_query"), req.league)
     except Exception as e:
-        partner_id = locals().get("partner_id", None)
+        error_message = str(e)
+        await store_error_response(partner_id, response_id, error_message, 500)
         partner_payload = {
             "question": req.message,
             "custom_data": req.custom_data,
@@ -348,7 +374,7 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
             "generate_insights",
             partner_payload,
             None,
-            str(e),
+            error_message,
         )
 
 
@@ -396,7 +422,7 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
             await log_query(call_id, req.partner_id, None, req.league)
             return
 
-        search_results = await llm.perform_search(req.message, {})
+        search_results = await llm.perform_search(req.message, {}, history)
         query_data = await llm.determine_sql_query(
             req.message,
             search_results,
@@ -440,6 +466,8 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
         )
         await log_query(call_id, req.partner_id, sql_query, req.league)
     except Exception as e:
+        error_message = str(e)
+        await store_error_response(req.partner_id, response_id, error_message, 500)
         partner_payload = {
             "user_id": req.user_id,
             "conversation_id": conv_id if 'conv_id' in locals() else req.conversation_id,
@@ -451,7 +479,7 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
             "conversation",
             partner_payload,
             None,
-            str(e),
+            error_message,
         )
 
 
@@ -464,7 +492,6 @@ async def generate_insights(
     partner_id = get_partner_id_from_api_key(api_key)
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    import uuid
     response_id = str(uuid.uuid4())
     try:
         await store_response(partner_id, response_id, {"status": "processing"})
@@ -543,14 +570,6 @@ async def feedback(req: FeedbackRequest, api_key: str = Depends(verify_api_key))
     except Exception as e:
         print(f"Error saving feedback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-def get_partner_id_from_api_key(api_key: str) -> int | None:
-    mapping = os.getenv("PARTNER_API_KEY_MAP", "{}")
-    try:
-        api_map = json.loads(mapping)
-        return api_map.get(api_key)
-    except Exception:
-        return None
 
 @app.get("/conversation/{response_id}")
 async def get_conversation_response(

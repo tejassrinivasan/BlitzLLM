@@ -13,7 +13,6 @@ from azure.search.documents.models import VectorizedQuery, QueryType, QueryCapti
 from utils import serialize_response, get_azure_credential, get_token_provider, get_embedding, DecimalEncoder
 from config import SEARCH_ENDPOINT, SEARCH_INDEX_NAME, OPENAI_ENDPOINT, OPENAI_API_VERSION
 from prompts import (
-    MLB_SIMPLE_RESPONSE_INSTRUCTION,
     get_prompts,
 )
 from typing import Optional, List, Dict, Union
@@ -175,7 +174,7 @@ async def prepare_history_for_sql(
     return history, history_context, user_message_count, previous_results
 
 async def check_clarification(
-    user_prompt: str,
+    partner_prompt: str,
     conversation_history: List[Dict] | None = None,
     custom_data: dict | None = None,
     league: str = "mlb",
@@ -194,7 +193,7 @@ async def check_clarification(
         prompts = get_prompts(league, prompt_type)
         prompt = prompts["CLARIFICATION_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
-            user_prompt=user_prompt,
+            partner_prompt=partner_prompt,
             custom_section=custom_section
         )
         system_prompt = prompts["CLARIFICATION_SYSTEM_PROMPT"].format(today_date=datetime.now().strftime('%m/%d/%Y'))
@@ -223,11 +222,12 @@ async def check_clarification(
 
 async def determine_live_endpoints(
     client,
-    user_prompt: str,
+    partner_prompt: str,
     conversation_history: list | None = None,
     league: str = "mlb",
     history_context: str | None = None,
-    prompt_type: str = "INSIGHT"
+    prompt_type: str = "INSIGHT",
+    custom_data: dict | None = None,
 ):
     """Determine if the question needs upcoming API data and what calls to make."""
     try:
@@ -237,9 +237,11 @@ async def determine_live_endpoints(
             history_context = ""
 
         prompts = get_prompts(league, prompt_type)
+        custom_section = f"Partner custom data: {json.dumps(custom_data)}" if custom_data else ""
         user_prompt_context = prompts["LIVE_ENDPOINTS_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
-            user_prompt=user_prompt
+            partner_prompt=partner_prompt,
+            custom_section=custom_section
         )
         system_prompt = prompts["LIVE_ENDPOINTS_SYSTEM_PROMPT"].format(
             today_date=datetime.now().strftime('%Y-%m-%d'),
@@ -478,7 +480,7 @@ async def fetch_upcoming_data(calls: List[dict], keys: List[str], constraints: d
     return results
 
 async def determine_sql_query(
-    user_prompt,
+    partner_prompt,
     search_results,
     conversation_id,
     current_message_id=None,
@@ -491,7 +493,7 @@ async def determine_sql_query(
     """Determines if a SQL query against the historical database is needed and generates it if so."""
     try:
         # Input validation
-        if not user_prompt or not user_prompt.strip():
+        if not partner_prompt or not partner_prompt.strip():
             return {
                 "type": "error",
                 "message": "Please provide a valid question"
@@ -537,7 +539,7 @@ async def determine_sql_query(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": "Partner's message: " + user_prompt}
+                {"role": "user", "content": "Partner's message: " + partner_prompt}
             ],
             temperature=0
         )
@@ -581,7 +583,7 @@ async def determine_sql_query(
             "message": "An error occurred while generating the SQL query"
         }
 
-async def execute_sql_query(sql_query: dict, user_prompt: str, conversation_id: int, current_message_id: int = None, previous_results: list = None):
+async def execute_sql_query(sql_query: dict, partner_prompt: str, conversation_id: int, current_message_id: int = None, previous_results: list = None):
     """Execute the SQL query and return results."""
     try:
         if previous_results:
@@ -590,24 +592,29 @@ async def execute_sql_query(sql_query: dict, user_prompt: str, conversation_id: 
                 "results": previous_results,
                 "type": "previous_results"
             }
-        
         else:
             # Execute the SQL query using PostgreSQL pool
-            print("Executing SQL query in PostgreSQL...")
+            print("[DEBUG] About to get baseball pool...")
             baseball_pool = get_baseball_pool()
+            print(f"[DEBUG] baseball_pool: {baseball_pool}")
+            import os
+            print(f"[DEBUG] BASEBALL_DB_DSN: {os.getenv('BASEBALL_DB_DSN')}")
+            if baseball_pool is None:
+                print("[ERROR] get_baseball_pool() returned None. Pool was not initialized.")
+            print("Executing SQL query in PostgreSQL...")
             async with baseball_pool.acquire() as conn:
                 # Extract any parameters from the query if needed
+                print(f"[DEBUG] Executing SQL: {sql_query}")
                 query_results = await conn.fetch(sql_query)
                 # Convert records to dicts
                 query_results = [dict(row) for row in query_results] if query_results else []
-                
+                print(f"[DEBUG] Query results: {query_results}")
                 # Return results even if empty
                 return {
                     "query": sql_query,
                     "results": query_results,
                     "type": "sql_query"
                 }
-
     except Exception as e:
         logging.error(f"Error executing SQL query: {e}")
         raise HTTPException(
@@ -615,14 +622,24 @@ async def execute_sql_query(sql_query: dict, user_prompt: str, conversation_id: 
             detail="There was an error retrieving data from the database."
         )
 
-async def perform_search(user_prompt: str, current_user: dict):
-    """Perform the initial search and ranking of results."""
+async def perform_search(partner_prompt: str, current_user: dict, conversation_history: list | None = None):
+    """Perform the initial search and ranking of results.
+
+    If conversation history is provided, combine the last three user messages
+    (including the current prompt) when generating embeddings and ranking.
+    """
     try:
         # Initialize Azure OpenAI client
         openai_client = get_openai_client()
-        
-        # Generate embedding for the user prompt
-        user_prompt_vector = await get_embedding(openai_client, user_prompt, "text-embedding-ada-002")
+
+        search_text = partner_prompt
+        if conversation_history:
+            last_user_msgs = [m.get("content", "") for m in conversation_history if m.get("role") == "user"]
+            last_user_msgs = last_user_msgs[-3:] + [partner_prompt]
+            search_text = "\n".join(last_user_msgs)
+
+        # Generate embedding for the search text
+        user_prompt_vector = await get_embedding(openai_client, search_text, "text-embedding-ada-002")
         
         if not user_prompt_vector:
             print("Failed to generate embedding for the user prompt.")
@@ -646,8 +663,8 @@ async def perform_search(user_prompt: str, current_user: dict):
         )
         
         # Perform semantic hybrid search with our vector query
-        results = search_client.search(  
-            search_text=user_prompt,
+        results = search_client.search(
+            search_text=search_text,
             vector_queries=[vector_query],
             select=["id", "UserPrompt", "Query", "AssistantPrompt"],
             query_type=QueryType.SEMANTIC,
@@ -664,7 +681,7 @@ async def perform_search(user_prompt: str, current_user: dict):
             
         # Rank the results using GPT-4o-mini
         print("Ranking search results...")
-        ranked_results = await rank_search_results(openai_client, user_prompt, collected_results)
+        ranked_results = await rank_search_results(openai_client, search_text, collected_results)
         print(f"Top ranked prompts:")
         for result in ranked_results:
             print(f"- {result['UserPrompt']}")
@@ -685,13 +702,13 @@ async def perform_search(user_prompt: str, current_user: dict):
         print("Make sure you have the necessary roles assigned to your identity.")
         return None
 
-async def rank_search_results(client, user_prompt, search_results):
+async def rank_search_results(client, query_text, search_results):
     """Rank search results using GPT-4o-mini to find the most relevant matches."""
     try:
         # Format the search results and user prompt for ranking
         prompt = f"""
         USER QUESTION:
-        {user_prompt}
+        {query_text}
 
         SEARCH RESULTS:
         {json.dumps([{
@@ -736,7 +753,7 @@ async def rank_search_results(client, user_prompt, search_results):
         return search_results[:3]  # Fall back to first 3 results
 
 async def generate_text_response(
-    user_prompt: str,
+    partner_prompt: str,
     query_data: dict | None,
     conversation_id: int,
     live_data: dict | None = None,
@@ -748,7 +765,18 @@ async def generate_text_response(
     conversation_history: list | None = None,
     history_context: str | None = None,
 ):
-    """Generate the final text response using historical and/or live data."""
+    print("[DEBUG] generate_text_response called with:")
+    print("  partner_prompt:", partner_prompt)
+    print("  query_data:", query_data)
+    print("  conversation_id:", conversation_id)
+    print("  live_data:", live_data)
+    print("  search_results:", search_results)
+    print("  custom_data:", custom_data)
+    print("  simple:", simple)
+    print("  include_history:", include_history)
+    print("  league:", league)
+    print("  conversation_history:", conversation_history)
+    print("  history_context:", history_context)
     try:
         historical_query = None
         historical_results = None
@@ -760,11 +788,10 @@ async def generate_text_response(
 
         # Generate a response based on the query results and message history
         text_response = await generate_response(
-            user_prompt,
+            partner_prompt,
             historical_query,      # Pass historical SQL query (can be None)
             historical_results,    # Pass historical results (can be None)
             conversation_id,
-            'text',
             live_data,             # Pass live data (can be None)
             search_results,
             custom_data=custom_data,
@@ -784,7 +811,6 @@ async def generate_text_response(
             "text": text_response,
             "sqlQuery": metadata,  # Return the simplified metadata
             "postgresqlResults": historical_results,  # Include the historical results (can be None)
-            "response_mode": 'text',
             "upcomingResults": live_data # Include live data (can be None)
         }
 
@@ -793,11 +819,10 @@ async def generate_text_response(
         return None
 
 async def generate_response(
-    user_prompt,
+    partner_prompt,
     sql_query,
     query_results,
     conversation_id,
-    response_mode: str = 'text',
     live_data: dict | None = None,
     search_results: dict | None = None,
     custom_data: dict | None = None,
@@ -808,7 +833,20 @@ async def generate_response(
     history_context: str | None = None,
     prompt_type: str = "INSIGHT"
 ):
-    """Generates the final natural language response based on the query results."""
+    print("[DEBUG] generate_response called with:")
+    print("  partner_prompt:", partner_prompt)
+    print("  sql_query:", sql_query)
+    print("  query_results:", query_results)
+    print("  conversation_id:", conversation_id)
+    print("  live_data:", live_data)
+    print("  search_results:", search_results)
+    print("  custom_data:", custom_data)
+    print("  simple:", simple)
+    print("  include_history:", include_history)
+    print("  league:", league)
+    print("  conversation_history:", conversation_history)
+    print("  history_context:", history_context)
+    print("  prompt_type:", prompt_type)
     credential = None # Initialize credential to None
     client = None
     frontend_base_url = os.getenv("FRONT_END_BASE_URL", "https://www.blitzanalytics.co")  # Add default fallback if needed
@@ -843,15 +881,42 @@ async def generate_response(
         if custom_data:
             custom_section = f"Partner custom data: {json.dumps(custom_data)}\n"
         prompts_set = get_prompts(league, prompt_type)
-        system_message = prompts_set["GENERATE_RESPONSE_SYSTEM"].format(custom_data_section=custom_section)
+        # Select system prompt based on insight length (simple/detailed)
+        if simple:
+            system_message = prompts_set.get("SIMPLE_RESPONSE_SYSTEM_PROMPT")
+            if not system_message:
+                raise ValueError("SIMPLE_RESPONSE_SYSTEM_PROMPT not found in prompts_set")
+        else:
+            system_message = prompts_set["DETAILED_RESPONSE_SYSTEM_PROMPT"]
+        system_message = system_message.format(custom_data_section=custom_section)
         system_message += f"\n\n**TODAY'S DATE:** {datetime.now().strftime('%Y-%m-%d')}"
 
-        prompt = prompts_set["DETAILED_RESPONSE_PROMPT"].replace("{history_context}", history_context)
-        if simple:
-            prompt += "\n" + SIMPLE_RESPONSE_INSTRUCTION
+        # Prepare fallback/default values for prompt variables
+        sql_query_str = sql_query if sql_query else "No historical SQL query was generated or needed."
+        results_str_final = results_str if results_str else "No historical query results provided or query was not run."
+        live_data_str_final = live_data_str if live_data_str else "No live/upcoming data provided or needed."
 
-        model_deployment_name = "gpt-4o"  # Azure deployment name for GPT-4o (ensure this deployment exists)
-        # Construct messages list safely
+        # Select user prompt template based on prompt_type
+        if prompt_type == "CONVERSATION":
+            user_prompt_template = prompts_set["RESPONSE_USER_PROMPT_CONVERSATION"]
+            prompt = user_prompt_template.format(
+                history_context=history_context or "",
+                partner_prompt=partner_prompt,
+                custom_section=custom_section,
+                sql_query=sql_query_str,
+                results_str=results_str_final,
+                live_data_str=live_data_str_final,
+            )
+        else:
+            user_prompt_template = prompts_set["RESPONSE_USER_PROMPT_INSIGHT"]
+            prompt = user_prompt_template.format(
+                partner_prompt=partner_prompt,
+                custom_section=custom_section,
+                sql_query=sql_query_str,
+                results_str=results_str_final,
+                live_data_str=live_data_str_final,
+            )
+
         messages = [{"role": "system", "content": system_message}]
         # Add history only if it's a non-empty list
         if include_history and isinstance(conversation_history, list) and conversation_history:
@@ -864,8 +929,12 @@ async def generate_response(
 
         messages.append({"role": "user", "content": prompt + "\nWEB_RESULTS:\n" + web_data_str})
 
+        print("[DEBUG] LLM system_message:", system_message)
+        print("[DEBUG] LLM prompt:", prompt)
+        print("[DEBUG] LLM messages:", messages)
+
         completion = await client.chat.completions.create(
-            model=model_deployment_name,
+            model="gpt-4o",
             messages=messages,
             temperature=0,
             response_format={"type": "json_object"},
