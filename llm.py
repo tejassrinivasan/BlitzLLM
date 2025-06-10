@@ -60,19 +60,17 @@ async def check_query_count(current_user: dict):
             detail="Error checking query count"
         )
 
-async def get_conversation_history(conversation_id, current_message_id=None):
+async def get_conversation_history(conversation_id: str, current_message_id=None):
     """Retrieve conversation history from messages table."""
     try:
-        conversation_id = int(conversation_id)
         partner_pool = get_partner_pool()
-
         async with partner_pool.acquire() as conn:
             rows = await conn.fetch(
                 """
                 SELECT message_id, role, content
                 FROM messages
                 WHERE conversation_id = $1
-                ORDER BY message_id ASC
+                ORDER BY message_id ASC, created_at ASC
                 """,
                 conversation_id,
             )
@@ -132,7 +130,7 @@ def format_conversation_history_for_prompt(history: list) -> str:
 
 
 async def prepare_history_for_sql(
-    conversation_id: int,
+    conversation_id: str,
     current_message_id: int | None,
     include_history: bool,
     history: list | None = None,
@@ -583,7 +581,7 @@ async def determine_sql_query(
             "message": "An error occurred while generating the SQL query"
         }
 
-async def execute_sql_query(sql_query: dict, partner_prompt: str, conversation_id: int, current_message_id: int = None, previous_results: list = None):
+async def execute_sql_query(sql_query: dict, partner_prompt: str, conversation_id: str, current_message_id: int = None, previous_results: list = None):
     """Execute the SQL query and return results."""
     try:
         if previous_results:
@@ -597,8 +595,6 @@ async def execute_sql_query(sql_query: dict, partner_prompt: str, conversation_i
             print("[DEBUG] About to get baseball pool...")
             baseball_pool = get_baseball_pool()
             print(f"[DEBUG] baseball_pool: {baseball_pool}")
-            import os
-            print(f"[DEBUG] BASEBALL_DB_DSN: {os.getenv('BASEBALL_DB_DSN')}")
             if baseball_pool is None:
                 print("[ERROR] get_baseball_pool() returned None. Pool was not initialized.")
             print("Executing SQL query in PostgreSQL...")
@@ -755,7 +751,7 @@ async def rank_search_results(client, query_text, search_results):
 async def generate_text_response(
     partner_prompt: str,
     query_data: dict | None,
-    conversation_id: int,
+    conversation_id: str,
     live_data: dict | None = None,
     search_results: dict | None = None,
     custom_data: dict | None = None,
@@ -822,7 +818,7 @@ async def generate_response(
     partner_prompt,
     sql_query,
     query_results,
-    conversation_id,
+    conversation_id: str,
     live_data: dict | None = None,
     search_results: dict | None = None,
     custom_data: dict | None = None,

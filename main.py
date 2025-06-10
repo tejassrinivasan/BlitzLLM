@@ -62,7 +62,7 @@ class ConversationRequest(BaseModel):
     custom_data: Optional[Dict[str, Any]] = None
     partner_id: Optional[int] = None
     user_id: Optional[int] = None
-    conversation_id: Optional[int] = 0
+    conversation_id: Optional[str] = None
     message_id: Optional[int] = None
     retry: Optional[bool] = False
     insight_length: Optional[str] = "detailed"
@@ -135,7 +135,7 @@ async def poll_sqs_queue():
                 elif body.get("type") == "conversation":
                     req = ConversationRequest(**body["req"])
                     await process_conversation(
-                        req, body["conversation_id"], body["response_id"]
+                        req, body.get("partner_id"), body["response_id"]
                     )
                 await asyncio.to_thread(
                     sqs.delete_message,
@@ -163,10 +163,10 @@ app.add_event_handler("startup", start_sqs_listener)
 app.add_event_handler("shutdown", stop_sqs_listener)
 
 
-async def ensure_conversation(partner_id: int, user_id: int, conversation_id: int) -> int:
+async def ensure_conversation(partner_id: int, user_id: int, conversation_id: str | None) -> str:
     pool = get_partner_pool()
     if not pool:
-        return conversation_id or 0
+        return conversation_id or ""
     async with pool.acquire() as conn:
         if conversation_id:
             exists = await conn.fetchval(
@@ -179,15 +179,17 @@ async def ensure_conversation(partner_id: int, user_id: int, conversation_id: in
                     conversation_id,
                 )
                 return conversation_id
-        row = await conn.fetchrow(
-            """INSERT INTO conversations (partner_id, user_id) VALUES ($1,$2) RETURNING conversation_id""",
+        new_id = str(uuid.uuid4())
+        await conn.execute(
+            """INSERT INTO conversations (conversation_id, partner_id, user_id) VALUES ($1,$2,$3)""",
+            new_id,
             partner_id,
             user_id,
         )
-        return row["conversation_id"]
+        return new_id
 
 
-async def add_message(conversation_id: int, partner_id: int, message_id: int, role: str, content: str):
+async def add_message(conversation_id: str, partner_id: int, message_id: int, role: str, content: str):
     pool = get_partner_pool()
     if not pool:
         return
@@ -200,7 +202,7 @@ async def add_message(conversation_id: int, partner_id: int, message_id: int, ro
         content,
     )
 
-async def delete_messages_from(conversation_id: int, start_id: int):
+async def delete_messages_from(conversation_id: str, start_id: int):
     pool = get_partner_pool()
     if not pool:
         return
@@ -221,27 +223,11 @@ async def store_response(partner_id: int | None, response_id: str, data: dict):
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
-
-async def store_conversation_history(partner_id: int | None, response_id: str, conversation_id: int):
-    """Dump the conversation history to S3 in the same way as insights."""
-    history, _ = await llm.get_conversation_history(conversation_id)
-    s3 = boto3.client("s3")
-    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    body = json.dumps({
-        "conversation_id": conversation_id,
-        "messages": history,
-        "timestamp": datetime.utcnow().isoformat(),
-    })
-    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
-    s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
-
-
 async def log_partner_call(
     partner_id: Optional[int],
     endpoint: str,
     partner_payload: dict,
     response_payload: Optional[dict] = None,
-    error: Optional[str] = None,
 ):
     """Store details of partner API calls for auditing."""
     pool = get_partner_pool()
@@ -249,14 +235,13 @@ async def log_partner_call(
         return
     row = await pool.fetchrow(
         """
-        INSERT INTO calls (partner_id, partner_payload, response_payload, endpoint, error)
-        VALUES ($1, $2, $3, $4, $5) RETURNING call_id
+        INSERT INTO calls (partner_id, partner_payload, response_payload, endpoint, created_at)
+        VALUES ($1, $2, $3, $4, NOW()) RETURNING call_id
         """,
         partner_id,
         json.dumps(partner_payload) if partner_payload is not None else None,
         json.dumps(response_payload) if response_payload is not None else None,
         endpoint,
-        error,
     )
     return row["call_id"] if row else None
 
@@ -347,52 +332,71 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 league=req.league,
                 search_results=web_results,
             )
-
-        await store_response(partner_id, response_id, response)
-
+        # Save complete request as partner payload
         partner_payload = {
-            "question": req.message,
+            "message": req.message,
             "custom_data": req.custom_data,
-            "sql_query": sql_query,
+            "league": req.league,
+            "insight_length": req.insight_length,
+            "search_the_web": req.search_the_web
         }
-        response_payload = {"text": response.get("text")} if response else None
+
+        # Build full response payload
+        response_payload = {
+            "response_id": response_id,
+            "text": response.get("text"),
+            "explanation": response.get("explanation"),
+            "links": response.get("links"),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
         call_id = await log_partner_call(
+            partner_id,
+            "generate_insights", 
+            partner_payload,
+            response_payload,
+        )
+        await store_response(partner_id, response_id, response_payload)
+        await log_query(call_id, partner_id, locals().get("sql_query"), req.league)
+    except Exception as e:
+        error_message = str(e)
+        await store_error_response(partner_id, response_id, error_message, 500)
+        
+        # Save complete request as partner payload even on error
+        partner_payload = {
+            "message": req.message,
+            "custom_data": req.custom_data,
+            "league": req.league,
+            "insight_length": req.insight_length,
+            "search_the_web": req.search_the_web
+        }
+
+        # Build error response payload
+        response_payload = {
+            "response_id": response_id,
+            "error": error_message,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+        await log_partner_call(
             partner_id,
             "generate_insights",
             partner_payload,
             response_payload,
         )
-        await log_query(call_id, partner_id, locals().get("sql_query"), req.league)
-    except Exception as e:
-        error_message = str(e)
-        await store_error_response(partner_id, response_id, error_message, 500)
-        partner_payload = {
-            "question": req.message,
-            "custom_data": req.custom_data,
-        }
-        await log_partner_call(
-            partner_id,
-            "generate_insights",
-            partner_payload,
-            None,
-            error_message,
-        )
 
 
-async def process_conversation(req: ConversationRequest, conv_id: int, response_id: str):
+async def process_conversation(req: ConversationRequest, partner_id: int, response_id: str):
     """Background task to process a conversation request."""
     try:
+        next_msg_id = req.message_id
         if req.retry and req.message_id:
-            await delete_messages_from(conv_id, req.message_id)
-            next_msg_id = req.message_id
-        else:
-            history, _, _, _ = await llm.prepare_history_for_sql(conv_id, None, include_history=True)
-            next_msg_id = len(history) + 1
+            await delete_messages_from(req.conversation_id, req.message_id)
 
-        await add_message(conv_id, req.partner_id or 0, next_msg_id, "user", req.message)
+        await add_message(req.conversation_id, partner_id, next_msg_id, "user", req.message)
 
         history, history_context_sql, _, previous_results = await llm.prepare_history_for_sql(
-            conv_id,
+            req.conversation_id,
             None,
             include_history=True,
         )
@@ -409,25 +413,34 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
         if clarify.get("type") == "clarify":
             partner_payload = {
                 "user_id": req.user_id,
-                "conversation_id": conv_id,
+                "conversation_id": req.conversation_id,
+                "message_id": req.message_id,
                 "message": req.message,
+                "insight_length": req.insight_length,
+                "league": req.league,
                 "custom_data": req.custom_data,
+                "retry": req.retry
             }
-            response_payload = {"clarify": clarify.get("question")}
+            response_payload = {
+                "response_id": response_id,
+                "clarify": clarify.get("question"),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
             call_id = await log_partner_call(
-                req.partner_id,
+                partner_id,
                 "conversation",
                 partner_payload,
                 response_payload,
             )
-            await log_query(call_id, req.partner_id, None, req.league)
+            await add_message(req.conversation_id, partner_id, next_msg_id, "assistant", json.dumps(clarify.get("question")))
+            await store_response(partner_id, response_id, response_payload)
             return
 
         search_results = await llm.perform_search(req.message, {}, history)
         query_data = await llm.determine_sql_query(
             req.message,
             search_results,
-            conv_id,
+            req.conversation_id,
             include_history=False,
             league=req.league,
             history_context=history_context_sql,
@@ -435,11 +448,11 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
             prompt_type="CONVERSATION",
         )
         sql_query = query_data.get("query") if query_data else None
-        executed = await llm.execute_sql_query(sql_query, req.message, conv_id)
+        executed = await llm.execute_sql_query(sql_query, req.message, req.conversation_id)
         response = await llm.generate_text_response(
             req.message,
             executed,
-            conv_id,
+            req.conversation_id,
             custom_data=req.custom_data,
             simple=req.insight_length == "short",
             league=req.league,
@@ -447,40 +460,56 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
             history_context=formatted_history,
             prompt_type="CONVERSATION", 
         )
-        await add_message(conv_id, req.partner_id or 0, next_msg_id + 1, "assistant", json.dumps(response))
-        await store_conversation_history(req.partner_id or 0, response_id, conv_id)
-        await store_response(req.partner_id, response_id, {**(response or {}), "conversation_id": conv_id})
 
         partner_payload = {
             "user_id": req.user_id,
-            "conversation_id": conv_id,
+            "conversation_id": req.conversation_id,
+            "message_id": req.message_id,
             "message": req.message,
+            "insight_length": req.insight_length,
+            "league": req.league,
             "custom_data": req.custom_data,
-            "sql_query": sql_query,
+            "retry": req.retry
         }
-        response_payload = {"text": response.get("text")} if response else None
+        response_payload = {
+            "response_id": response_id,
+            "text": response.get("text"),
+            "explanation": response.get("explanation"),
+            "links": response.get("links"),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        await add_message(req.conversation_id, partner_id, next_msg_id, "assistant", json.dumps(response))
+        await store_response(partner_id, response_id, response_payload)
         call_id = await log_partner_call(
-            req.partner_id,
+            partner_id,
             "conversation",
             partner_payload,
             response_payload,
         )
-        await log_query(call_id, req.partner_id, sql_query, req.league)
+        await log_query(call_id, partner_id, sql_query, req.league)
     except Exception as e:
         error_message = str(e)
-        await store_error_response(req.partner_id, response_id, error_message, 500)
+        await store_error_response(partner_id, response_id, error_message, 500)
         partner_payload = {
             "user_id": req.user_id,
-            "conversation_id": conv_id if 'conv_id' in locals() else req.conversation_id,
+            "conversation_id": req.conversation_id,
+            "message_id": req.message_id,
             "message": req.message,
+            "insight_length": req.insight_length,
+            "league": req.league,
             "custom_data": req.custom_data,
+            "retry": req.retry
+        }
+        response_payload = {
+            "response_id": response_id,
+            "error": error_message,
+            "timestamp": datetime.utcnow().isoformat(),
         }
         await log_partner_call(
-            req.partner_id,
+            partner_id,
             "conversation",
             partner_payload,
-            None,
-            error_message,
+            response_payload,
         )
 
 
@@ -520,8 +549,24 @@ async def conversation(
     partner_id = get_partner_id_from_api_key(api_key)
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    conv_id = await ensure_conversation(partner_id, req.user_id or 0, req.conversation_id)
-    import uuid
+    if req.message_id is not None and not req.conversation_id:
+        raise HTTPException(status_code=400, detail="message_id requires conversation_id")
+
+    conv_id = await ensure_conversation(partner_id, req.user_id, req.conversation_id)
+    req.conversation_id = conv_id
+
+    pool = get_partner_pool()
+    if req.message_id is None:
+        if pool:
+            async with pool.acquire() as conn:
+                max_id = await conn.fetchval(
+                    "SELECT MAX(message_id) FROM messages WHERE conversation_id=$1",
+                    conv_id,
+                )
+                req.message_id = (max_id or 0) + 1
+        else:
+            req.message_id = 1
+
     response_id = str(uuid.uuid4())
     try:
         await store_response(partner_id, response_id, {"status": "processing"})
@@ -532,12 +577,12 @@ async def conversation(
         {
             "type": "conversation",
             "req": req.dict(),
-            "conversation_id": conv_id,
+            "partner_id": partner_id,
             "response_id": response_id,
         }
     )
 
-    return {"response_id": response_id}
+    return {"conversation_id": conv_id, "response_id": response_id}
 
 
 @app.get("/insights/{response_id}")

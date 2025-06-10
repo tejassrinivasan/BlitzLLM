@@ -22,16 +22,18 @@ CREATE TABLE IF NOT EXISTS calls (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+DROP TABLE IF EXISTS conversations;
 CREATE TABLE IF NOT EXISTS conversations (
-    conversation_id SERIAL PRIMARY KEY,
+    conversation_id VARCHAR(64) PRIMARY KEY,
     partner_id INTEGER REFERENCES metadata(partner_id),
     user_id INTEGER,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(), 
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+DROP TABLE IF EXISTS messages;
 create table if not exists messages (
-    conversation_id INTEGER REFERENCES conversations(conversation_id),
+    conversation_id VARCHAR(64) REFERENCES conversations(conversation_id),
     message_id INTEGER,
     partner_id INTEGER REFERENCES metadata(partner_id),
     role TEXT,

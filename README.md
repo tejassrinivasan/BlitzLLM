@@ -28,11 +28,11 @@ The request body accepts the same fields as `/generate-insights` plus:
 | Field | Type | Description |
 |-------|------|-------------|
 | `user_id` | `integer` | Identifier for the end user. Optional. |
-| `conversation_id` | `integer` | Conversation identifier. Defaults to `0`. |
-| `message_id` | `integer` | Message identifier for retries. Optional. |
+| `conversation_id` | `integer` | Conversation identifier. Optional. |
+| `message_id` | `integer` | Message identifier. Optional. |
 | `retry` | `boolean` | When `true`, retry the message at the given `message_id`. |
 
-The response includes the current `conversation_id` and a `response_id` that can be polled.
+If `conversation_id` and `message_id` are omitted a new conversation is started and both identifiers are generated automatically. The API response always includes the current `conversation_id` together with the `response_id`.
 
 ### `POST /feedback`
 Stores user feedback. The body must contain:
