@@ -51,22 +51,22 @@ def get_partner_id_from_api_key(api_key: str) -> int | None:
 
 class InsightRequest(BaseModel):
     message: str
-    search_the_web: Optional[bool] = False
-    insight_length: Optional[str] = "detailed"
     custom_data: Optional[Dict[str, Any]] = None
+    insight_length: Optional[str] = "short"
     league: Optional[str] = "mlb"
+    search_the_web: Optional[bool] = False
 
 
 class ConversationRequest(BaseModel):
     message: str
     custom_data: Optional[Dict[str, Any]] = None
-    partner_id: Optional[int] = None
+    insight_length: Optional[str] = "short"
+    league: Optional[str] = "mlb"
+    search_the_web: Optional[bool] = False
     user_id: Optional[int] = None
-    conversation_id: Optional[str] = None
+    conversation_id: Optional[str] = ""
     message_id: Optional[int] = None
     retry: Optional[bool] = False
-    insight_length: Optional[str] = "detailed"
-    league: Optional[str] = "mlb"
 
 
 class FeedbackRequest(BaseModel):
@@ -289,7 +289,7 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
             history_context="",
         )
         if quick.get("type") == "answer":
-            response = {"text": quick.get("answer")}
+            response = quick.get("response")
         else:
             live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
             live_data = None
@@ -313,24 +313,22 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
             if query_data and query_data.get("type") in ("sql_query", "previous_results"):
                 executed = await llm.execute_sql_query(
                     sql_query,
-                    req.message,
-                    0,
                     previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
                 )
 
             web_results = None
             if req.search_the_web:
                 web_results = await llm.search_the_web(req.message)
+
             response = await llm.generate_text_response(
-                req.message,
-                executed,
-                0,
-                live_data,
+                partner_prompt=req.message,
+                query_data=executed,
+                live_data=live_data,
+                search_results=web_results,
                 custom_data=req.custom_data,
                 simple=req.insight_length == "short",
                 include_history=False,
                 league=req.league,
-                search_results=web_results,
             )
         # Save complete request as partner payload
         partner_payload = {
@@ -389,6 +387,7 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
 async def process_conversation(req: ConversationRequest, partner_id: int, response_id: str):
     """Background task to process a conversation request."""
     try:
+        openai_client = llm.get_openai_client()
         next_msg_id = req.message_id
         if req.retry and req.message_id:
             await delete_messages_from(req.conversation_id, req.message_id)
@@ -410,56 +409,54 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             history_context=formatted_history,
             prompt_type="CONVERSATION",
         )
-        if clarify.get("type") == "clarify":
-            partner_payload = {
-                "user_id": req.user_id,
-                "conversation_id": req.conversation_id,
-                "message_id": req.message_id,
-                "message": req.message,
-                "insight_length": req.insight_length,
-                "league": req.league,
-                "custom_data": req.custom_data,
-                "retry": req.retry
-            }
-            response_payload = {
-                "response_id": response_id,
-                "clarify": clarify.get("question"),
-                "timestamp": datetime.utcnow().isoformat(),
-            }
-            call_id = await log_partner_call(
-                partner_id,
-                "conversation",
-                partner_payload,
-                response_payload,
-            )
-            await add_message(req.conversation_id, partner_id, next_msg_id, "assistant", json.dumps(clarify.get("question")))
-            await store_response(partner_id, response_id, response_payload)
-            return
+        if clarify.get("type") == "clarify" or clarify.get("type") == "answer":
+            response = clarify.get("response") 
+        else:
+            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
+            live_data = None
+            if live_info.get("needs_live_data"):
+                live_data = await llm.fetch_upcoming_data(
+                    live_info.get("calls", []),
+                    live_info.get("keys", []),
+                    live_info.get("constraints"),
+                )
 
-        search_results = await llm.perform_search(req.message, {}, history)
-        query_data = await llm.determine_sql_query(
-            req.message,
-            search_results,
-            req.conversation_id,
-            include_history=False,
-            league=req.league,
-            history_context=history_context_sql,
-            previous_results=previous_results,
-            prompt_type="CONVERSATION",
-        )
-        sql_query = query_data.get("query") if query_data else None
-        executed = await llm.execute_sql_query(sql_query, req.message, req.conversation_id)
-        response = await llm.generate_text_response(
-            req.message,
-            executed,
-            req.conversation_id,
-            custom_data=req.custom_data,
-            simple=req.insight_length == "short",
-            league=req.league,
-            conversation_history=history,
-            history_context=formatted_history,
-            prompt_type="CONVERSATION", 
-        )
+            search_results = await llm.perform_search(req.message, {}, history)
+            query_data = await llm.determine_sql_query(
+                req.message,
+                search_results,
+                req.conversation_id,
+                include_history=False,
+                league=req.league,
+                history_context=history_context_sql,
+                previous_results=previous_results,
+                prompt_type="CONVERSATION",
+            )
+            sql_query = query_data.get("query") if query_data else None
+            executed = None
+            if query_data and query_data.get("type") in ("sql_query", "previous_results"):
+                executed = await llm.execute_sql_query(
+                    sql_query,
+                    previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
+                )
+
+            web_results = None
+            if req.search_the_web:
+                web_results = await llm.search_the_web(req.message)
+
+            response = await llm.generate_text_response(
+                req.message,
+                executed,
+                live_data=live_data,
+                custom_data=req.custom_data,
+                simple=req.insight_length == "short",
+                include_history=True,
+                league=req.league,
+                search_results=web_results,
+                conversation_history=history,
+                history_context=formatted_history,
+                prompt_type="CONVERSATION", 
+            )
 
         partner_payload = {
             "user_id": req.user_id,
@@ -549,14 +546,14 @@ async def conversation(
     partner_id = get_partner_id_from_api_key(api_key)
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    if req.message_id is not None and not req.conversation_id:
+    if req.message_id not in (None, 0) and not req.conversation_id:
         raise HTTPException(status_code=400, detail="message_id requires conversation_id")
 
     conv_id = await ensure_conversation(partner_id, req.user_id, req.conversation_id)
     req.conversation_id = conv_id
 
     pool = get_partner_pool()
-    if req.message_id is None:
+    if req.message_id in (None, 0):
         if pool:
             async with pool.acquire() as conn:
                 max_id = await conn.fetchval(

@@ -210,9 +210,25 @@ async def check_clarification(
 
         content = response.choices[0].message.content.strip()
         if content.upper().startswith("CLARIFY:"):
-            return {"type": "clarify", "question": content[8:].strip()}
+            question = content[8:].strip()
+            return {
+                "type": "clarify",
+                "response": {
+                    "response": question,
+                    "explanation": None,
+                    "links": None,
+                },
+            }
         if content.upper().startswith("ANSWER:"):
-            return {"type": "answer", "answer": content[7:].strip()}
+            answer = content[7:].strip()
+            return {
+                "type": "answer",
+                "response": {
+                    "response": answer,
+                    "explanation": None,
+                    "links": None,
+                },
+            }
         return {"type": "proceed"}
     except Exception as e:
         print(f"Error determining clarification: {e}")
@@ -581,7 +597,7 @@ async def determine_sql_query(
             "message": "An error occurred while generating the SQL query"
         }
 
-async def execute_sql_query(sql_query: dict, partner_prompt: str, conversation_id: str, current_message_id: int = None, previous_results: list = None):
+async def execute_sql_query(sql_query: dict, previous_results: list = None):
     """Execute the SQL query and return results."""
     try:
         if previous_results:
@@ -751,7 +767,6 @@ async def rank_search_results(client, query_text, search_results):
 async def generate_text_response(
     partner_prompt: str,
     query_data: dict | None,
-    conversation_id: str,
     live_data: dict | None = None,
     search_results: dict | None = None,
     custom_data: dict | None = None,
@@ -760,11 +775,11 @@ async def generate_text_response(
     league: str = "mlb",
     conversation_history: list | None = None,
     history_context: str | None = None,
+    prompt_type: str = "INSIGHT"
 ):
     print("[DEBUG] generate_text_response called with:")
     print("  partner_prompt:", partner_prompt)
     print("  query_data:", query_data)
-    print("  conversation_id:", conversation_id)
     print("  live_data:", live_data)
     print("  search_results:", search_results)
     print("  custom_data:", custom_data)
@@ -784,18 +799,18 @@ async def generate_text_response(
 
         # Generate a response based on the query results and message history
         text_response = await generate_response(
-            partner_prompt,
-            historical_query,      # Pass historical SQL query (can be None)
-            historical_results,    # Pass historical results (can be None)
-            conversation_id,
-            live_data,             # Pass live data (can be None)
-            search_results,
+            partner_prompt=partner_prompt,
+            sql_query=historical_query,      # Pass historical SQL query (can be None)
+            query_results=historical_results,    # Pass historical results (can be None)
+            live_data=live_data,             # Pass live data (can be None)
+            search_results=search_results,
             custom_data=custom_data,
             simple=simple,
             include_history=include_history,
             league=league,
             conversation_history=conversation_history,
             history_context=history_context,
+            prompt_type=prompt_type,
         )
         
         # Store the SQL query in a format that's easier to retrieve
@@ -818,7 +833,6 @@ async def generate_response(
     partner_prompt,
     sql_query,
     query_results,
-    conversation_id: str,
     live_data: dict | None = None,
     search_results: dict | None = None,
     custom_data: dict | None = None,
@@ -833,7 +847,6 @@ async def generate_response(
     print("  partner_prompt:", partner_prompt)
     print("  sql_query:", sql_query)
     print("  query_results:", query_results)
-    print("  conversation_id:", conversation_id)
     print("  live_data:", live_data)
     print("  search_results:", search_results)
     print("  custom_data:", custom_data)
