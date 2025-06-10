@@ -15,17 +15,21 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def serialize_response(data):
+def serialize_response(obj):
     """Recursively convert complex objects for JSON serialization."""
-    if isinstance(data, dict):
-        return {k: serialize_response(v) for k, v in data.items()}
-    if isinstance(data, list):
-        return [serialize_response(item) for item in data]
-    if isinstance(data, Decimal):
-        return float(data)
-    if isinstance(data, (datetime, date)):
-        return data.isoformat()
-    return data
+    if isinstance(obj, dict):
+        return {k: serialize_response(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [serialize_response(item) for item in obj]
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    if hasattr(obj, "_asdict"):
+        return serialize_response(dict(obj._asdict()))
+    return obj
 
 
 def serialize_result(obj):

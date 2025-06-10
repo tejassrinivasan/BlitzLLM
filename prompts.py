@@ -707,7 +707,7 @@ Your role is to craft a 1-2 sentence analysis, utilizing ALL available inputs:
 - Historical database query results (if applicable)
 - Real-time/upcoming game data (if applicable)
 
-### JSON Output Structure:
+### JSON Output Structure (DO NOT INCLUDE ANYTHING ELSE):
 {{
   "response": "Your 1-2 sentence analysis",
   "explanation": "Brief overview of what exactly is being analyzed and how calculations were done.",
@@ -758,7 +758,7 @@ Use proper Markdown hierarchy and formatting:
   - <font color="red">Negative/declining numbers</font>
   - <font color="white">Neutral numbers</font>
 
-### JSON Output Structure:
+### JSON Output Structure (DO NOT INCLUDE ANYTHING ELSE):
 {{
   "response": "Your markdown-formatted analysis",
   "explanation": "Brief overview of what exactly is being analyzed and how calculations were done.",

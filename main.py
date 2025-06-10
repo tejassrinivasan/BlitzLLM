@@ -15,6 +15,7 @@ from pydantic import BaseModel
 import asyncpg
 from config import SQS_QUEUE_URL
 from fastapi.security.api_key import APIKeyHeader
+from utils import serialize_response, DecimalEncoder
 
 from database_pool import (
     get_partner_pool,
@@ -214,9 +215,9 @@ async def store_response(partner_id: int | None, response_id: str, data: dict):
     s3 = boto3.client("s3")
     bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     body = json.dumps({
-        "response": data,
+        "response": serialize_response(data),
         "timestamp": datetime.utcnow().isoformat(),
-    })
+    }, cls=DecimalEncoder)
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
@@ -282,10 +283,10 @@ async def store_error_response(partner_id: int | None, response_id: str, error_m
     bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     body = json.dumps({
         "status": "error",
-        "error_message": error_message,
+        "error_message": serialize_response(error_message),
         "status_code": status_code,
         "timestamp": datetime.utcnow().isoformat(),
-    })
+    }, cls=DecimalEncoder)
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
@@ -543,7 +544,7 @@ async def conversation(
 async def get_insight_response(response_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
     """Retrieve a stored response from S3."""
     s3 = boto3.client("s3")
-    bucket = os.getenv("INSIGHTS_BUCKET", "blitz-insights")
+    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     try:
         obj = s3.get_object(Bucket=bucket, Key=key)
