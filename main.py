@@ -222,17 +222,17 @@ async def store_response(partner_id: int | None, response_id: str, data: dict):
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
 
-async def store_conversation_history(partner_id: int | None, conversation_id: int):
-    """Dump the conversation history to S3."""
+async def store_conversation_history(partner_id: int | None, response_id: str, conversation_id: int):
+    """Dump the conversation history to S3 in the same way as insights."""
     history, _ = await llm.get_conversation_history(conversation_id)
     s3 = boto3.client("s3")
-    bucket = os.getenv("CONVERSATIONS_BUCKET", "blitz-conversations")
+    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     body = json.dumps({
         "conversation_id": conversation_id,
         "messages": history,
         "timestamp": datetime.utcnow().isoformat(),
     })
-    key = f"{partner_id}/{conversation_id}.json" if partner_id else f"{conversation_id}.json"
+    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
 
@@ -448,7 +448,7 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
             prompt_type="CONVERSATION", 
         )
         await add_message(conv_id, req.partner_id or 0, next_msg_id + 1, "assistant", json.dumps(response))
-        await store_conversation_history(req.partner_id or 0, conv_id)
+        await store_conversation_history(req.partner_id or 0, response_id, conv_id)
         await store_response(req.partner_id, response_id, {**(response or {}), "conversation_id": conv_id})
 
         partner_payload = {
@@ -537,12 +537,13 @@ async def conversation(
         }
     )
 
-    return {"conversation_id": conv_id, "response_id": response_id}
+    return {"response_id": response_id}
 
 
 @app.get("/insights/{response_id}")
-async def get_insight_response(response_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
+async def get_insight_response(response_id: str, api_key: str = Depends(verify_api_key)):
     """Retrieve a stored response from S3."""
+    partner_id = get_partner_id_from_api_key(api_key)
     s3 = boto3.client("s3")
     bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
@@ -552,6 +553,22 @@ async def get_insight_response(response_id: str, partner_id: int | None = None, 
         return data
     except Exception:
         raise HTTPException(status_code=404, detail="Response not found")
+
+@app.get("/conversation/{response_id}")
+async def get_conversation_response(
+    response_id: str,
+    api_key: str = Depends(verify_api_key)
+):
+    partner_id = get_partner_id_from_api_key(api_key)
+    s3 = boto3.client("s3")
+    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
+    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
+    try:
+        obj = s3.get_object(Bucket=bucket, Key=key)
+        data = json.loads(obj["Body"].read().decode())
+        return data
+    except Exception:
+        raise HTTPException(status_code=404, detail="Conversation response not found")
 
 
 @app.post("/feedback")
@@ -571,21 +588,3 @@ async def feedback(req: FeedbackRequest, api_key: str = Depends(verify_api_key))
     except Exception as e:
         print(f"Error saving feedback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/conversation/{response_id}")
-async def get_conversation_response(
-    response_id: int,
-    api_key: str = Depends(api_key_header)
-):
-    partner_id = get_partner_id_from_api_key(api_key)
-    if not partner_id:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    s3 = boto3.client("s3")
-    bucket = os.getenv("CONVERSATIONS_BUCKET", "blitz-messages")
-    key = f"{partner_id}/{response_id}.json"
-    try:
-        obj = s3.get_object(Bucket=bucket, Key=key)
-        data = json.loads(obj["Body"].read().decode())
-        return data
-    except Exception:
-        raise HTTPException(status_code=404, detail="Conversation response not found")
