@@ -20,6 +20,7 @@ from typing import Optional, List, Dict, Union
 from database_pool import get_partner_pool, get_baseball_pool
 from datetime import timedelta
 from constants import ENDPOINT_LABELS, UPCOMING_ENDPOINTS, TABLE_DESCRIPTIONS
+SERPAPI_KEY = "d0014298277f40474659cc6edb35fa2f0f33affc73a2190c1c116b254e03681e"
 
 SPORTSDATA_API_KEY = os.getenv("SPORTSDATA_API_KEY")
 BAKER_API_KEY = os.getenv("BAKER_API_KEY")
@@ -61,42 +62,30 @@ async def check_query_count(current_user: dict):
         )
 
 async def get_conversation_history(conversation_id, current_message_id=None):
-    """Get conversation history stored in the partner calls table."""
+    """Retrieve conversation history from messages table."""
     try:
         conversation_id = int(conversation_id)
         partner_pool = get_partner_pool()
 
         async with partner_pool.acquire() as conn:
-            user_message_count = await conn.fetchval(
-                "SELECT COUNT(*) FROM calls WHERE conversation_id = $1",
-                conversation_id,
-            )
-            calls = await conn.fetch(
+            rows = await conn.fetch(
                 """
-                SELECT id, question, sql_query, response_text
-                FROM calls
+                SELECT message_id, role, content
+                FROM messages
                 WHERE conversation_id = $1
-                ORDER BY id ASC
+                ORDER BY message_id ASC
                 """,
                 conversation_id,
             )
             formatted_history = []
-            for row in calls:
-                formatted_history.append(
-                    {
-                        "id": row["id"] * 2 - 1,
-                        "role": "user",
-                        "content": row["question"],
-                    }
-                )
-                assistant_msg = {
-                    "id": row["id"] * 2,
-                    "role": "assistant",
-                    "content": row["response_text"] or "",
+            for row in rows:
+                msg = {
+                    "id": row["message_id"],
+                    "role": row["role"],
+                    "content": row["content"] or "",
                 }
-                if row["sql_query"]:
-                    assistant_msg["sqlQuery"] = row["sql_query"]
-                formatted_history.append(assistant_msg)
+                formatted_history.append(msg)
+            user_message_count = sum(1 for r in rows if r["role"] == "user")
             return formatted_history, user_message_count
     except Exception as e:
         logging.error(f"Error getting conversation history: {str(e)}")
@@ -330,6 +319,21 @@ async def _lookup_player_id(client: httpx.AsyncClient, player: str):
     except Exception as e:
         print(f"Error looking up player id: {e}")
     return None
+
+async def search_the_web(query: str):
+    """Search the web via SerpAPI and return results."""
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://serpapi.com/search",
+                params={"engine": "google", "q": query, "api_key": SERPAPI_KEY},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except Exception as e:
+        print(f"Error searching web: {e}")
+        return None
 
 async def fetch_upcoming_data(calls: List[dict], keys: List[str], constraints: dict = None):
     """Fetch and filter data from various SportsDataIO/Baker endpoints."""
@@ -733,6 +737,7 @@ async def generate_text_response(
     query_data: dict | None,
     conversation_id: int,
     live_data: dict | None = None,
+    search_results: dict | None = None,
     custom_data: dict | None = None,
     simple: bool = False,
     include_history: bool = True,
@@ -758,6 +763,7 @@ async def generate_text_response(
             conversation_id,
             'text',
             live_data,             # Pass live data (can be None)
+            search_results,
             custom_data=custom_data,
             simple=simple,
             include_history=include_history,
@@ -790,6 +796,7 @@ async def generate_response(
     conversation_id,
     response_mode: str = 'text',
     live_data: dict | None = None,
+    search_results: dict | None = None,
     custom_data: dict | None = None,
     simple: bool = False,
     include_history: bool = True,
@@ -814,6 +821,7 @@ async def generate_response(
         # Serialize results to JSON string for the prompt
         results_str = json.dumps(query_results, cls=DecimalEncoder, indent=2) if query_results else ""
         live_data_str = json.dumps(live_data, cls=DecimalEncoder, indent=2) if live_data else ""
+        web_data_str = json.dumps(search_results, cls=DecimalEncoder, indent=2) if search_results else ""
 
         # Limit results size to avoid exceeding token limits
         max_results_length = 15000 # Adjust as needed
@@ -850,12 +858,13 @@ async def generate_response(
         elif include_history:
             print(f"Conversation history for {conversation_id} contained invalid items: {conversation_history}")
 
-        messages.append({"role": "user", "content": prompt})
+        messages.append({"role": "user", "content": prompt + "\nWEB_RESULTS:\n" + web_data_str})
 
         completion = await client.chat.completions.create(
-            model=model_deployment_name, # Use the Azure deployment name
+            model=model_deployment_name,
             messages=messages,
             temperature=0,
+            response_format={"type": "json_object"},
         )
         response_content = completion.choices[0].message.content
         print(response_content)
@@ -864,7 +873,10 @@ async def generate_response(
             response_content = response_content.strip()[11:]
         if response_content.strip().endswith("```"):
             response_content = response_content.strip()[:-3]
-        return response_content.strip()
+        try:
+            return json.loads(response_content)
+        except json.JSONDecodeError:
+            return {"insight": response_content.strip()}
 
     except Exception as e:
         # Log the specific error during client interaction

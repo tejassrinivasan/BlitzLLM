@@ -15,6 +15,11 @@ Generates a text response based on the provided question and optional context.
 | `simple` | `boolean` | When `true`, request a short one-sentence answer. Defaults to `false`. |
 | `league` | `string` | League code (e.g. `"mlb"`). Defaults to `"mlb"`. |
 
+The response will include a unique `insight_id` that can be polled later.
+
+### `GET /insights/{insight_id}`
+Retrieve a previously generated insight. Include the `partner_id` as a query parameter if used when creating the insight.
+
 ### `POST /conversation`
 Provides a conversation style interface that keeps track of previous questions and answers.
 
@@ -24,6 +29,10 @@ The request body accepts the same fields as `/generate-insights` plus:
 |-------|------|-------------|
 | `user_id` | `integer` | Identifier for the end user. Optional. |
 | `conversation_id` | `integer` | Conversation identifier. Defaults to `0`. |
+| `message_id` | `integer` | Message identifier for retries. Optional. |
+| `retry` | `boolean` | When `true`, retry the message at the given `message_id`. |
+
+The response includes the current `conversation_id`.
 
 ### `POST /feedback`
 Stores user feedback. The body must contain:
