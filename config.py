@@ -1,3 +1,4 @@
+import os
 SEARCH_SERVICE_NAME = "blitz-ai-search"
 SEARCH_INDEX_NAME = "blitz-mlb-index"
 SEARCH_ENDPOINT = f"https://{SEARCH_SERVICE_NAME}.search.windows.net"
@@ -11,3 +12,9 @@ COSMOSDB_ENDPOINT = "https://blitz-queries.documents.azure.com:443/"
 DATABASE_NAME = "sports"
 CONTAINER_NAME = "mlb-partner-feedback-helpful"
 UNHELPFUL_CONTAINER_NAME = "mlb-partner-feedback-unhelpful"
+
+SQS_QUEUE_URL = os.getenv(
+    "SQS_QUEUE_URL",
+    "https://sqs.us-west-2.amazonaws.com/183631332155/blitz-endpoints-queue",
+)
+

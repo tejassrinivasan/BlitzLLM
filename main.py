@@ -2,15 +2,18 @@
 
 import os
 import json
+import asyncio
+import contextlib
 from datetime import datetime
 from typing import Optional, Dict, Any
 import boto3
 
-from fastapi import FastAPI, HTTPException, Header, Security, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Header, Security, Depends
 from azure.identity import DefaultAzureCredential
 from azure.cosmos import CosmosClient
 from pydantic import BaseModel
 import asyncpg
+from config import SQS_QUEUE_URL
 from fastapi.security.api_key import APIKeyHeader
 
 from database_pool import (
@@ -85,6 +88,67 @@ async def close_pools():
 
 app.add_event_handler("startup", init_pools)
 app.add_event_handler("shutdown", close_pools)
+
+# --- SQS Queue Handling ---
+sqs_task = None
+
+async def send_to_sqs(message: dict):
+    """Send a message to the configured SQS queue."""
+    sqs = boto3.client("sqs", region_name="us-west-2")
+    await asyncio.to_thread(
+        sqs.send_message,
+        QueueUrl=SQS_QUEUE_URL,
+        MessageBody=json.dumps(message),
+    )
+
+
+async def poll_sqs_queue():
+    """Continuously poll SQS and process messages."""
+    sqs = boto3.client("sqs", region_name="us-west-2")
+    while True:
+        try:
+            resp = await asyncio.to_thread(
+                sqs.receive_message,
+                QueueUrl=SQS_QUEUE_URL,
+                MaxNumberOfMessages=10,
+                WaitTimeSeconds=20,
+            )
+            for msg in resp.get("Messages", []):
+                body = json.loads(msg["Body"])
+                if body.get("type") == "generate_insights":
+                    req = InsightRequest(**body["req"])
+                    await process_generate_insights(
+                        req, body.get("partner_id"), body["response_id"]
+                    )
+                elif body.get("type") == "conversation":
+                    req = ConversationRequest(**body["req"])
+                    await process_conversation(
+                        req, body["conversation_id"], body["response_id"]
+                    )
+                await asyncio.to_thread(
+                    sqs.delete_message,
+                    QueueUrl=SQS_QUEUE_URL,
+                    ReceiptHandle=msg["ReceiptHandle"],
+                )
+        except Exception as e:
+            print(f"Error processing SQS messages: {e}")
+        await asyncio.sleep(1)
+
+
+async def start_sqs_listener():
+    global sqs_task
+    sqs_task = asyncio.create_task(poll_sqs_queue())
+
+
+async def stop_sqs_listener():
+    global sqs_task
+    if sqs_task:
+        sqs_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await sqs_task
+
+app.add_event_handler("startup", start_sqs_listener)
+app.add_event_handler("shutdown", stop_sqs_listener)
 
 
 async def ensure_conversation(partner_id: int, user_id: int, conversation_id: int) -> int:
@@ -394,7 +458,6 @@ async def process_conversation(req: ConversationRequest, conv_id: int, response_
 @app.post("/generate-insights", status_code=202)
 async def generate_insights(
     req: InsightRequest,
-    background_tasks: BackgroundTasks,
     api_key: str = Depends(verify_api_key),
 ):
     """Schedule insight generation and return a response identifier."""
@@ -408,7 +471,14 @@ async def generate_insights(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
 
-    background_tasks.add_task(process_generate_insights, req, partner_id, response_id)
+    await send_to_sqs(
+        {
+            "type": "generate_insights",
+            "req": req.dict(),
+            "partner_id": partner_id,
+            "response_id": response_id,
+        }
+    )
 
     return {"response_id": response_id}
 
@@ -416,7 +486,6 @@ async def generate_insights(
 @app.post("/conversation", status_code=202)
 async def conversation(
     req: ConversationRequest,
-    background_tasks: BackgroundTasks,
     api_key: str = Depends(verify_api_key),
 ):
     """Schedule conversation processing and return identifiers."""
@@ -431,13 +500,20 @@ async def conversation(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
 
-    background_tasks.add_task(process_conversation, req, conv_id, response_id)
+    await send_to_sqs(
+        {
+            "type": "conversation",
+            "req": req.dict(),
+            "conversation_id": conv_id,
+            "response_id": response_id,
+        }
+    )
 
     return {"conversation_id": conv_id, "response_id": response_id}
 
 
 @app.get("/insights/{response_id}")
-async def get_insight(response_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
+async def get_insight_response(response_id: str, partner_id: int | None = None, api_key: str = Depends(verify_api_key)):
     """Retrieve a stored response from S3."""
     s3 = boto3.client("s3")
     bucket = os.getenv("INSIGHTS_BUCKET", "blitz-insights")
@@ -476,9 +552,9 @@ def get_partner_id_from_api_key(api_key: str) -> int | None:
     except Exception:
         return None
 
-@app.get("/conversation/{conversation_id}")
-async def get_conversation(
-    conversation_id: int,
+@app.get("/conversation/{response_id}")
+async def get_conversation_response(
+    response_id: int,
     api_key: str = Depends(api_key_header)
 ):
     partner_id = get_partner_id_from_api_key(api_key)
@@ -486,10 +562,10 @@ async def get_conversation(
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
     s3 = boto3.client("s3")
     bucket = os.getenv("CONVERSATIONS_BUCKET", "blitz-messages")
-    key = f"{partner_id}/{conversation_id}.json"
+    key = f"{partner_id}/{response_id}.json"
     try:
         obj = s3.get_object(Bucket=bucket, Key=key)
         data = json.loads(obj["Body"].read().decode())
         return data
     except Exception:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail="Conversation response not found")
