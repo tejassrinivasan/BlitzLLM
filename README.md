@@ -42,3 +42,12 @@ Stores user feedback. The body must contain:
 | `call_id` | `string` | Identifier of the API call being rated. **Required**. |
 | `helpful` | `boolean` | Whether the response was helpful. **Required**. |
 
+
+## Embeddable Conversation Widget
+
+A simple JavaScript widget is provided in the [`widget`](widget) directory. It
+creates a chat interface that communicates with the `/conversation` API
+endpoint. Partners can embed it in their own sites by including the supplied
+JS and CSS files. The widget supports light and dark themes, optional
+borders and preset widths for mobile, tablet or desktop displays. See
+[`widget/README.md`](widget/README.md) for usage details and an example page.

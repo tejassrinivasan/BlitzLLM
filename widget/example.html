@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>BlitzLLM Conversation Widget</title>
+  <link rel="stylesheet" href="conversation_widget.css" />
+</head>
+<body>
+  <h3>BlitzLLM Conversation Widget Demo</h3>
+  <div id="blitz-widget"></div>
+  <script src="conversation_widget.js"></script>
+  <script>
+    BlitzWidget.createWidget({
+      targetId: 'blitz-widget',
+      apiBase: 'http://localhost:8000',
+      device: 'desktop',
+      border: true,
+      theme: 'light',
+      userId: 'demo-user@example.com',
+      apiKey: 'Q9AIueGsVQa4It0MMlVYjqcWc8FrnTE3546JY932u3WBc2b5pcE7jXOsx471ddPS'
+    });
+  </script>
+</body>
+</html>

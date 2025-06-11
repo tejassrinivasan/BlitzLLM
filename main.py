@@ -16,6 +16,7 @@ import asyncpg
 from config import SQS_QUEUE_URL
 from fastapi.security.api_key import APIKeyHeader
 from utils import serialize_response, DecimalEncoder
+from fastapi.middleware.cors import CORSMiddleware
 
 from database_pool import (
     get_partner_pool,
@@ -31,6 +32,14 @@ import llm
 load_dotenv()
 
 app = FastAPI(title="BlitzLLM B2B API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For development; restrict in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)

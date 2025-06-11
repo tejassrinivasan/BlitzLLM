@@ -1,0 +1,49 @@
+.blitz-widget-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  background: #fff;
+}
+.blitz-size-mobile { width: 100%; }
+.blitz-size-tablet { width: 400px; }
+.blitz-size-desktop { width: 600px; }
+.blitz-no-border { border: none; }
+.blitz-theme-dark {
+  background: #222;
+  color: #eee;
+}
+.blitz-theme-dark .blitz-widget-messages { background: #333; }
+.blitz-theme-dark .blitz-widget-input {
+  background: #555;
+  color: #fff;
+}
+.blitz-theme-dark .blitz-widget-msg.user { color: #ddd; }
+.blitz-theme-dark .blitz-widget-msg.assistant { color: #8ab4f8; }
+.blitz-widget-messages {
+  height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  background: #fafafa;
+  padding: 5px;
+}
+.blitz-widget-msg {
+  margin-bottom: 5px;
+}
+.blitz-widget-msg.user {
+  text-align: right;
+  color: #333;
+}
+.blitz-widget-msg.assistant {
+  text-align: left;
+  color: #0066cc;
+}
+.blitz-widget-form {
+  display: flex;
+}
+.blitz-widget-input {
+  flex: 1;
+  padding: 5px;
+}
+.blitz-widget-send {
+  padding: 5px 10px;
+}
