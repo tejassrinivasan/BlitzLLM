@@ -295,6 +295,9 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
             web_results_raw = await llm.search_the_web(req.message, req.league)
             web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
             print(f"Web results: {web_results}")
+            if web_results.get("error"):
+                await store_error_response(partner_id, response_id, web_results.get("explanation"), 500)
+                return
 
         quick = await llm.check_clarification(
             req.message,
@@ -332,6 +335,10 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 )
 
             search_results = await llm.perform_search(req.message, {})
+            if search_results.get("error"):
+                await store_error_response(partner_id, response_id, search_results.get("explanation"), 500)
+                return
+
             query_data = await llm.determine_sql_query(
                 req.message,
                 search_results,
@@ -339,6 +346,10 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 include_history=False,
                 league=req.league,
             )
+            if query_data.get("error"):
+                await store_error_response(partner_id, response_id, query_data.get("explanation"), 500)
+                return
+
             sql_query = query_data.get("query") if query_data else None
             executed = None
             if query_data and query_data.get("type") in ("sql_query", "previous_results"):
@@ -346,6 +357,9 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                     sql_query,
                     previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
                 )
+            if executed.get("error"):
+                await store_error_response(partner_id, response_id, executed.get("explanation"), 500)
+                return
 
             response = await llm.generate_text_response(
                 partner_prompt=req.message,
@@ -357,6 +371,9 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 include_history=False,
                 league=req.league,
             )
+            if response.get("error"):
+                await store_error_response(partner_id, response_id, response.get("explanation"), 500)
+                return
 
         # Build full response payload
         text_block = response.get("text")
@@ -445,6 +462,9 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
         if req.search_the_web:
             web_results_raw = await llm.search_the_web(req.message, req.league)
             web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
+            if web_results.get("error"):
+                await store_error_response(partner_id, response_id, web_results.get("explanation"), 500)
+                return
 
         clarify = await llm.check_clarification(
             req.message,
@@ -483,6 +503,10 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 )
 
             search_results = await llm.perform_search(req.message, {}, history)
+            if search_results.get("error"):
+                await store_error_response(partner_id, response_id, search_results.get("explanation"), 500)
+                return
+
             query_data = await llm.determine_sql_query(
                 req.message,
                 search_results,
@@ -493,6 +517,10 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 previous_results=previous_results,
                 prompt_type="CONVERSATION",
             )
+            if query_data.get("error"):
+                await store_error_response(partner_id, response_id, query_data.get("explanation"), 500)
+                return
+
             sql_query = query_data.get("query") if query_data else None
             executed = None
             if query_data and query_data.get("type") in ("sql_query", "previous_results"):
@@ -500,6 +528,9 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                     sql_query,
                     previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
                 )
+            if executed.get("error"):
+                await store_error_response(partner_id, response_id, executed.get("explanation"), 500)
+                return
 
             response = await llm.generate_text_response(
                 req.message,
@@ -514,6 +545,9 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 history_context=formatted_history,
                 prompt_type="CONVERSATION", 
             )
+            if response.get("error"):
+                await store_error_response(partner_id, response_id, response.get("explanation"), 500)
+                return
 
         text_block = response.get("text")
         if isinstance(text_block, dict):

@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SERPAPI_KEY = "d0014298277f40474659cc6edb35fa2f0f33affc73a2190c1c116b254e03681e"
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 SPORTSDATA_API_KEY = os.getenv("SPORTSDATA_API_KEY")
 BAKER_API_KEY = os.getenv("BAKER_API_KEY")
@@ -222,7 +222,7 @@ async def check_clarification(
         try:
             return json.loads(response_content)
         except json.JSONDecodeError:
-            return {"insight": response_content.strip()}
+            return {"type": "proceed"}
     except Exception as e:
         print(f"Error determining clarification: {e}")
         return {"type": "proceed"}
@@ -350,8 +350,7 @@ async def search_the_web(query: str, league: str):
             resp.raise_for_status()
             return resp.json()
     except Exception as e:
-        print(f"Error searching web: {e}")
-        return None
+        return {"error": "Error searching web. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
 def format_web_results(raw_results: dict) -> list:
     """Format SerpAPI Google Light API results for LLM consumption as a flat list, top stories first."""
@@ -613,12 +612,7 @@ async def determine_sql_query(
         }
         
     except Exception as e:
-        print(f"Error generating SQL query: {e}")
-        print(f"Exception details: {type(e).__name__}")
-        return {
-            "type": "error",
-            "message": "An error occurred while generating the SQL query"
-        }
+        return {"error": "Error generating query. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
 async def execute_sql_query(sql_query: dict, previous_results: list = None):
     """Execute the SQL query and return results."""
@@ -651,11 +645,7 @@ async def execute_sql_query(sql_query: dict, previous_results: list = None):
                     "type": "sql_query"
                 }
     except Exception as e:
-        logging.error(f"Error executing SQL query: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="There was an error retrieving data from the database."
-        )
+        return {"error": "Error executing query. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
 async def perform_search(partner_prompt: str, current_user: dict, conversation_history: list | None = None):
     """Perform the initial search and ranking of results.
@@ -722,20 +712,8 @@ async def perform_search(partner_prompt: str, current_user: dict, conversation_h
             print(f"- {result['UserPrompt']}")
 
         return ranked_results
-
-    except HTTPException as e:
-        if e.status_code == 429:
-            print(f"Query credits limit exceeded: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Query credits limit exceeded. Please try again tomorrow."
-            )
-        raise
     except Exception as e:
-        print(f"Error performing search: {e}")
-        print(f"Exception details: {type(e).__name__}")
-        print("Make sure you have the necessary roles assigned to your identity.")
-        return None
+        return {"error": "Error performing search. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
 async def rank_search_results(client, query_text, search_results):
     """Rank search results using GPT-4o-mini to find the most relevant matches."""
@@ -779,13 +757,11 @@ async def rank_search_results(client, query_text, search_results):
             # Return top 3 results
             return ranked_results[:3]
             
-        except json.JSONDecodeError:
-            print("Failed to parse ranking response as JSON")
-            return search_results[:3]  # Fall back to first 3 results
+        except json.JSONDecodeError as e:
+            return {"error": "Error performing search. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
             
     except Exception as e:
-        print(f"Error ranking search results: {e}")
-        return search_results[:3]  # Fall back to first 3 results
+        return {"error": "Error performing search. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
 async def generate_text_response(
     partner_prompt: str,
@@ -866,19 +842,6 @@ async def generate_response(
     history_context: str | None = None,
     prompt_type: str = "INSIGHT"
 ):
-    print("[DEBUG] generate_response called with:")
-    print("  partner_prompt:", partner_prompt)
-    print("  sql_query:", sql_query)
-    print("  query_results:", query_results)
-    print("  live_data:", live_data)
-    print("  search_results:", search_results)
-    print("  custom_data:", custom_data)
-    print("  simple:", simple)
-    print("  include_history:", include_history)
-    print("  league:", league)
-    print("  conversation_history:", conversation_history)
-    print("  history_context:", history_context)
-    print("  prompt_type:", prompt_type)
     credential = None # Initialize credential to None
     client = None
     frontend_base_url = os.getenv("FRONT_END_BASE_URL", "https://www.blitzanalytics.co")  # Add default fallback if needed
@@ -984,17 +947,14 @@ async def generate_response(
         try:
             return json.loads(response_content)
         except json.JSONDecodeError:
-            return {"insight": response_content.strip()}
+            return {"error": "Error generating response. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
 
     except Exception as e:
-        # Log the specific error during client interaction
-        print(f"Error during Azure OpenAI client interaction in generate_response: {e}")
-        # Fallback response
-        return "Error generating analysis. Please try again."
+        return {"error": "Error generating response. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {e}"}
     finally:
         # Safely close the credential client if it exists and has an async close method
         if credential and hasattr(credential, 'close') and asyncio.iscoroutinefunction(credential.close):
-             try:
-                 await credential.close()
-             except Exception as close_err:
-                 print(f"Error closing Azure credential: {close_err}")
+            try:
+                await credential.close()
+            except Exception as close_err:
+                return {"error": "Error generating response. Please contact support at hello@blitzanalytics.co.", "explanation": f"Error: {close_err}"}
