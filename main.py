@@ -281,17 +281,48 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
     try:
         openai_client = llm.get_openai_client()
 
+        # Save complete request as partner payload
+        partner_payload = {
+            "message": req.message,
+            "custom_data": req.custom_data,
+            "league": req.league,
+            "insight_length": req.insight_length,
+            "search_the_web": req.search_the_web
+        }
+
+        web_results = None
+        if req.search_the_web:
+            web_results_raw = await llm.search_the_web(req.message, req.league)
+            web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
+            print(f"Web results: {web_results}")
+
         quick = await llm.check_clarification(
             req.message,
             [],
             req.custom_data,
             league=req.league,
             history_context="",
+            web_results=web_results,
         )
         if quick.get("type") == "answer":
-            response = quick.get("response")
+            response_payload = {
+                "response_id": response_id,
+                "response": quick.get("response"),
+                "explanation": quick.get("explanation"),
+                "links": quick.get("links"),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+            call_id = await log_partner_call(
+                partner_id,
+                "generate_insights", 
+                partner_payload,
+                response_payload,
+            )
+            await store_response(partner_id, response_id, response_payload)
+            return
         else:
-            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
+            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league, web_results=web_results)
             live_data = None
             if live_info.get("needs_live_data"):
                 live_data = await llm.fetch_upcoming_data(
@@ -316,10 +347,6 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                     previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
                 )
 
-            web_results = None
-            if req.search_the_web:
-                web_results = await llm.search_the_web(req.message)
-
             response = await llm.generate_text_response(
                 partner_prompt=req.message,
                 query_data=executed,
@@ -330,14 +357,6 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 include_history=False,
                 league=req.league,
             )
-        # Save complete request as partner payload
-        partner_payload = {
-            "message": req.message,
-            "custom_data": req.custom_data,
-            "league": req.league,
-            "insight_length": req.insight_length,
-            "search_the_web": req.search_the_web
-        }
 
         # Build full response payload
         text_block = response.get("text")
@@ -411,6 +430,22 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
         )
         formatted_history = llm.format_conversation_history_for_prompt(history)
 
+        partner_payload = {
+            "user_id": req.user_id,
+            "conversation_id": req.conversation_id,
+            "message_id": req.message_id,
+            "message": req.message,
+            "insight_length": req.insight_length,
+            "league": req.league,
+            "custom_data": req.custom_data,
+            "retry": req.retry
+        }
+
+        web_results = None
+        if req.search_the_web:
+            web_results_raw = await llm.search_the_web(req.message, req.league)
+            web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
+
         clarify = await llm.check_clarification(
             req.message,
             history,
@@ -418,11 +453,27 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             league=req.league,
             history_context=formatted_history,
             prompt_type="CONVERSATION",
+            web_results=web_results,
         )
         if clarify.get("type") == "clarify" or clarify.get("type") == "answer":
-            response = clarify.get("response") 
+            response_payload = {
+                "response_id": response_id,
+                "response": clarify.get("response"),
+                "explanation": clarify.get("explanation"),
+                "links": clarify.get("links"),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+            call_id = await log_partner_call(
+                partner_id,
+                "conversation", 
+                partner_payload,
+                response_payload,
+            )
+            await store_response(partner_id, response_id, response_payload)
+            return
         else:
-            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league)
+            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league, web_results=web_results)
             live_data = None
             if live_info.get("needs_live_data"):
                 live_data = await llm.fetch_upcoming_data(
@@ -450,10 +501,6 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                     previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
                 )
 
-            web_results = None
-            if req.search_the_web:
-                web_results = await llm.search_the_web(req.message)
-
             response = await llm.generate_text_response(
                 req.message,
                 executed,
@@ -468,16 +515,6 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 prompt_type="CONVERSATION", 
             )
 
-        partner_payload = {
-            "user_id": req.user_id,
-            "conversation_id": req.conversation_id,
-            "message_id": req.message_id,
-            "message": req.message,
-            "insight_length": req.insight_length,
-            "league": req.league,
-            "custom_data": req.custom_data,
-            "retry": req.retry
-        }
         text_block = response.get("text")
         if isinstance(text_block, dict):
             resp_text = text_block.get("response")

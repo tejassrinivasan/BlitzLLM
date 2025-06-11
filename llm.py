@@ -181,7 +181,8 @@ async def check_clarification(
     custom_data: dict | None = None,
     league: str = "mlb",
     history_context: str | None = None,
-    prompt_type: str = "INSIGHT"
+    prompt_type: str = "INSIGHT",
+    web_results: dict | None = None
 ):
     """Determine if clarification is needed or provide a direct answer."""
     try:
@@ -193,10 +194,12 @@ async def check_clarification(
 
         custom_section = f"Partner custom data: {json.dumps(custom_data)}" if custom_data else ""
         prompts = get_prompts(league, prompt_type)
+        web_results_section = f"Web results: {json.dumps(web_results)}" if web_results else ""
         prompt = prompts["CLARIFICATION_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
             partner_prompt=partner_prompt,
-            custom_section=custom_section
+            custom_section=custom_section,
+            web_results_section=web_results_section
         )
         system_prompt = prompts["CLARIFICATION_SYSTEM_PROMPT"].format(today_date=datetime.now().strftime('%m/%d/%Y'))
         response = await openai_client.chat.completions.create(
@@ -210,30 +213,16 @@ async def check_clarification(
             ],
             temperature=0,
             max_tokens=200,
+            response_format={"type": "json_object"},
         )
 
-        content = response.choices[0].message.content.strip()
-        if content.upper().startswith("CLARIFY:"):
-            question = content[8:].strip()
-            return {
-                "type": "clarify",
-                "response": {
-                    "response": question,
-                    "explanation": None,
-                    "links": None,
-                },
-            }
-        if content.upper().startswith("ANSWER:"):
-            answer = content[7:].strip()
-            return {
-                "type": "answer",
-                "response": {
-                    "response": answer,
-                    "explanation": None,
-                    "links": None,
-                },
-            }
-        return {"type": "proceed"}
+        response_content = response.choices[0].message.content.strip()
+        if response_content.strip().endswith("```"):
+            response_content = response_content.strip()[:-3]
+        try:
+            return json.loads(response_content)
+        except json.JSONDecodeError:
+            return {"insight": response_content.strip()}
     except Exception as e:
         print(f"Error determining clarification: {e}")
         return {"type": "proceed"}
@@ -246,6 +235,7 @@ async def determine_live_endpoints(
     history_context: str | None = None,
     prompt_type: str = "INSIGHT",
     custom_data: dict | None = None,
+    web_results: dict | None = None
 ):
     """Determine if the question needs upcoming API data and what calls to make."""
     try:
@@ -256,10 +246,12 @@ async def determine_live_endpoints(
 
         prompts = get_prompts(league, prompt_type)
         custom_section = f"Partner custom data: {json.dumps(custom_data)}" if custom_data else ""
+        web_results_section = f"Web results: {json.dumps(web_results)}" if web_results else ""
         user_prompt_context = prompts["LIVE_ENDPOINTS_USER_PROMPT"].format(
             history_context=history_context if history_context else 'No history provided.',
             partner_prompt=partner_prompt,
-            custom_section=custom_section
+            custom_section=custom_section,
+            web_results_section=web_results_section
         )
         system_prompt = prompts["LIVE_ENDPOINTS_SYSTEM_PROMPT"].format(
             today_date=datetime.now().strftime('%Y-%m-%d'),
@@ -342,13 +334,17 @@ async def _lookup_player_id(client: httpx.AsyncClient, player: str):
         print(f"Error looking up player id: {e}")
     return None
 
-async def search_the_web(query: str):
-    """Search the web via SerpAPI and return results."""
+async def search_the_web(query: str, league: str):
+    """Search the web via SerpAPI Google Light API and return results."""
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 "https://serpapi.com/search",
-                params={"engine": "google", "q": query, "api_key": SERPAPI_KEY},
+                params={
+                    "engine": "google_light",
+                    "q": f"{query} {league}",
+                    "api_key": SERPAPI_KEY,
+                },
                 timeout=10,
             )
             resp.raise_for_status()
@@ -356,6 +352,29 @@ async def search_the_web(query: str):
     except Exception as e:
         print(f"Error searching web: {e}")
         return None
+
+def format_web_results(raw_results: dict) -> list:
+    """Format SerpAPI Google Light API results for LLM consumption as a flat list, top stories first."""
+    results = []
+    # Process top stories first
+    for story in raw_results.get("top_stories", []):
+        entry = {
+            "title": story.get("title"),
+            "source": story.get("source"),
+            "date": story.get("date"),
+        }
+        results.append(entry)
+    # Process organic results (news/articles)
+    for item in raw_results.get("organic_results", []):
+        entry = {
+            "title": item.get("title"),
+            "snippet": item.get("snippet"),
+            "source": item.get("displayed_link"),
+        }
+        if "date" in item:
+            entry["date"] = item["date"]
+        results.append(entry)
+    return results
 
 async def fetch_upcoming_data(calls: List[dict], keys: List[str], constraints: dict = None):
     """Fetch and filter data from various SportsDataIO/Baker endpoints."""
@@ -908,6 +927,7 @@ async def generate_response(
         sql_query_str = sql_query if sql_query else "No historical SQL query was generated or needed."
         results_str_final = results_str if results_str else "No historical query results provided or query was not run."
         live_data_str_final = live_data_str if live_data_str else "No live/upcoming data provided or needed."
+        web_results_str_final = web_data_str if web_data_str else "No web results provided or needed."
 
         # Select user prompt template based on prompt_type
         if prompt_type == "CONVERSATION":
@@ -919,6 +939,7 @@ async def generate_response(
                 sql_query=sql_query_str,
                 results_str=results_str_final,
                 live_data_str=live_data_str_final,
+                web_results_str=web_results_str_final
             )
         else:
             user_prompt_template = prompts_set["RESPONSE_USER_PROMPT_INSIGHT"]
@@ -928,6 +949,7 @@ async def generate_response(
                 sql_query=sql_query_str,
                 results_str=results_str_final,
                 live_data_str=live_data_str_final,
+                web_results_str=web_results_str_final
             )
 
         messages = [{"role": "system", "content": system_message}]
