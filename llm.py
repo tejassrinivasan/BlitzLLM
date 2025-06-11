@@ -19,6 +19,10 @@ from typing import Optional, List, Dict, Union
 from database_pool import get_partner_pool, get_baseball_pool
 from datetime import timedelta
 from constants import ENDPOINT_LABELS, UPCOMING_ENDPOINTS, TABLE_DESCRIPTIONS
+from dotenv import load_dotenv
+
+load_dotenv()
+
 SERPAPI_KEY = "d0014298277f40474659cc6edb35fa2f0f33affc73a2190c1c116b254e03681e"
 
 SPORTSDATA_API_KEY = os.getenv("SPORTSDATA_API_KEY")

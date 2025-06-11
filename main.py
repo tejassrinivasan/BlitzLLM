@@ -216,10 +216,10 @@ async def store_response(partner_id: int | None, response_id: str, data: dict):
     """Store the response JSON in S3 under the partner prefix."""
     s3 = boto3.client("s3")
     bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    body = json.dumps({
-        "response": serialize_response(data),
-        "timestamp": datetime.utcnow().isoformat(),
-    }, cls=DecimalEncoder)
+    body = json.dumps(
+        serialize_response(data),
+        cls=DecimalEncoder,
+    )
     key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
     s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
 
@@ -340,11 +340,21 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
         }
 
         # Build full response payload
+        text_block = response.get("text")
+        if isinstance(text_block, dict):
+            resp_text = text_block.get("response")
+            resp_explanation = text_block.get("explanation")
+            resp_links = text_block.get("links")
+        else:
+            resp_text = text_block
+            resp_explanation = response.get("explanation")
+            resp_links = response.get("links")
+
         response_payload = {
             "response_id": response_id,
-            "text": response.get("text"),
-            "explanation": response.get("explanation"),
-            "links": response.get("links"),
+            "response": resp_text,
+            "explanation": resp_explanation,
+            "links": resp_links,
             "timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -468,11 +478,21 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             "custom_data": req.custom_data,
             "retry": req.retry
         }
+        text_block = response.get("text")
+        if isinstance(text_block, dict):
+            resp_text = text_block.get("response")
+            resp_explanation = text_block.get("explanation")
+            resp_links = text_block.get("links")
+        else:
+            resp_text = text_block
+            resp_explanation = response.get("explanation")
+            resp_links = response.get("links")
+
         response_payload = {
             "response_id": response_id,
-            "text": response.get("text"),
-            "explanation": response.get("explanation"),
-            "links": response.get("links"),
+            "response": resp_text,
+            "explanation": resp_explanation,
+            "links": resp_links,
             "timestamp": datetime.utcnow().isoformat(),
         }
         await add_message(req.conversation_id, partner_id, next_msg_id, "assistant", json.dumps(response))
