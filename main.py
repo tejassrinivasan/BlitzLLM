@@ -8,7 +8,8 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import boto3
 import uuid
-from fastapi import FastAPI, HTTPException, Header, Security, Depends
+import time
+from fastapi import FastAPI, HTTPException, Header, Security, Depends, BackgroundTasks
 from azure.identity import DefaultAzureCredential
 from azure.cosmos import CosmosClient
 from pydantic import BaseModel
@@ -825,3 +826,36 @@ async def feedback(req: FeedbackRequest, api_key: str = Depends(verify_api_key))
     except Exception as e:
         print(f"Error saving feedback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Simple in-memory task storage for streaming demo
+conversation_tasks: dict = {}
+
+@app.post('/api/conversations/{conversation_id}/messages/stream')
+async def create_message_stream(conversation_id: str, message: Dict[str, Any], background_tasks: BackgroundTasks, api_key: str = Depends(verify_api_key)):
+    task_id = f"{conversation_id}_{int(time.time())}"
+    conversation_tasks[task_id] = {"status": "processing", "step": "Generating response..."}
+
+    async def process():
+        await asyncio.sleep(1)
+        conversation_tasks[task_id].update({
+            "status": "complete",
+            "user_message": {"conversation_id": conversation_id, "role": "user", "content": message.get("content")},
+            "assistant_message": {"role": "assistant", "content": f"Echo: {message.get('content')}"}
+        })
+        await asyncio.sleep(180)
+        conversation_tasks.pop(task_id, None)
+
+    background_tasks.add_task(process)
+    return {"task_id": task_id}
+
+@app.get('/api/tasks/{task_id}')
+async def get_task_status(task_id: str, api_key: str = Depends(verify_api_key)):
+    return conversation_tasks.get(task_id, {"status": "not_found"})
+
+@app.post('/api/tasks/{task_id}/cancel')
+async def cancel_task(task_id: str, api_key: str = Depends(verify_api_key)):
+    task = conversation_tasks.get(task_id)
+    if not task:
+        return {"status": "not_found"}
+    task["status"] = "cancelled"
+    return {"status": "cancelled"}

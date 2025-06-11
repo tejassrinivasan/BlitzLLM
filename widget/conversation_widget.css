@@ -1,49 +1,286 @@
+:root {
+  --msg-font-size: 1rem;
+  --icon-size-user: 28px;
+  --icon-size-bot: 44px;
+}
+
 .blitz-widget-container {
-  border: 1px solid #ccc;
-  padding: 10px;
-  font-family: Arial, sans-serif;
+  background: #000;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.25);
+  font-family: 'Inter var', Arial, sans-serif;
+  color: #BDC5D3;
+  padding: 0;
+  border: 1px solid #222;
+  font-size: var(--msg-font-size);
+}
+
+/* Light theme */
+.blitz-theme-light {
+  background: #f8fafc;
+  color: #222;
+  border: 1px solid #e5e7eb;
+}
+.blitz-theme-light .blitz-widget-messages {
   background: #fff;
 }
-.blitz-size-mobile { width: 100%; }
-.blitz-size-tablet { width: 400px; }
-.blitz-size-desktop { width: 600px; }
-.blitz-no-border { border: none; }
-.blitz-theme-dark {
-  background: #222;
-  color: #eee;
+.blitz-theme-light .blitz-widget-msg.user {
+  background: #e5e7eb;
+  color: #222;
 }
-.blitz-theme-dark .blitz-widget-messages { background: #333; }
-.blitz-theme-dark .blitz-widget-input {
-  background: #555;
+.blitz-theme-light .blitz-widget-msg.assistant {
+  background: #f1f5f9;
+  color: #2563eb;
+}
+.blitz-theme-light .blitz-widget-form {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+.blitz-theme-light .blitz-widget-input {
+  background: #f1f5f9;
+  color: #222;
+}
+.blitz-theme-light .blitz-widget-input:focus {
+  border: 1.5px solid #a40d0d;
+  box-shadow: 0 0 0 2px #a40d0d33;
+}
+.blitz-theme-light .blitz-widget-send {
+  background: #222;
   color: #fff;
 }
-.blitz-theme-dark .blitz-widget-msg.user { color: #ddd; }
-.blitz-theme-dark .blitz-widget-msg.assistant { color: #8ab4f8; }
+.blitz-theme-light .blitz-widget-send:hover {
+  background: #a40d0d;
+  color: #fff;
+}
+
 .blitz-widget-messages {
-  height: 200px;
+  background: #111111;
+  padding: 1.5rem 1rem 1rem 1rem;
+  height: 320px;
   overflow-y: auto;
-  margin-bottom: 10px;
-  background: #fafafa;
-  padding: 5px;
+  border-radius: 1.25rem 1.25rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
+
+.blitz-widget-msg-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+.blitz-widget-msg-row.user {
+  flex-direction: row-reverse;
+}
+.blitz-widget-msg-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0.5rem;
+}
+.blitz-widget-msg-bubble {
+  max-width: 80%;
+  padding: 0.75rem 1.25rem;
+  border-radius: 1.25rem;
+  font-size: var(--msg-font-size);
+  line-height: 1.5;
+  word-break: break-word;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  background: #f1f5f9;
+  color: #222;
+}
+
 .blitz-widget-msg {
-  margin-bottom: 5px;
+  max-width: 80%;
+  padding: 0.75rem 1.25rem;
+  border-radius: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
 }
+
 .blitz-widget-msg.user {
+  align-self: flex-end;
+  background: #1A1A1A;
+  color: #fff;
+  border-bottom-right-radius: 0.25rem;
+  border-bottom-left-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
+  border-top-left-radius: 1.25rem;
   text-align: right;
-  color: #333;
 }
+
 .blitz-widget-msg.assistant {
+  align-self: flex-start;
+  background: #222222;
+  color: #8ab4f8;
+  border-bottom-left-radius: 0.25rem;
+  border-bottom-right-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
+  border-top-left-radius: 1.25rem;
   text-align: left;
-  color: #0066cc;
 }
+
 .blitz-widget-form {
   display: flex;
+  align-items: center;
+  background: #111111;
+  border-radius: 0 0 1.25rem 1.25rem;
+  padding: 1rem;
+  border-top: 1px solid #222;
 }
+
 .blitz-widget-input {
   flex: 1;
-  padding: 5px;
+  background: #222222;
+  color: #fff;
+  border: 1.5px solid transparent;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  outline: none;
+  margin-right: 0.5rem;
+  transition: border 0.2s, box-shadow 0.2s;
 }
+
+.blitz-widget-input:focus {
+  border: 1.5px solid #a40d0d !important;
+  box-shadow: 0 0 0 2px #a40d0d33 !important;
+}
+
 .blitz-widget-send {
-  padding: 5px 10px;
+  background: #fff;
+  color: #0A0A0A;
+  border: none;
+  border-radius: 9999px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  margin-left: 0.25rem;
+}
+
+.blitz-widget-send:hover {
+  background: #a40d0d;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(164,13,13,0.10);
+}
+
+.blitz-widget-send svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Width modes */
+.blitz-width-wide {
+  --msg-font-size: 1.15rem;
+  --icon-size-user: 32px;
+  --icon-size-bot: 52px;
+  width: 600px;
+}
+.blitz-width-normal {
+  --msg-font-size: 1rem;
+  --icon-size-user: 28px;
+  --icon-size-bot: 44px;
+  width: 480px;
+}
+.blitz-width-narrow {
+  --msg-font-size: 0.92rem;
+  --icon-size-user: 22px;
+  --icon-size-bot: 34px;
+  width: 340px;
+}
+
+/* Remove width from device classes */
+.blitz-size-mobile, .blitz-size-tablet, .blitz-size-desktop { width: auto !important; max-width: none; }
+
+/* Device scale classes */
+.blitz-device-desktop {
+  --msg-font-size: 1.1rem;
+  --icon-size-user: 36px;
+  --icon-size-bot: 56px;
+  transform: scale(1);
+  transform-origin: top center;
+}
+.blitz-device-tablet {
+  --msg-font-size: 1rem;
+  --icon-size-user: 28px;
+  --icon-size-bot: 44px;
+  transform: scale(0.95);
+  transform-origin: top center;
+}
+.blitz-device-phone {
+  --msg-font-size: 0.92rem;
+  --icon-size-user: 22px;
+  --icon-size-bot: 34px;
+  transform: scale(0.85);
+  transform-origin: top center;
+}
+
+.blitz-no-border { border: none; }
+
+.blitz-theme-dark {
+  background: #000 !important;
+  color: #BDC5D3;
+}
+
+/* Center widget in viewport */
+.widget-center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blitz-theme-dark .blitz-widget-messages {
+  background: #000 !important;
+}
+.blitz-theme-dark .blitz-widget-form {
+  background: #000 !important;
+}
+.blitz-theme-dark .blitz-widget-msg.user {
+  background: #000 !important;
+  color: #fff;
+}
+.blitz-theme-dark .blitz-widget-msg.assistant {
+  background: #000 !important;
+  color: #8ab4f8;
+}
+
+.blitz-theme-dark .blitz-widget-msg-bubble {
+  background: #e5e7eb;
+  color: #222;
+}
+
+.blitz-theme-light .blitz-widget-msg-bubble {
+  background: #f1f5f9;
+  color: #222;
+}
+
+/* Ensure icon containers use correct size */
+.blitz-widget-msg-icon.user {
+  width: var(--icon-size-user);
+  height: var(--icon-size-user);
+}
+.blitz-widget-msg-icon.assistant {
+  width: var(--icon-size-bot);
+  height: var(--icon-size-bot);
+}
+
+.blitz-widget-msg-icon.user svg {
+  width: var(--icon-size-user);
+  height: var(--icon-size-user);
+}
+.blitz-widget-msg-icon.assistant img {
+  width: var(--icon-size-bot);
+  height: var(--icon-size-bot);
 }

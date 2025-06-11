@@ -42,3 +42,10 @@ the accompanying CSS file.
 | `border` | `true` to show a border, `false` for none |
 | `theme` | `'light'` or `'dark'` color scheme |
 | `userId` | String identifying the end user. Used to persist conversation state |
+
+## Streaming Version
+
+A variant named `streaming_conversation_widget.js` is also provided. It uses the
+`/api/conversations/{conversation_id}/messages/stream` endpoint and polls the
+`/api/tasks/{task_id}` endpoint for progress. Include this file instead of
+`conversation_widget.js` to enable streaming responses.
