@@ -86,15 +86,25 @@
   margin: 0 0.5rem;
 }
 .blitz-widget-msg-bubble {
-  max-width: 80%;
+  max-width: 70%;
   padding: 0.75rem 1.25rem;
-  border-radius: 1.25rem;
+  border-radius: 1.5rem;
   font-size: var(--msg-font-size);
   line-height: 1.5;
   word-break: break-word;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
-  background: #f1f5f9;
-  color: #222;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+.blitz-widget-msg-row.user .blitz-widget-msg-bubble,
+.blitz-widget-msg-row.assistant .blitz-widget-msg-bubble {
+  border-radius: 1.25rem;
+}
+
+/* Removed triangle pointers next to user and assistant message bubbles */
+.blitz-widget-msg-row.user .blitz-widget-msg-bubble::after, .blitz-widget-msg-row.assistant .blitz-widget-msg-bubble::after {
+  content: none;
+  display: none;
 }
 
 .blitz-widget-msg {
@@ -262,12 +272,12 @@
 }
 
 .blitz-theme-dark .blitz-widget-msg-bubble {
-  background: #e5e7eb;
+  background: #fff;
   color: #222;
 }
 
 .blitz-theme-light .blitz-widget-msg-bubble {
-  background: #e5e7eb;
+  background: #fff;
   color: #222;
 }
 
@@ -294,4 +304,60 @@
   background: #101014;
   border-top-left-radius: 1.25rem;
   border-top-right-radius: 1.25rem;
+}
+
+/* typing indicator */
+.blitz-typing {
+  display: inline-flex;
+  gap: 4px;
+}
+.blitz-typing .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #666;
+  animation: blitz-bounce 1s infinite ease-in-out;
+}
+.blitz-typing .dot:nth-child(2) { animation-delay: 0.2s; }
+.blitz-typing .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blitz-bounce {
+  0%,80%,100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+.blitz-widget-msg-bubble.typing {
+  padding: 0.6rem 1rem;
+}
+
+/* feedback buttons */
+.blitz-widget-feedback {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: center;
+}
+.blitz-widget-feedback button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 2px;
+}
+.blitz-widget-feedback button.good.active { color: #16a34a; }
+.blitz-widget-feedback button.bad.active { color: #dc2626; }
+
+.blitz-widget-feedback svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+  color: #666;
+}
+.blitz-widget-feedback button.good.active svg {
+  color: #16a34a;
+}
+.blitz-widget-feedback button.bad.active svg {
+  color: #dc2626;
 }
