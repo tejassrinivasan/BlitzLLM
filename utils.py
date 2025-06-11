@@ -15,12 +15,12 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def serialize_response(obj):
+def _serialize(obj):
     """Recursively convert complex objects for JSON serialization."""
     if isinstance(obj, dict):
-        return {k: serialize_response(v) for k, v in obj.items()}
+        return {k: _serialize(v) for k, v in obj.items()}
     if isinstance(obj, list):
-        return [serialize_response(item) for item in obj]
+        return [_serialize(item) for item in obj]
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     if isinstance(obj, Decimal):
@@ -28,25 +28,18 @@ def serialize_response(obj):
     if isinstance(obj, uuid.UUID):
         return str(obj)
     if hasattr(obj, "_asdict"):
-        return serialize_response(dict(obj._asdict()))
+        return _serialize(dict(obj._asdict()))
     return obj
+
+
+def serialize_response(obj):
+    """Serialize API response objects for JSON output."""
+    return _serialize(obj)
 
 
 def serialize_result(obj):
     """Serialize database records returned by asyncpg."""
-    if isinstance(obj, dict):
-        return {k: serialize_result(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [serialize_result(item) for item in obj]
-    if isinstance(obj, (datetime, date)):
-        return obj.isoformat()
-    if isinstance(obj, Decimal):
-        return float(obj)
-    if isinstance(obj, uuid.UUID):
-        return str(obj)
-    if hasattr(obj, "_asdict"):
-        return serialize_result(dict(obj._asdict()))
-    return obj
+    return _serialize(obj)
 
 from azure.identity import DefaultAzureCredential
 from fastapi import HTTPException

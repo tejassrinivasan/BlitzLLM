@@ -2,22 +2,28 @@ import asyncio
 import os
 import json
 import logging
-import time
 import httpx
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from openai import AsyncAzureOpenAI
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorizedQuery, QueryType, QueryCaptionType, QueryAnswerType
-from utils import serialize_response, get_azure_credential, get_token_provider, get_embedding, DecimalEncoder
-from config import SEARCH_ENDPOINT, SEARCH_INDEX_NAME, OPENAI_ENDPOINT, OPENAI_API_VERSION
-from prompts import (
-    get_prompts,
+from azure.search.documents.models import (
+    VectorizedQuery,
+    QueryType,
+    QueryCaptionType,
+    QueryAnswerType,
 )
-from typing import Optional, List, Dict, Union
+from utils import get_azure_credential, get_embedding, DecimalEncoder
+from config import (
+    SEARCH_ENDPOINT,
+    SEARCH_INDEX_NAME,
+    OPENAI_ENDPOINT,
+    OPENAI_API_VERSION,
+)
+from prompts import get_prompts
+from typing import List, Dict
 from database_pool import get_partner_pool, get_baseball_pool
-from datetime import timedelta
 from constants import ENDPOINT_LABELS, UPCOMING_ENDPOINTS, TABLE_DESCRIPTIONS
 from dotenv import load_dotenv
 
@@ -842,16 +848,13 @@ async def generate_response(
     history_context: str | None = None,
     prompt_type: str = "INSIGHT"
 ):
-    credential = None # Initialize credential to None
+    credential = None  # Initialize credential to None
     client = None
-    frontend_base_url = os.getenv("FRONT_END_BASE_URL", "https://www.blitzanalytics.co")  # Add default fallback if needed
     try:
         # Use Azure AD Token Authentication
         credential = get_azure_credential() # Get the Azure credential
         if not credential:
              raise ValueError("Failed to get Azure credentials.") # Raise error if credential is None
-
-        token_provider = get_token_provider(credential) # Get the token provider function
 
         client = get_openai_client()
 

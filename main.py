@@ -35,19 +35,27 @@ app = FastAPI(title="BlitzLLM B2B API")
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
+# Initialize common AWS clients and config values
+SQS_CLIENT = boto3.client("sqs", region_name="us-west-2")
+S3_CLIENT = boto3.client("s3")
+S3_BUCKET = os.getenv("PARTNER_RESPONSES_BUCKET")
+API_KEY_MAP = json.loads(os.getenv("PARTNER_API_KEY_MAP", "{}"))
+
+
 async def verify_api_key(api_key: str = Security(api_key_header)):
     partner_id = get_partner_id_from_api_key(api_key)
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
     return api_key
 
+
 def get_partner_id_from_api_key(api_key: str) -> int | None:
-    mapping = os.getenv("PARTNER_API_KEY_MAP", "{}")
+    """Lookup the partner ID for the provided API key."""
     try:
-        api_map = json.loads(mapping)
-        return api_map.get(api_key)
+        return API_KEY_MAP.get(api_key)
     except Exception:
         return None
+
 
 class InsightRequest(BaseModel):
     message: str
@@ -104,11 +112,11 @@ app.add_event_handler("shutdown", close_pools)
 # --- SQS Queue Handling ---
 sqs_task = None
 
+
 async def send_to_sqs(message: dict):
     """Send a message to the configured SQS queue."""
-    sqs = boto3.client("sqs", region_name="us-west-2")
     await asyncio.to_thread(
-        sqs.send_message,
+        SQS_CLIENT.send_message,
         QueueUrl=SQS_QUEUE_URL,
         MessageBody=json.dumps(message),
     )
@@ -116,11 +124,10 @@ async def send_to_sqs(message: dict):
 
 async def poll_sqs_queue():
     """Continuously poll SQS and process messages."""
-    sqs = boto3.client("sqs", region_name="us-west-2")
     while True:
         try:
             resp = await asyncio.to_thread(
-                sqs.receive_message,
+                SQS_CLIENT.receive_message,
                 QueueUrl=SQS_QUEUE_URL,
                 MaxNumberOfMessages=10,
                 WaitTimeSeconds=20,
@@ -138,7 +145,7 @@ async def poll_sqs_queue():
                         req, body.get("partner_id"), body["response_id"]
                     )
                 await asyncio.to_thread(
-                    sqs.delete_message,
+                    SQS_CLIENT.delete_message,
                     QueueUrl=SQS_QUEUE_URL,
                     ReceiptHandle=msg["ReceiptHandle"],
                 )
@@ -159,11 +166,14 @@ async def stop_sqs_listener():
         with contextlib.suppress(asyncio.CancelledError):
             await sqs_task
 
+
 app.add_event_handler("startup", start_sqs_listener)
 app.add_event_handler("shutdown", stop_sqs_listener)
 
 
-async def ensure_conversation(partner_id: int, user_id: int, conversation_id: str | None) -> str:
+async def ensure_conversation(
+    partner_id: int, user_id: int, conversation_id: str | None
+) -> str:
     pool = get_partner_pool()
     if not pool:
         return conversation_id or ""
@@ -189,7 +199,9 @@ async def ensure_conversation(partner_id: int, user_id: int, conversation_id: st
         return new_id
 
 
-async def add_message(conversation_id: str, partner_id: int, message_id: int, role: str, content: str):
+async def add_message(
+    conversation_id: str, partner_id: int, message_id: int, role: str, content: str
+):
     pool = get_partner_pool()
     if not pool:
         return
@@ -202,6 +214,7 @@ async def add_message(conversation_id: str, partner_id: int, message_id: int, ro
         content,
     )
 
+
 async def delete_messages_from(conversation_id: str, start_id: int):
     pool = get_partner_pool()
     if not pool:
@@ -212,16 +225,37 @@ async def delete_messages_from(conversation_id: str, start_id: int):
         start_id,
     )
 
+
+def _s3_key(partner_id: int | None, response_id: str) -> str:
+    return f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
+
+
+def _store_json(partner_id: int | None, response_id: str, data: dict) -> None:
+    body = json.dumps(serialize_response(data), cls=DecimalEncoder)
+    S3_CLIENT.put_object(
+        Bucket=S3_BUCKET, Key=_s3_key(partner_id, response_id), Body=body.encode()
+    )
+
+
+def _load_json(partner_id: int | None, response_id: str) -> dict:
+    obj = S3_CLIENT.get_object(
+        Bucket=S3_BUCKET, Key=_s3_key(partner_id, response_id)
+    )
+    return json.loads(obj["Body"].read().decode())
+
+
 async def store_response(partner_id: int | None, response_id: str, data: dict):
     """Store the response JSON in S3 under the partner prefix."""
-    s3 = boto3.client("s3")
-    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    body = json.dumps(
-        serialize_response(data),
-        cls=DecimalEncoder,
-    )
-    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
-    s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
+    _store_json(partner_id, response_id, data)
+
+
+async def fetch_response(partner_id: int | None, response_id: str) -> dict | None:
+    """Retrieve a stored response from S3."""
+    try:
+        return _load_json(partner_id, response_id)
+    except Exception:
+        return None
+
 
 async def log_partner_call(
     partner_id: Optional[int],
@@ -245,7 +279,10 @@ async def log_partner_call(
     )
     return row["call_id"] if row else None
 
-async def log_query(call_id: int, partner_id: Optional[int], sql_query: str, league: str):
+
+async def log_query(
+    call_id: int, partner_id: Optional[int], sql_query: str, league: str
+):
     pool = get_partner_pool()
     if not pool or not sql_query:
         return
@@ -262,21 +299,36 @@ async def log_query(call_id: int, partner_id: Optional[int], sql_query: str, lea
     )
 
 
-async def store_error_response(partner_id: int | None, response_id: str, error_message: str, status_code: int = 500):
+async def store_error_response(
+    partner_id: int | None, response_id: str, error_message: str, status_code: int = 500
+):
     """Store an error response in S3 under the partner prefix."""
-    s3 = boto3.client("s3")
-    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    body = json.dumps({
+    error_data = {
         "status": "error",
         "error_message": serialize_response(error_message),
         "status_code": status_code,
         "timestamp": datetime.utcnow().isoformat(),
-    }, cls=DecimalEncoder)
-    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
-    s3.put_object(Bucket=bucket, Key=key, Body=body.encode())
+    }
+    _store_json(partner_id, response_id, error_data)
 
 
-async def process_generate_insights(req: InsightRequest, partner_id: int, response_id: str):
+def extract_response_parts(
+    response: dict,
+) -> tuple[str | None, str | None, list | None]:
+    """Extract text, explanation and links from an LLM response."""
+    text_block = response.get("text")
+    if isinstance(text_block, dict):
+        return (
+            text_block.get("response"),
+            text_block.get("explanation"),
+            text_block.get("links"),
+        )
+    return text_block, response.get("explanation"), response.get("links")
+
+
+async def process_generate_insights(
+    req: InsightRequest, partner_id: int, response_id: str
+):
     """Background task to generate an insight and store it."""
     try:
         openai_client = llm.get_openai_client()
@@ -287,17 +339,21 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
             "custom_data": req.custom_data,
             "league": req.league,
             "insight_length": req.insight_length,
-            "search_the_web": req.search_the_web
+            "search_the_web": req.search_the_web,
         }
 
         web_results = None
         if req.search_the_web:
             web_results_raw = await llm.search_the_web(req.message, req.league)
-            web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
-            print(f"Web results: {web_results}")
-            if web_results.get("error"):
-                await store_error_response(partner_id, response_id, web_results.get("explanation"), 500)
+            if web_results_raw.get("error"):
+                await store_error_response(
+                    partner_id, response_id, web_results_raw.get("explanation"), 500
+                )
                 return
+            web_results = (
+                llm.format_web_results(web_results_raw) if web_results_raw else None
+            )
+            print(f"Web results: {web_results}")
 
         quick = await llm.check_clarification(
             req.message,
@@ -318,14 +374,16 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
 
             call_id = await log_partner_call(
                 partner_id,
-                "generate_insights", 
+                "generate_insights",
                 partner_payload,
                 response_payload,
             )
             await store_response(partner_id, response_id, response_payload)
             return
         else:
-            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league, web_results=web_results)
+            live_info = await llm.determine_live_endpoints(
+                openai_client, req.message, league=req.league, web_results=web_results
+            )
             live_data = None
             if live_info.get("needs_live_data"):
                 live_data = await llm.fetch_upcoming_data(
@@ -335,8 +393,10 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 )
 
             search_results = await llm.perform_search(req.message, {})
-            if search_results.get("error"):
-                await store_error_response(partner_id, response_id, search_results.get("explanation"), 500)
+            if isinstance(search_results, dict) and search_results.get("error"):
+                await store_error_response(
+                    partner_id, response_id, search_results.get("explanation"), 500
+                )
                 return
 
             query_data = await llm.determine_sql_query(
@@ -346,19 +406,30 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 include_history=False,
                 league=req.league,
             )
-            if query_data.get("error"):
-                await store_error_response(partner_id, response_id, query_data.get("explanation"), 500)
+            if isinstance(query_data, dict) and query_data.get("error"):
+                await store_error_response(
+                    partner_id, response_id, query_data.get("explanation"), 500
+                )
                 return
 
             sql_query = query_data.get("query") if query_data else None
             executed = None
-            if query_data and query_data.get("type") in ("sql_query", "previous_results"):
+            if query_data and query_data.get("type") in (
+                "sql_query",
+                "previous_results",
+            ):
                 executed = await llm.execute_sql_query(
                     sql_query,
-                    previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
+                    previous_results=(
+                        query_data.get("results")
+                        if query_data.get("reuse_results")
+                        else None
+                    ),
                 )
-            if executed.get("error"):
-                await store_error_response(partner_id, response_id, executed.get("explanation"), 500)
+            if isinstance(executed, dict) and executed.get("error"):
+                await store_error_response(
+                    partner_id, response_id, executed.get("explanation"), 500
+                )
                 return
 
             response = await llm.generate_text_response(
@@ -371,20 +442,14 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
                 include_history=False,
                 league=req.league,
             )
-            if response.get("error"):
-                await store_error_response(partner_id, response_id, response.get("explanation"), 500)
+            if isinstance(response, dict) and response.get("error"):
+                await store_error_response(
+                    partner_id, response_id, response.get("explanation"), 500
+                )
                 return
 
         # Build full response payload
-        text_block = response.get("text")
-        if isinstance(text_block, dict):
-            resp_text = text_block.get("response")
-            resp_explanation = text_block.get("explanation")
-            resp_links = text_block.get("links")
-        else:
-            resp_text = text_block
-            resp_explanation = response.get("explanation")
-            resp_links = response.get("links")
+        resp_text, resp_explanation, resp_links = extract_response_parts(response)
 
         response_payload = {
             "response_id": response_id,
@@ -396,7 +461,7 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
 
         call_id = await log_partner_call(
             partner_id,
-            "generate_insights", 
+            "generate_insights",
             partner_payload,
             response_payload,
         )
@@ -405,14 +470,14 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
     except Exception as e:
         error_message = str(e)
         await store_error_response(partner_id, response_id, error_message, 500)
-        
+
         # Save complete request as partner payload even on error
         partner_payload = {
             "message": req.message,
             "custom_data": req.custom_data,
             "league": req.league,
             "insight_length": req.insight_length,
-            "search_the_web": req.search_the_web
+            "search_the_web": req.search_the_web,
         }
 
         # Build error response payload
@@ -430,7 +495,9 @@ async def process_generate_insights(req: InsightRequest, partner_id: int, respon
         )
 
 
-async def process_conversation(req: ConversationRequest, partner_id: int, response_id: str):
+async def process_conversation(
+    req: ConversationRequest, partner_id: int, response_id: str
+):
     """Background task to process a conversation request."""
     try:
         openai_client = llm.get_openai_client()
@@ -438,12 +505,16 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
         if req.retry and req.message_id:
             await delete_messages_from(req.conversation_id, req.message_id)
 
-        await add_message(req.conversation_id, partner_id, next_msg_id, "user", req.message)
+        await add_message(
+            req.conversation_id, partner_id, next_msg_id, "user", req.message
+        )
 
-        history, history_context_sql, _, previous_results = await llm.prepare_history_for_sql(
-            req.conversation_id,
-            None,
-            include_history=True,
+        history, history_context_sql, _, previous_results = (
+            await llm.prepare_history_for_sql(
+                req.conversation_id,
+                None,
+                include_history=True,
+            )
         )
         formatted_history = llm.format_conversation_history_for_prompt(history)
 
@@ -455,16 +526,20 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             "insight_length": req.insight_length,
             "league": req.league,
             "custom_data": req.custom_data,
-            "retry": req.retry
+            "retry": req.retry,
         }
 
         web_results = None
         if req.search_the_web:
             web_results_raw = await llm.search_the_web(req.message, req.league)
-            web_results = llm.format_web_results(web_results_raw) if web_results_raw else None
-            if web_results.get("error"):
-                await store_error_response(partner_id, response_id, web_results.get("explanation"), 500)
+            if web_results_raw.get("error"):
+                await store_error_response(
+                    partner_id, response_id, web_results_raw.get("explanation"), 500
+                )
                 return
+            web_results = (
+                llm.format_web_results(web_results_raw) if web_results_raw else None
+            )
 
         clarify = await llm.check_clarification(
             req.message,
@@ -486,14 +561,16 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
 
             call_id = await log_partner_call(
                 partner_id,
-                "conversation", 
+                "conversation",
                 partner_payload,
                 response_payload,
             )
             await store_response(partner_id, response_id, response_payload)
             return
         else:
-            live_info = await llm.determine_live_endpoints(openai_client, req.message, league=req.league, web_results=web_results)
+            live_info = await llm.determine_live_endpoints(
+                openai_client, req.message, league=req.league, web_results=web_results
+            )
             live_data = None
             if live_info.get("needs_live_data"):
                 live_data = await llm.fetch_upcoming_data(
@@ -503,8 +580,10 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 )
 
             search_results = await llm.perform_search(req.message, {}, history)
-            if search_results.get("error"):
-                await store_error_response(partner_id, response_id, search_results.get("explanation"), 500)
+            if isinstance(search_results, dict) and search_results.get("error"):
+                await store_error_response(
+                    partner_id, response_id, search_results.get("explanation"), 500
+                )
                 return
 
             query_data = await llm.determine_sql_query(
@@ -517,19 +596,30 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 previous_results=previous_results,
                 prompt_type="CONVERSATION",
             )
-            if query_data.get("error"):
-                await store_error_response(partner_id, response_id, query_data.get("explanation"), 500)
+            if isinstance(query_data, dict) and query_data.get("error"):
+                await store_error_response(
+                    partner_id, response_id, query_data.get("explanation"), 500
+                )
                 return
 
             sql_query = query_data.get("query") if query_data else None
             executed = None
-            if query_data and query_data.get("type") in ("sql_query", "previous_results"):
+            if query_data and query_data.get("type") in (
+                "sql_query",
+                "previous_results",
+            ):
                 executed = await llm.execute_sql_query(
                     sql_query,
-                    previous_results=query_data.get("results") if query_data.get("reuse_results") else None,
+                    previous_results=(
+                        query_data.get("results")
+                        if query_data.get("reuse_results")
+                        else None
+                    ),
                 )
-            if executed.get("error"):
-                await store_error_response(partner_id, response_id, executed.get("explanation"), 500)
+            if isinstance(executed, dict) and executed.get("error"):
+                await store_error_response(
+                    partner_id, response_id, executed.get("explanation"), 500
+                )
                 return
 
             response = await llm.generate_text_response(
@@ -543,21 +633,15 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
                 search_results=web_results,
                 conversation_history=history,
                 history_context=formatted_history,
-                prompt_type="CONVERSATION", 
+                prompt_type="CONVERSATION",
             )
-            if response.get("error"):
-                await store_error_response(partner_id, response_id, response.get("explanation"), 500)
+            if isinstance(response, dict) and response.get("error"):
+                await store_error_response(
+                    partner_id, response_id, response.get("explanation"), 500
+                )
                 return
 
-        text_block = response.get("text")
-        if isinstance(text_block, dict):
-            resp_text = text_block.get("response")
-            resp_explanation = text_block.get("explanation")
-            resp_links = text_block.get("links")
-        else:
-            resp_text = text_block
-            resp_explanation = response.get("explanation")
-            resp_links = response.get("links")
+        resp_text, resp_explanation, resp_links = extract_response_parts(response)
 
         response_payload = {
             "response_id": response_id,
@@ -566,7 +650,13 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             "links": resp_links,
             "timestamp": datetime.utcnow().isoformat(),
         }
-        await add_message(req.conversation_id, partner_id, next_msg_id, "assistant", json.dumps(response))
+        await add_message(
+            req.conversation_id,
+            partner_id,
+            next_msg_id,
+            "assistant",
+            json.dumps(response),
+        )
         await store_response(partner_id, response_id, response_payload)
         call_id = await log_partner_call(
             partner_id,
@@ -586,7 +676,7 @@ async def process_conversation(req: ConversationRequest, partner_id: int, respon
             "insight_length": req.insight_length,
             "league": req.league,
             "custom_data": req.custom_data,
-            "retry": req.retry
+            "retry": req.retry,
         }
         response_payload = {
             "response_id": response_id,
@@ -614,7 +704,9 @@ async def generate_insights(
     try:
         await store_response(partner_id, response_id, {"status": "processing"})
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
+        raise HTTPException(
+            status_code=500, detail="Failed to schedule processing"
+        ) from e
 
     await send_to_sqs(
         {
@@ -638,7 +730,9 @@ async def conversation(
     if not partner_id:
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
     if req.message_id not in (None, 0) and not req.conversation_id:
-        raise HTTPException(status_code=400, detail="message_id requires conversation_id")
+        raise HTTPException(
+            status_code=400, detail="message_id requires conversation_id"
+        )
 
     conv_id = await ensure_conversation(partner_id, req.user_id, req.conversation_id)
     req.conversation_id = conv_id
@@ -659,7 +753,9 @@ async def conversation(
     try:
         await store_response(partner_id, response_id, {"status": "processing"})
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to schedule processing") from e
+        raise HTTPException(
+            status_code=500, detail="Failed to schedule processing"
+        ) from e
 
     await send_to_sqs(
         {
@@ -674,34 +770,27 @@ async def conversation(
 
 
 @app.get("/insights/{response_id}")
-async def get_insight_response(response_id: str, api_key: str = Depends(verify_api_key)):
-    """Retrieve a stored response from S3."""
+async def get_insight_response(
+    response_id: str, api_key: str = Depends(verify_api_key)
+):
+    """Retrieve a stored insight response from S3."""
     partner_id = get_partner_id_from_api_key(api_key)
-    s3 = boto3.client("s3")
-    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
-    try:
-        obj = s3.get_object(Bucket=bucket, Key=key)
-        data = json.loads(obj["Body"].read().decode())
-        return data
-    except Exception:
+    data = await fetch_response(partner_id, response_id)
+    if data is None:
         raise HTTPException(status_code=404, detail="Response not found")
+    return data
+
 
 @app.get("/conversation/{response_id}")
 async def get_conversation_response(
-    response_id: str,
-    api_key: str = Depends(verify_api_key)
+    response_id: str, api_key: str = Depends(verify_api_key)
 ):
+    """Retrieve a stored conversation response from S3."""
     partner_id = get_partner_id_from_api_key(api_key)
-    s3 = boto3.client("s3")
-    bucket = os.getenv("PARTNER_RESPONSES_BUCKET")
-    key = f"{partner_id}/{response_id}.json" if partner_id else f"{response_id}.json"
-    try:
-        obj = s3.get_object(Bucket=bucket, Key=key)
-        data = json.loads(obj["Body"].read().decode())
-        return data
-    except Exception:
+    data = await fetch_response(partner_id, response_id)
+    if data is None:
         raise HTTPException(status_code=404, detail="Conversation response not found")
+    return data
 
 
 @app.post("/feedback")
@@ -709,9 +798,15 @@ async def feedback(req: FeedbackRequest, api_key: str = Depends(verify_api_key))
     """Store user feedback in Azure Cosmos DB."""
     try:
         credential = DefaultAzureCredential()
-        cosmos_client = CosmosClient(os.getenv("COSMOSDB_ENDPOINT"), credential=credential)
+        cosmos_client = CosmosClient(
+            os.getenv("COSMOSDB_ENDPOINT"), credential=credential
+        )
         database = cosmos_client.get_database_client("sports")
-        container_name = "mlb-partner-feedback-helpful" if req.helpful else "mlb-partner-feedback-unhelpful"
+        container_name = (
+            "mlb-partner-feedback-helpful"
+            if req.helpful
+            else "mlb-partner-feedback-unhelpful"
+        )
         container = database.get_container_client(container_name)
         item = {
             "id": req.call_id,
