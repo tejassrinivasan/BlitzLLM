@@ -52,6 +52,11 @@
   background: #a40d0d;
   color: #fff;
 }
+.blitz-theme-light .blitz-widget-header {
+  background: #e5e7eb;
+  border-top-left-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
+}
 
 .blitz-widget-messages {
   background: #111111;
@@ -262,7 +267,7 @@
 }
 
 .blitz-theme-light .blitz-widget-msg-bubble {
-  background: #f1f5f9;
+  background: #e5e7eb;
   color: #222;
 }
 
@@ -283,4 +288,10 @@
 .blitz-widget-msg-icon.assistant img {
   width: var(--icon-size-bot);
   height: var(--icon-size-bot);
+}
+
+.blitz-theme-dark .blitz-widget-header {
+  background: #101014;
+  border-top-left-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
 }

@@ -29,6 +29,7 @@
 
     // Header with logo in top right
     const header = document.createElement('div');
+    header.className = 'blitz-widget-header';
     header.style.padding = '1.25rem 1rem 0.5rem 1rem';
     header.style.display = 'flex';
     header.style.alignItems = 'center';
