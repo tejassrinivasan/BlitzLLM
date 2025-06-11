@@ -2,6 +2,10 @@
   --msg-font-size: 1rem;
   --icon-size-user: 28px;
   --icon-size-bot: 44px;
+  /* colors for chat bubbles */
+  --sentColor: #333;
+  --receiveColor: #e5e5ea;
+  --bubbleBg: #111;
 }
 
 .blitz-widget-container {
@@ -20,6 +24,7 @@
   background: #f8fafc;
   color: #222;
   border: 1px solid #e5e7eb;
+  --bubbleBg: #fff;
 }
 .blitz-theme-light .blitz-widget-messages {
   background: #fff;
@@ -71,11 +76,19 @@
 
 .blitz-widget-msg-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   margin-bottom: 0.5rem;
 }
 .blitz-widget-msg-row.user {
   flex-direction: row-reverse;
+}
+.blitz-widget-msg-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.blitz-widget-msg-row.user .blitz-widget-msg-content {
+  align-items: flex-end;
 }
 .blitz-widget-msg-icon {
   width: 36px;
@@ -86,29 +99,65 @@
   margin: 0 0.5rem;
 }
 .blitz-widget-msg-bubble {
-  max-width: 70%;
-  padding: 0.75rem 1.25rem;
-  border-radius: 1.5rem;
-  font-size: var(--msg-font-size);
-  line-height: 1.5;
-  word-break: break-word;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
   position: relative;
-  margin-bottom: 0.5rem;
+  max-width: 55%;
+  margin-bottom: 15px;
+  padding: 10px 20px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  border-radius: 25px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
 }
-.blitz-widget-msg-row.user .blitz-widget-msg-bubble,
+.blitz-widget-msg-bubble::before {
+  position: absolute;
+  bottom: 0;
+  height: 25px;
+  width: 20px;
+  content: '';
+}
+.blitz-widget-msg-bubble::after {
+  position: absolute;
+  bottom: 0;
+  height: 25px;
+  width: 26px;
+  content: '';
+  background-color: var(--bubbleBg);
+}
+.blitz-widget-msg-row.user .blitz-widget-msg-bubble {
+  margin-right: 16px;
+  margin-left: 0;
+  align-self: flex-end;
+  color: #fff;
+  background: var(--sentColor);
+}
+.blitz-widget-msg-row.user .blitz-widget-msg-bubble::before {
+  right: -7px;
+  background-color: var(--sentColor);
+  border-bottom-left-radius: 16px 14px;
+}
+.blitz-widget-msg-row.user .blitz-widget-msg-bubble::after {
+  right: -26px;
+  border-bottom-left-radius: 12px;
+}
 .blitz-widget-msg-row.assistant .blitz-widget-msg-bubble {
-  border-radius: 1.25rem;
+  margin-left: 18px;
+  margin-right: 0;
+  align-self: flex-start;
+  color: #000;
+  background: var(--receiveColor);
 }
-
-/* Removed triangle pointers next to user and assistant message bubbles */
-.blitz-widget-msg-row.user .blitz-widget-msg-bubble::after, .blitz-widget-msg-row.assistant .blitz-widget-msg-bubble::after {
-  content: none;
-  display: none;
+.blitz-widget-msg-row.assistant .blitz-widget-msg-bubble::before {
+  left: -7px;
+  background-color: var(--receiveColor);
+  border-bottom-right-radius: 16px 14px;
+}
+.blitz-widget-msg-row.assistant .blitz-widget-msg-bubble::after {
+  left: -26px;
+  border-bottom-right-radius: 10px;
 }
 
 .blitz-widget-msg {
-  max-width: 80%;
+  max-width: 70%;
   padding: 0.75rem 1.25rem;
   border-radius: 1.25rem;
   font-size: 1rem;
@@ -246,6 +295,7 @@
 .blitz-theme-dark {
   background: #000 !important;
   color: #BDC5D3;
+  --bubbleBg: #000;
 }
 
 /* Center widget in viewport */
@@ -332,12 +382,13 @@
 
 /* feedback buttons */
 .blitz-widget-feedback {
-  margin-top: 0.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.25rem;
-  justify-content: center;
+  gap: 0.40rem;
+  justify-content: flex-start;
+  margin-left: 30px;
+  color: #fff;
 }
 .blitz-widget-feedback button {
   background: none;
@@ -345,13 +396,20 @@
   cursor: pointer;
   color: #666;
   padding: 2px;
+  transition: color 0.2s, transform 0.2s, box-shadow 0.2s;
+  border-radius: 50%;
+}
+.blitz-widget-feedback button:hover {
+  color: #a40d0d;
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px 0 rgba(164,13,13,0.10);
 }
 .blitz-widget-feedback button.good.active { color: #16a34a; }
 .blitz-widget-feedback button.bad.active { color: #dc2626; }
 
 .blitz-widget-feedback svg {
-  width: 28px;
-  height: 28px;
+  width: 16px;
+  height: 16px;
   display: block;
   color: #666;
 }

@@ -101,9 +101,13 @@
       } else {
         bubble.textContent = text;
       }
+      // Wrapper for bubble and feedback
+      const content = document.createElement('div');
+      content.className = 'blitz-widget-msg-content';
+      content.appendChild(bubble);
       // Layout
       row.appendChild(icon);
-      row.appendChild(bubble);
+      row.appendChild(content);
       messages.appendChild(row);
       messages.scrollTop=messages.scrollHeight;
       return bubble;
@@ -121,7 +125,7 @@
       fb.appendChild(up);
       fb.appendChild(down);
       if (bubble.parentNode) {
-        bubble.parentNode.insertBefore(fb, bubble.nextSibling);
+        bubble.parentNode.appendChild(fb);
       }
 
       async function send(val){
