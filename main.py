@@ -314,6 +314,8 @@ async def log_partner_call(
     endpoint: str,
     partner_payload: dict,
     response_payload: Optional[dict] = None,
+    conversation_id: str | None = None,
+    message_id: int | None = None,
 ):
     """Store details of partner API calls for auditing."""
     pool = get_partner_pool()
@@ -321,10 +323,19 @@ async def log_partner_call(
         return
     row = await pool.fetchrow(
         """
-        INSERT INTO calls (partner_id, partner_payload, response_payload, endpoint, created_at)
-        VALUES ($1, $2, $3, $4, NOW()) RETURNING call_id
+        INSERT INTO calls (
+            partner_id,
+            conversation_id,
+            message_id,
+            partner_payload,
+            response_payload,
+            endpoint,
+            created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING call_id
         """,
         partner_id,
+        conversation_id,
+        message_id,
         json.dumps(partner_payload) if partner_payload is not None else None,
         json.dumps(response_payload) if response_payload is not None else None,
         endpoint,
@@ -421,6 +432,8 @@ async def process_generate_insights(
                 "response": quick.get("response"),
                 "explanation": quick.get("explanation"),
                 "links": quick.get("links"),
+                "sqlQuery": None,
+                "results": None,
                 "timestamp": datetime.utcnow().isoformat(),
             }
 
@@ -429,6 +442,8 @@ async def process_generate_insights(
                 "generate_insights",
                 partner_payload,
                 response_payload,
+                None,
+                None,
             )
             await store_response(partner_id, response_id, response_payload)
             return
@@ -508,6 +523,8 @@ async def process_generate_insights(
             "response": resp_text,
             "explanation": resp_explanation,
             "links": resp_links,
+            "sqlQuery": sql_query,
+            "results": executed.get("results") if isinstance(executed, dict) else None,
             "timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -516,6 +533,8 @@ async def process_generate_insights(
             "generate_insights",
             partner_payload,
             response_payload,
+            None,
+            None,
         )
         await store_response(partner_id, response_id, response_payload)
         await log_query(call_id, partner_id, locals().get("sql_query"), req.league)
@@ -536,6 +555,8 @@ async def process_generate_insights(
         response_payload = {
             "response_id": response_id,
             "error": error_message,
+            "sqlQuery": None,
+            "results": None,
             "timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -544,6 +565,8 @@ async def process_generate_insights(
             "generate_insights",
             partner_payload,
             response_payload,
+            None,
+            None,
         )
 
 
@@ -560,6 +583,17 @@ async def process_conversation(
         await add_message(
             req.conversation_id, partner_id, next_msg_id, "user", req.message
         )
+
+        if next_msg_id == 1:
+            pool = get_partner_pool()
+            if pool:
+                title = await generate_title(openai_client, req.message)
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        "UPDATE conversations SET title=$1 WHERE conversation_id=$2",
+                        title,
+                        req.conversation_id,
+                    )
 
         history, history_context_sql, _, previous_results = (
             await llm.prepare_history_for_sql(
@@ -609,6 +643,8 @@ async def process_conversation(
                 "response": clarify.get("response"),
                 "explanation": clarify.get("explanation"),
                 "links": clarify.get("links"),
+                "sqlQuery": None,
+                "results": None,
                 "timestamp": datetime.utcnow().isoformat(),
             }
 
@@ -617,6 +653,8 @@ async def process_conversation(
                 "conversation",
                 partner_payload,
                 response_payload,
+                req.conversation_id,
+                next_msg_id,
             )
             await store_response(partner_id, response_id, response_payload)
             return
@@ -701,12 +739,15 @@ async def process_conversation(
             "response": resp_text,
             "explanation": resp_explanation,
             "links": resp_links,
+            "sqlQuery": sql_query,
+            "results": executed.get("results") if isinstance(executed, dict) else None,
             "timestamp": datetime.utcnow().isoformat(),
         }
+        assistant_id = next_msg_id + 1
         await add_message(
             req.conversation_id,
             partner_id,
-            next_msg_id,
+            assistant_id,
             "assistant",
             json.dumps(response),
         )
@@ -716,6 +757,8 @@ async def process_conversation(
             "conversation",
             partner_payload,
             response_payload,
+            req.conversation_id,
+            next_msg_id,
         )
         await log_query(call_id, partner_id, sql_query, req.league)
     except Exception as e:
@@ -734,6 +777,8 @@ async def process_conversation(
         response_payload = {
             "response_id": response_id,
             "error": error_message,
+            "sqlQuery": None,
+            "results": None,
             "timestamp": datetime.utcnow().isoformat(),
         }
         await log_partner_call(
@@ -741,6 +786,8 @@ async def process_conversation(
             "conversation",
             partner_payload,
             response_payload,
+            req.conversation_id,
+            req.message_id,
         )
 
 
@@ -929,7 +976,7 @@ async def create_message_stream(
                 await add_message(
                     conversation_id,
                     partner_id,
-                    next_id + 1,
+                    next_id,
                     "assistant",
                     response_text,
                 )
@@ -1007,6 +1054,13 @@ async def get_conversation_messages(conversation_id: str, api_key: str = Depends
     pool = get_partner_pool()
     if not pool:
         return []
+    async with pool.acquire() as conn:
+        user_id = await conn.fetchval(
+            "SELECT user_id FROM conversations WHERE conversation_id=$1",
+            conversation_id,
+        )
+    if user_id is not None:
+        await ensure_conversation(partner_id, user_id, conversation_id)
     rows = await pool.fetch(
         "SELECT message_id AS id, role, content, created_at FROM messages WHERE conversation_id=$1 AND partner_id=$2 ORDER BY message_id",
         conversation_id,

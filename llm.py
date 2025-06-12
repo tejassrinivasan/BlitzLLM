@@ -80,7 +80,9 @@ async def get_conversation_history(conversation_id: str, current_message_id=None
                 SELECT message_id, role, content
                 FROM messages
                 WHERE conversation_id = $1
-                ORDER BY message_id ASC, created_at ASC
+                ORDER BY message_id ASC,
+                    CASE WHEN role='user' THEN 0 ELSE 1 END,
+                    created_at ASC
                 """,
                 conversation_id,
             )
@@ -98,32 +100,54 @@ async def get_conversation_history(conversation_id: str, current_message_id=None
         logging.error(f"Error getting conversation history: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting conversation history: {str(e)}")
 
+async def get_sql_history(conversation_id: str) -> dict:
+    """Retrieve SQL queries and results from the calls table."""
+    try:
+        partner_pool = get_partner_pool()
+        async with partner_pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT message_id, response_payload FROM calls WHERE conversation_id=$1 ORDER BY message_id",
+                conversation_id,
+            )
+        sql_map = {}
+        for row in rows:
+            payload = row["response_payload"]
+            if not payload:
+                continue
+            try:
+                data = json.loads(payload)
+            except Exception:
+                continue
+            sql_map[row["message_id"]] = {
+                "sqlQuery": data.get("sqlQuery"),
+                "results": data.get("results"),
+            }
+        return sql_map
+    except Exception as e:
+        logging.error(f"Error getting sql history: {e}")
+        return {}
+
 def format_conversation_history_for_prompt(history: list) -> str:
     """Format history into a compact string for LLM prompts."""
     if not history:
         return ""
 
-    last_assistant_index = None
-    for idx in range(len(history) - 1, -1, -1):
-        if history[idx].get("role") == "assistant" and history[idx].get("content"):
-            last_assistant_index = idx
-            break
+    grouped = {}
+    for msg in history:
+        grouped.setdefault(msg["id"], {})[msg["role"]] = msg
 
-    if last_assistant_index is None:
+    message_ids = sorted(
+        k
+        for k, v in grouped.items()
+        if "assistant" in v and "user" in v and v["assistant"].get("content")
+    )
+    if not message_ids:
         return ""
 
-    relevant_history = history[: last_assistant_index + 1]
-
-    pairs = []
-    i = 0
-    while i < len(relevant_history) - 1 and len(pairs) < 10:
-        user_msg = relevant_history[i]
-        assistant_msg = relevant_history[i + 1]
-        if user_msg.get("role") == "user" and assistant_msg.get("role") == "assistant":
-            pairs.append((user_msg, assistant_msg))
-            i += 2
-        else:
-            i += 1
+    pairs = [
+        (grouped[mid]["user"], grouped[mid]["assistant"])
+        for mid in message_ids
+    ][-10:]
 
     lines = []
     for user_msg, assistant_msg in reversed(pairs):
@@ -133,7 +157,7 @@ def format_conversation_history_for_prompt(history: list) -> str:
             lines.append(f"You: {assistant_msg.get('content')}")
         lines.append(f"User: {user_msg.get('content')}")
 
-    if len(relevant_history) > len(pairs) * 2:
+    if len(message_ids) > len(pairs):
         lines.append("Older messages may include clarifying questions.")
 
     return "\n".join(lines)
@@ -156,23 +180,35 @@ async def prepare_history_for_sql(
     if history is None:
         history = []
 
-    history_to_use = history
-    if current_message_id is not None:
-        current_idx = next((i for i, msg in enumerate(history) if msg.get("id") == current_message_id), -1)
-        if current_idx >= 0:
-            history_to_use = history[:current_idx]
+    sql_map = await get_sql_history(conversation_id)
+    for msg in history:
+        if msg.get("role") == "assistant" and msg.get("id") in sql_map:
+            msg.update(sql_map[msg["id"]])
 
-    history_to_use = history_to_use[::-1]
+    grouped = {}
+    for msg in history:
+        grouped.setdefault(msg["id"], {})[msg["role"]] = msg
+
+    message_ids = sorted(
+        k
+        for k, v in grouped.items()
+        if "assistant" in v and "user" in v
+    )
+    if current_message_id is not None and current_message_id in message_ids:
+        message_ids = [mid for mid in message_ids if mid < current_message_id]
+
+    pairs = [
+        (grouped[mid]["user"], grouped[mid]["assistant"])
+        for mid in message_ids
+    ][-10:]
+
     history_context = "CONVERSATION HISTORY (OLDEST TO NEWEST):\n"
     previous_results = []
-    for i in range(len(history_to_use) - 1, 0, -2):
-        assistant_msg = history_to_use[i - 1]
-        user_msg = history_to_use[i]
-        msg_num = (len(history_to_use) - i) // 2 + 1
-        history_context += f"{msg_num}. User Question/Message: {user_msg['content']}\n"
-        history_context += f"{msg_num}. Your Response: {assistant_msg['content']}\n"
-        history_context += f"{msg_num}. Your SQL Query: {assistant_msg.get('sqlQuery', '')[:2000]}\n"
-        history_context += f"{msg_num}. Your Query Results: {assistant_msg.get('results', '')[:2000]}\n"
+    for idx, (user_msg, assistant_msg) in enumerate(pairs, start=1):
+        history_context += f"{idx}. User Question/Message: {user_msg['content']}\n"
+        history_context += f"{idx}. Your Response: {assistant_msg['content']}\n"
+        history_context += f"{idx}. Your SQL Query: {assistant_msg.get('sqlQuery', '')[:2000]}\n"
+        history_context += f"{idx}. Your Query Results: {assistant_msg.get('results', '')[:2000]}\n"
         previous_results.append({
             "sqlQuery": assistant_msg.get("sqlQuery", ""),
             "results": assistant_msg.get("results", ""),

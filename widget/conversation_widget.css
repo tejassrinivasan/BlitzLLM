@@ -42,7 +42,7 @@
   border-top: 1px solid #e5e7eb;
 }
 .blitz-theme-light .blitz-widget-input {
-  background: #f1f5f9;
+  background: #e5e7eb;
   color: #222;
 }
 .blitz-theme-light .blitz-widget-input:focus {
@@ -58,9 +58,16 @@
   color: #fff;
 }
 .blitz-theme-light .blitz-widget-header {
-  background: #e5e7eb;
+  background: #d1d5db;
   border-top-left-radius: 1.25rem;
   border-top-right-radius: 1.25rem;
+}
+.blitz-theme-light .blitz-history-btn svg path,
+.blitz-theme-light .blitz-history-btn svg polygon {
+  fill: #000 !important;
+}
+.blitz-theme-light .blitz-newchat-btn svg path {
+  stroke: #000 !important;
 }
 
 .blitz-widget-messages {
@@ -220,15 +227,15 @@
   color: #fff;
   border: 1.5px solid transparent;
   border-radius: 0.75rem;
-  padding: 0.6rem 0.9rem;
+  padding: 0.36rem 0.5rem;
   font-family: inherit;
   font-size: var(--msg-font-size);
   line-height: 1.5;
   outline: none;
   margin-right: 0.5rem;
   transition: border 0.2s, box-shadow 0.2s;
-  min-height: 36px;
-  max-height: 144px;
+  min-height: 10px;
+  max-height: 20px;
   overflow-y: auto;
   resize: none;
 }
@@ -445,4 +452,54 @@
 
 .blitz-history-panel div:hover {
   background:#222;
+}
+
+/* Shared button base styles for history and new chat buttons */
+.blitz-history-btn,
+.blitz-newchat-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px;
+  transition: background 0.18s, color 0.18s;
+}
+
+/* Icon color default (dark theme) */
+.blitz-history-btn svg path,
+.blitz-newchat-btn svg path {
+  fill: #fff;
+  stroke: #fff;
+  transition: fill 0.18s, stroke 0.18s;
+}
+
+/* Hover effect for both buttons (dark theme) */
+.blitz-history-btn:hover,
+.blitz-newchat-btn:hover {
+  background: rgba(128,128,128,0.13); /* subtle gray background */
+}
+.blitz-history-btn:hover svg path,
+.blitz-newchat-btn:hover svg path {
+  fill: #808080;
+  stroke: #808080;
+}
+
+/* Light theme overrides */
+.blitz-theme-light .blitz-history-btn,
+.blitz-theme-light .blitz-newchat-btn {
+  background: none;
+}
+.blitz-theme-light .blitz-history-btn:hover,
+.blitz-theme-light .blitz-newchat-btn:hover {
+  background: rgba(0,0,0,0.08); /* subtle black background for light mode */
+}
+.blitz-theme-light .blitz-history-btn svg path,
+.blitz-theme-light .blitz-newchat-btn svg path {
+  fill: #000 !important;
+  stroke: #000 !important;
+}
+.blitz-theme-light .blitz-history-btn:hover svg path,
+.blitz-theme-light .blitz-newchat-btn:hover svg path {
+  fill: #333 !important;
+  stroke: #333 !important;
 }

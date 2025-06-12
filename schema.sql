@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS metadata (
 CREATE TABLE IF NOT EXISTS calls (
     call_id SERIAL PRIMARY KEY,
     partner_id INTEGER REFERENCES metadata(partner_id),
-    partner_payload JSONB, 
+    conversation_id VARCHAR(64),
+    message_id INTEGER,
+    partner_payload JSONB,
     response_payload JSONB,
     endpoint TEXT NOT NULL,
     error TEXT,
