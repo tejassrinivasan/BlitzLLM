@@ -11,6 +11,7 @@
     const theme = options.theme || 'dark';
     const userId = options.userId || '';
     const storageKey = `blitz_stream_${userId}_${apiBase}`;
+    let conversations = [];
     // Remove localStorage persistence for conversationId
     // let stored = {};
     // try{stored = JSON.parse(localStorage.getItem(storageKey) || '{}');}catch(_){stored={};}
@@ -38,9 +39,152 @@
     header.style.padding = '1.25rem 1rem 0.5rem 1rem';
     header.style.display = 'flex';
     header.style.alignItems = 'center';
-    header.style.justifyContent = 'flex-end';
-    header.innerHTML = `<img src="blitz.png" alt="Blitz" style="height:28px;width:auto;display:block;margin-right:2px;">`;
+    header.style.justifyContent = 'space-between';
+    // Left: icons, Right: logo
+    header.innerHTML = `
+      <div class="blitz-header-left" style="display:flex;align-items:center;gap:0.5rem;">
+        <button class="blitz-history-btn" style="background:none;border:none;cursor:pointer;color:inherit;">
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" viewBox="0 0 256 256" xml:space="preserve">
+            <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+              <path d="M 48.831 86.169 c -13.336 0 -25.904 -6.506 -33.62 -17.403 c -2.333 -3.295 -4.163 -6.901 -5.437 -10.717 l 5.606 -1.872 c 1.09 3.265 2.657 6.352 4.654 9.174 c 6.61 9.336 17.376 14.908 28.797 14.908 c 19.443 0 35.26 -15.817 35.26 -35.26 c 0 -19.442 -15.817 -35.259 -35.26 -35.259 C 29.389 9.74 13.571 25.558 13.571 45 h -5.91 c 0 -22.701 18.468 -41.169 41.169 -41.169 C 71.532 3.831 90 22.299 90 45 C 90 67.701 71.532 86.169 48.831 86.169 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: #fff; fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+              <polygon points="64.67,61.69 45.88,46.41 45.88,19.03 51.78,19.03 51.78,43.59 68.4,57.1 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: #fff; fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+              <polygon points="21.23,40.41 10.62,51.02 0,40.41 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: #fff; fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+            </g>
+          </svg>
+        </button>
+        <button class="blitz-newchat-btn" style="background:none;border:none;cursor:pointer;color:inherit;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <img src="blitz.png" alt="Blitz" style="height:28px;width:auto;display:block;margin-right:2px;">
+    `;
     container.appendChild(header);
+
+    const historyPanel = document.createElement('div');
+    historyPanel.className = 'blitz-history-panel';
+    historyPanel.style.display = 'none';
+    historyPanel.style.position = 'absolute';
+    // Position the panel below the history button, left-aligned
+    historyPanel.style.left = '0';
+    historyPanel.style.top = '100%';
+    historyPanel.style.background = '#18181b';
+    historyPanel.style.border = '1.5px solid #333';
+    historyPanel.style.borderRadius = '0.75rem';
+    historyPanel.style.padding = '0.5rem 0';
+    historyPanel.style.maxHeight = '260px';
+    historyPanel.style.overflowY = 'auto';
+    historyPanel.style.minWidth = '220px';
+    historyPanel.style.boxShadow = '0 8px 32px 0 rgba(0,0,0,0.22), 0 1.5px 6px 0 rgba(0,0,0,0.10)';
+    historyPanel.style.marginTop = '0.5rem';
+    historyPanel.style.zIndex = '100';
+    historyPanel.style.opacity = '0';
+    historyPanel.style.transition = 'opacity 0.18s ease';
+    header.appendChild(historyPanel);
+
+    async function fetchConversationsList(){
+      if(!userId) return;
+      try{
+        const resp = await fetch(apiBase+`/api/users/${encodeURIComponent(userId)}/conversations`,{headers:{'X-API-Key':apiKey}});
+        if(resp.ok){
+          conversations = await resp.json();
+          historyPanel.innerHTML = '';
+          conversations.forEach(c => {
+            const item = document.createElement('div');
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.justifyContent = 'space-between';
+            item.style.padding = '0.55rem 1.1rem';
+            item.style.cursor = 'pointer';
+            item.style.fontSize = '1rem';
+            // Highlight if this is the current conversationId
+            const isActive = c.id === conversationId;
+            item.style.color = isActive ? '#fff' : '#cbd5e1';
+            item.style.background = isActive ? '#23232a' : 'transparent';
+            item.style.border = 'none';
+            item.style.borderRadius = '0.5rem';
+            item.style.margin = '0 0.25rem 2px 0.25rem';
+            item.style.transition = 'background 0.15s, color 0.15s';
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = c.title || 'New Chat';
+            item.appendChild(titleSpan);
+            // Trash icon to the right
+            const trashBtn = document.createElement('button');
+            trashBtn.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' viewBox='0 0 24 24'><path d='M6 7h12M9 7V5a3 3 0 0 1 6 0v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z' stroke='#fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
+            trashBtn.style.background = 'none';
+            trashBtn.style.border = 'none';
+            trashBtn.style.cursor = 'pointer';
+            trashBtn.style.marginLeft = '0.5rem';
+            trashBtn.style.opacity = '0.7';
+            trashBtn.style.transition = 'opacity 0.15s';
+            trashBtn.addEventListener('mouseenter',()=>{trashBtn.style.opacity='1';});
+            trashBtn.addEventListener('mouseleave',()=>{trashBtn.style.opacity='0.7';});
+            trashBtn.addEventListener('click', async (e)=>{
+              e.stopPropagation();
+              await fetch(apiBase+`/api/conversations/${c.id}`,{method:'DELETE',headers:{'X-API-Key':apiKey}});
+              await fetchConversationsList();
+            });
+            item.appendChild(trashBtn);
+            item.addEventListener('mouseenter',()=>{
+              item.style.background = '#23232a';
+              item.style.color = '#fff';
+            });
+            item.addEventListener('mouseleave',()=>{
+              item.style.background = (c.id === conversationId) ? '#23232a' : 'transparent';
+              item.style.color = (c.id === conversationId) ? '#fff' : '#cbd5e1';
+            });
+            item.addEventListener('click', async ()=>{
+              conversationId = c.id;
+              historyPanel.style.display = 'none';
+              await loadMessages();
+            });
+            historyPanel.appendChild(item);
+          });
+        }
+      }catch(_){/* ignore */}
+    }
+
+    async function loadMessages(){
+      messages.innerHTML = '';
+      if(!conversationId) return;
+      const resp = await fetch(apiBase+`/api/conversations/${conversationId}/messages`,{headers:{'X-API-Key':apiKey}});
+      if(resp.ok){
+        const data = await resp.json();
+        data.forEach(m=>addMessage(m.role,m.content));
+      }
+    }
+
+    const historyBtn = header.querySelector('.blitz-history-btn');
+    historyBtn.addEventListener('click', async ()=>{
+      if(historyPanel.style.display==='none'){
+        // Position the panel below the button
+        const btnRect = historyBtn.getBoundingClientRect();
+        const headerRect = header.getBoundingClientRect();
+        historyPanel.style.left = (historyBtn.offsetLeft) + 'px';
+        historyPanel.style.top = (historyBtn.offsetTop + historyBtn.offsetHeight) + 'px';
+        await fetchConversationsList();
+        historyPanel.style.display='block';
+        setTimeout(()=>{historyPanel.style.opacity='1';}, 10);
+      }else{
+        historyPanel.style.opacity='0';
+        setTimeout(()=>{historyPanel.style.display='none';}, 180);
+      }
+    });
+
+    // Add event for new chat button
+    const newChatBtn = header.querySelector('.blitz-newchat-btn');
+    newChatBtn.addEventListener('click', async ()=>{
+      const resp = await fetch(apiBase+`/api/conversations`,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({user_id:userId})});
+      if(resp.ok){
+        const data = await resp.json();
+        conversationId = data.id;
+        messages.innerHTML = '';
+        await fetchConversationsList();
+      }
+    });
+
+    if(userId){
+      fetchConversationsList();
+    }
 
     // Messages
     const messages = document.createElement('div');
@@ -57,13 +201,15 @@
     input.className = 'blitz-widget-input';
     input.style.overflowY = 'auto';
     input.style.resize = 'none';
-    input.addEventListener('input', function() {
-      this.style.height = '36px';
-      const maxHeight = 144;
-      if (this.scrollHeight > 36) {
+    let baseHeight;
+    let maxHeight;
+    const adjustHeight = function() {
+      this.style.height = baseHeight + 'px';
+      if (this.scrollHeight > baseHeight) {
         this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
       }
-    });
+    };
+    input.addEventListener('input', adjustHeight);
     const sendBtn = document.createElement('button');
     sendBtn.type = 'submit';
     sendBtn.className = 'blitz-widget-send';
@@ -74,15 +220,25 @@
     wrapper.appendChild(container);
     target.appendChild(wrapper);
 
+    // Calculate dynamic heights after element is in the DOM
+    baseHeight = input.scrollHeight || 36;
+    maxHeight = baseHeight * 4;
+    input.style.height = baseHeight + 'px';
+    input.style.minHeight = baseHeight + 'px';
+    input.style.maxHeight = maxHeight + 'px';
+    // Ensure correct height on initial load
+    adjustHeight.call(input);
+
     form.addEventListener('submit',async(e)=>{
       e.preventDefault();
       const text=input.value.trim();
       if(!text) return;
       addMessage('user',text);
       input.value='';
-      const payload={ message:text };
-      // For followup messages, send conversation_id
+      const payload={ message:text, user_id: userId };
+      const isNew = !conversationId;
       if(conversationId) payload.conversation_id = conversationId;
+      if(isNew) payload.generate_title = true;
       const res = await fetch(apiBase+`/conversation`,{
         method:'POST',
         headers:{'Content-Type':'application/json','X-API-Key':apiKey},
@@ -91,6 +247,9 @@
       const data = await res.json();
       // Always update conversationId with backend response
       conversationId = data.conversation_id || conversationId;
+      if(isNew){
+        fetchConversationsList();
+      }
       poll(data.response_id);
     });
 

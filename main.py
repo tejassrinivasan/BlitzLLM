@@ -81,7 +81,7 @@ class ConversationRequest(BaseModel):
     insight_length: Optional[str] = "short"
     league: Optional[str] = "mlb"
     search_the_web: Optional[bool] = False
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None
     conversation_id: Optional[str] = ""
     message_id: Optional[int] = None
     retry: Optional[bool] = False
@@ -184,6 +184,7 @@ app.add_event_handler("shutdown", stop_sqs_listener)
 async def ensure_conversation(
     partner_id: int, user_id: int, conversation_id: str | None
 ) -> str:
+    """Ensure a conversation exists and mark it as current."""
     pool = get_partner_pool()
     if not pool:
         return conversation_id or ""
@@ -195,16 +196,27 @@ async def ensure_conversation(
             )
             if exists:
                 await conn.execute(
-                    "UPDATE conversations SET updated_at=NOW() WHERE conversation_id=$1",
+                    "UPDATE conversations SET updated_at=NOW(), is_current=TRUE WHERE conversation_id=$1",
+                    conversation_id,
+                )
+                await conn.execute(
+                    "UPDATE conversations SET is_current=FALSE WHERE user_id=$1 AND conversation_id<>$2",
+                    user_id,
                     conversation_id,
                 )
                 return conversation_id
         new_id = str(uuid.uuid4())
         await conn.execute(
-            """INSERT INTO conversations (conversation_id, partner_id, user_id) VALUES ($1,$2,$3)""",
+            """INSERT INTO conversations (conversation_id, partner_id, user_id, title, is_current) VALUES ($1,$2,$3,$4,TRUE)""",
             new_id,
             partner_id,
             user_id,
+            "New Chat",
+        )
+        await conn.execute(
+            "UPDATE conversations SET is_current=FALSE WHERE user_id=$1 AND conversation_id<>$2",
+            user_id,
+            new_id,
         )
         return new_id
 
@@ -234,6 +246,36 @@ async def delete_messages_from(conversation_id: str, start_id: int):
         conversation_id,
         start_id,
     )
+
+
+async def generate_title(client, user_prompt: str) -> str:
+    """Generate a concise title for the conversation."""
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant that generates very short, concise titles (max 6 words) for conversations based on user questions. "
+                        f"Focus on the main topic or intent. **TODAY'S DATE:** {datetime.now().strftime('%Y-%m-%d')}"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Generate a short title (max 6 words) for a conversation that starts with this question: "
+                        f"{user_prompt}"
+                    ),
+                },
+            ],
+            temperature=0,
+            max_tokens=30,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error generating title: {e}")
+        return "New Chat"
 
 
 def _s3_key(partner_id: int | None, response_id: str) -> str:
@@ -832,17 +874,86 @@ async def feedback(req: FeedbackRequest, api_key: str = Depends(verify_api_key))
 conversation_tasks: dict = {}
 
 @app.post('/api/conversations/{conversation_id}/messages/stream')
-async def create_message_stream(conversation_id: str, message: Dict[str, Any], background_tasks: BackgroundTasks, api_key: str = Depends(verify_api_key)):
+async def create_message_stream(
+    conversation_id: str,
+    message: Dict[str, Any],
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(verify_api_key),
+):
+    """Accept a message and stream a dummy response while storing it."""
     task_id = f"{conversation_id}_{int(time.time())}"
     conversation_tasks[task_id] = {"status": "processing", "step": "Generating response..."}
 
+    partner_id = get_partner_id_from_api_key(api_key)
+    pool = get_partner_pool()
+    openai_client = llm.get_openai_client()
+
     async def process():
+        user_text = message.get("content", "")
+        title = None
+        if pool:
+            async with pool.acquire() as conn:
+                max_id = await conn.fetchval(
+                    "SELECT MAX(message_id) FROM messages WHERE conversation_id=$1",
+                    conversation_id,
+                )
+                next_id = (max_id or 0) + 1
+                await add_message(conversation_id, partner_id, next_id, "user", user_text)
+
+                if message.get("generate_title"):
+                    title = await generate_title(openai_client, user_text)
+                    await conn.execute(
+                        "UPDATE conversations SET title=$1 WHERE conversation_id=$2",
+                        title,
+                        conversation_id,
+                    )
+
+                # Generate the real assistant response
+                assistant_response = await llm.generate_text_response(
+                    partner_prompt=user_text,
+                    query_data=None,
+                    live_data=None,
+                    search_results=None,
+                    custom_data=None,
+                    simple=True,
+                    include_history=True,
+                    league="mlb",
+                    conversation_history=None,
+                    history_context="",
+                    prompt_type="CONVERSATION",
+                )
+                # Extract the text response (if dict, get 'response', else str)
+                response_text = (
+                    assistant_response.get('response') if isinstance(assistant_response, dict) else str(assistant_response)
+                )
+                await add_message(
+                    conversation_id,
+                    partner_id,
+                    next_id + 1,
+                    "assistant",
+                    response_text,
+                )
+                await conn.execute(
+                    "UPDATE conversations SET updated_at=NOW() WHERE conversation_id=$1",
+                    conversation_id,
+                )
+
         await asyncio.sleep(1)
-        conversation_tasks[task_id].update({
-            "status": "complete",
-            "user_message": {"conversation_id": conversation_id, "role": "user", "content": message.get("content")},
-            "assistant_message": {"role": "assistant", "content": f"Echo: {message.get('content')}"}
-        })
+        conversation_tasks[task_id].update(
+            {
+                "status": "complete",
+                "user_message": {
+                    "conversation_id": conversation_id,
+                    "role": "user",
+                    "content": user_text,
+                },
+                "assistant_message": {
+                    "role": "assistant",
+                    "content": response_text,
+                },
+                "title": title,
+            }
+        )
         await asyncio.sleep(180)
         conversation_tasks.pop(task_id, None)
 
@@ -860,3 +971,59 @@ async def cancel_task(task_id: str, api_key: str = Depends(verify_api_key)):
         return {"status": "not_found"}
     task["status"] = "cancelled"
     return {"status": "cancelled"}
+
+
+@app.get("/api/users/{user_id}/conversations")
+async def list_user_conversations(user_id: str, api_key: str = Depends(verify_api_key)):
+    """Return all conversations for a user."""
+    partner_id = get_partner_id_from_api_key(api_key)
+    pool = get_partner_pool()
+    if not pool:
+        return []
+    rows = await pool.fetch(
+        "SELECT conversation_id AS id, COALESCE(title,'New Chat') AS title, is_current, created_at, updated_at FROM conversations WHERE partner_id=$1 AND user_id=$2 ORDER BY updated_at DESC",
+        partner_id,
+        user_id,
+    )
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/conversations")
+async def create_conversation(
+    payload: Optional[dict] = None,
+    api_key: str = Depends(verify_api_key),
+):
+    """Create a new conversation for the user."""
+    partner_id = get_partner_id_from_api_key(api_key)
+    user_id = (payload or {}).get("user_id", 0) if isinstance(payload, dict) else 0
+    conv_id = await ensure_conversation(partner_id, user_id, None)
+    return {"id": conv_id}
+
+
+@app.get("/api/conversations/{conversation_id}/messages")
+async def get_conversation_messages(conversation_id: str, api_key: str = Depends(verify_api_key)):
+    """Return messages for a conversation."""
+    partner_id = get_partner_id_from_api_key(api_key)
+    pool = get_partner_pool()
+    if not pool:
+        return []
+    rows = await pool.fetch(
+        "SELECT message_id AS id, role, content, created_at FROM messages WHERE conversation_id=$1 AND partner_id=$2 ORDER BY message_id",
+        conversation_id,
+        partner_id,
+    )
+    return [dict(r) for r in rows]
+
+
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, api_key: str = Depends(verify_api_key)):
+    partner_id = get_partner_id_from_api_key(api_key)
+    pool = get_partner_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="No DB connection")
+    async with pool.acquire() as conn:
+        result = await conn.execute("DELETE FROM messages WHERE conversation_id=$1 AND partner_id=$2", conversation_id, partner_id)
+        result2 = await conn.execute("DELETE FROM conversations WHERE conversation_id=$1 AND partner_id=$2", conversation_id, partner_id)
+        if (result == "DELETE 0" and result2 == "DELETE 0"):
+            raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"status": "deleted"}

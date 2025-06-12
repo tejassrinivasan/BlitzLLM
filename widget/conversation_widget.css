@@ -442,3 +442,7 @@
 .blitz-widget-feedback button.bad.active svg {
   color: #dc2626;
 }
+
+.blitz-history-panel div:hover {
+  background:#222;
+}
