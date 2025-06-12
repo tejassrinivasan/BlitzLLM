@@ -623,6 +623,13 @@ async def process_conversation(
                 await store_error_response(
                     partner_id, response_id, web_results_raw.get("explanation"), 500
                 )
+                await add_message(
+                    req.conversation_id,
+                    partner_id,
+                    next_msg_id + 1,
+                    "assistant",
+                    web_results_raw.get("explanation"),
+                )
                 return
             web_results = (
                 llm.format_web_results(web_results_raw) if web_results_raw else None
@@ -656,6 +663,13 @@ async def process_conversation(
                 req.conversation_id,
                 next_msg_id,
             )
+            await add_message(
+                req.conversation_id,
+                partner_id,
+                next_msg_id + 1,
+                "assistant",
+                clarify.get("response"),
+            )
             await store_response(partner_id, response_id, response_payload)
             return
         else:
@@ -674,6 +688,13 @@ async def process_conversation(
             if isinstance(search_results, dict) and search_results.get("error"):
                 await store_error_response(
                     partner_id, response_id, search_results.get("explanation"), 500
+                )
+                await add_message(
+                    req.conversation_id,
+                    partner_id,
+                    next_msg_id + 1,
+                    "assistant",
+                    search_results.get("explanation"),
                 )
                 return
 
@@ -749,7 +770,7 @@ async def process_conversation(
             partner_id,
             assistant_id,
             "assistant",
-            json.dumps(response),
+            resp_text,
         )
         await store_response(partner_id, response_id, response_payload)
         call_id = await log_partner_call(
@@ -764,6 +785,13 @@ async def process_conversation(
     except Exception as e:
         error_message = str(e)
         await store_error_response(partner_id, response_id, error_message, 500)
+        await add_message(
+            req.conversation_id,
+            partner_id,
+            next_msg_id + 1,
+            "assistant",
+            error_message,
+        )
         partner_payload = {
             "user_id": req.user_id,
             "conversation_id": req.conversation_id,
