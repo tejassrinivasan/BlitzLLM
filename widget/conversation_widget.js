@@ -11,8 +11,13 @@
     const theme = options.theme || 'dark';
     const userId = options.userId || '';
     const storageKey = `blitz_stream_${userId}_${apiBase}`;
-    let stored = {};
-    try{stored = JSON.parse(localStorage.getItem(storageKey) || '{}');}catch(_){stored={};}
+    // Remove localStorage persistence for conversationId
+    // let stored = {};
+    // try{stored = JSON.parse(localStorage.getItem(storageKey) || '{}');}catch(_){stored={};}
+
+    // Always start with a fresh conversationId for each page load
+    let conversationId = '';
+    console.log('conversationId', conversationId);
 
     // Create a wrapper for scaling
     const wrapper = document.createElement('div');
@@ -69,8 +74,6 @@
     wrapper.appendChild(container);
     target.appendChild(wrapper);
 
-    let conversationId = stored.conversationId || '';
-
     form.addEventListener('submit',async(e)=>{
       e.preventDefault();
       const text=input.value.trim();
@@ -78,6 +81,7 @@
       addMessage('user',text);
       input.value='';
       const payload={ message:text };
+      // For followup messages, send conversation_id
       if(conversationId) payload.conversation_id = conversationId;
       const res = await fetch(apiBase+`/conversation`,{
         method:'POST',
@@ -85,9 +89,8 @@
         body:JSON.stringify(payload)
       });
       const data = await res.json();
+      // Always update conversationId with backend response
       conversationId = data.conversation_id || conversationId;
-      stored.conversationId = conversationId;
-      localStorage.setItem(storageKey, JSON.stringify(stored));
       poll(data.response_id);
     });
 

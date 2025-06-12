@@ -527,7 +527,8 @@ async def process_conversation(
             )
         )
         formatted_history = llm.format_conversation_history_for_prompt(history)
-
+        
+        print(f"Formatted history: {formatted_history}")
         partner_payload = {
             "user_id": req.user_id,
             "conversation_id": req.conversation_id,
