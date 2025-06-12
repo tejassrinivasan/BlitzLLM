@@ -45,10 +45,20 @@
     // Form
     const form = document.createElement('form');
     form.className = 'blitz-widget-form';
-    const input = document.createElement('input');
-    input.type = 'text';
+    const input = document.createElement('textarea');
+    input.rows = 1;
+    input.maxLength = 2000;
     input.placeholder = 'Send a message...';
     input.className = 'blitz-widget-input';
+    input.style.overflowY = 'auto';
+    input.style.resize = 'none';
+    input.addEventListener('input', function() {
+      this.style.height = '36px';
+      const maxHeight = 144;
+      if (this.scrollHeight > 36) {
+        this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
+      }
+    });
     const sendBtn = document.createElement('button');
     sendBtn.type = 'submit';
     sendBtn.className = 'blitz-widget-send';
