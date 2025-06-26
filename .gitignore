@@ -1,9 +1,78 @@
+# Environment files
 .env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+backend/.env
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .Python
-.venv
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.python-version
 venv/
-ENV/
-*.pyc
+.venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn
+.pnp.*
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build and dist
+/dist
+/build
+/out
+/.next
+.cache/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+/coverage
+.nyc_output
+.pytest_cache/
+
+# Misc
+.DS_Store
+Thumbs.db
