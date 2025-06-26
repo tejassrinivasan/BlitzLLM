@@ -1,0 +1,59 @@
+{
+  "name": "BlitzAgent",
+  "version": "1.0.0",
+  "description": "MLB Insights Agent powered by Mastra with comprehensive data analysis capabilities",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "copy-assets": "node scripts/copy-assets.js",
+    "dev": "npm run copy-assets && PROJECT_ROOT=$PWD npx mastra dev",
+    "clean": "rm -rf dist .mastra",
+    "fetch-documents": "node scripts/fetch-all-documents.js",
+    "upload-to-cosmos": "node scripts/upload-to-cosmos.js"
+  },
+  "keywords": [
+    "mastra",
+    "mlb",
+    "agent",
+    "ai",
+    "baseball",
+    "insights",
+    "mcp"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/azure": "^1.0.0",
+    "@ai-sdk/google": "^1.2.19",
+    "@ai-sdk/openai": "^1.3.22",
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "@azure/cosmos": "^4.4.1",
+    "@azure/search-documents": "^12.1.0",
+    "@mastra/core": "latest",
+    "@mastra/loggers": "latest",
+    "@mastra/mcp": "^0.10.4",
+    "@mastra/memory": "latest",
+    "@mastra/pg": "latest",
+    "@mendable/firecrawl-js": "^1.25.5",
+    "jsonpath-plus": "^9.0.0",
+    "mastra": "^0.10.6",
+    "node-fetch": "^3.3.2",
+    "openapi-types": "^12.1.3",
+    "pg": "^8.11.3",
+    "tiktoken": "^1.0.21",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "mastra": "latest",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

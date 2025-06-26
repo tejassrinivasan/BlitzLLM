@@ -1,0 +1,139 @@
+{
+  "model": {
+    "provider": "azure_openai",
+    "name": "gpt-4o",
+    "reasoning_model": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 4096,
+    "streaming": true,
+    "top_p": 0.95,
+    "top_k": 40,
+    "api_key": "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
+    
+    "enable_dual_model": false,
+    "reasoning_provider": null,
+    "reasoning_model_name": null,
+    "reasoning_api_key": null,
+    
+    "azure_endpoint": "https://blitzgpt.openai.azure.com/",
+    "azure_deployment": "gpt-4o",
+    "azure_api_version": "2025-03-01-preview",
+    "azure_ad_token": null,
+    "azure_ad_token_provider": null,
+    
+    "azure_embedding_deployment": "text-embedding-ada-002",
+    "azure_embedding_model": "text-embedding-ada-002"
+  },
+  "database": {
+    "host": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+    "port": 5432,
+    "database": "mlb",
+    "user": "postgres",
+    "password": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+    "ssl_mode": "require",
+    "ssl_cert_path": null,
+    "ssl_key_path": null,
+    "ssl_root_cert_path": null,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_timeout": 30,
+    "pool_recycle": 3600
+  },
+  "memory_database": {
+    "host": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+    "port": 5432,
+    "database": "agentmemoryagno",
+    "user": "postgres",
+    "password": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+    "ssl_mode": "require",
+    "ssl_cert_path": null,
+    "ssl_key_path": null,
+    "ssl_root_cert_path": null,
+    "pool_size": 5,
+    "max_overflow": 10,
+    "pool_timeout": 30,
+    "pool_recycle": 3600
+  },
+  "mcp": {
+    "enabled": true,
+    "server_url": "direct://localhost",
+    "transport": "direct",
+    "timeout": 30,
+    "retry_attempts": 3,
+    "reconnect_delay": 5,
+    "max_message_size": 1048576,
+    "tools_enabled": []
+  },
+  "agent": {
+    "name": "BlitzAgent",
+    "description": "AI agent for sports analytics and database insights",
+    "max_memory_messages": 100,
+    "memory_retention_days": 30,
+    "memory_max_conversations": 1000,
+    "session_timeout_minutes": 30,
+    "max_concurrent_sessions": 50,
+    "max_iterations": 20,
+    "enable_reasoning": true,
+    "enable_streaming": true,
+    "stream_reasoning": true,
+    "stream_intermediate_steps": true,
+    "show_reasoning_steps": true,
+    "monitoring": true,
+    "debug_mode": false
+  },
+  "memory": {
+    "enabled": true,
+    "semantic_recall": {
+      "enabled": true,
+      "top_k": 5,
+      "message_range": 3,
+      "scope": "resource",
+      "embedding_model": "text-embedding-ada-002",
+      "similarity_threshold": 0.7
+    },
+    "vector_store": {
+      "provider": "pgvector",
+      "table_name": "message_embeddings",
+      "dimension": 1536
+    },
+    "storage": {
+      "table_name": "agent_messages",
+      "cleanup_interval_hours": 24,
+      "max_message_age_days": 90
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "agno_monitor": true,
+    "prometheus_enabled": true,
+    "prometheus_port": 8000,
+    "metrics_endpoint": "/metrics",
+    "log_level": "INFO",
+    "log_format": "json",
+    "log_file": null,
+    "structured_logging": true,
+    "debug_mode": true
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "workers": 1,
+    "auto_reload": false,
+    "cors_origins": [
+      "http://localhost:3000",
+      "http://localhost:8080"
+    ],
+    "cors_credentials": true,
+    "max_request_size": 10485760,
+    "timeout": 60
+  },
+  "security": {
+    "jwt_secret_key": "your_super_secure_jwt_secret_key_that_is_at_least_32_characters_long_1234",
+    "jwt_expiration_hours": 24,
+    "api_rate_limit": 60,
+    "rate_limit_window_minutes": 1,
+    "force_https": false
+  },
+  "environment": "development",
+  "debug": true
+} 
