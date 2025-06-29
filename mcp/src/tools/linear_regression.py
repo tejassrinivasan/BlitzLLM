@@ -21,10 +21,10 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
-from ..config import get_postgres_url
-from ..models.connection import Connection
-from ..models.query import Query
-from ..utils import serialize_response
+from config import get_postgres_url
+from models.connection import Connection
+from models.query import Query
+from utils import serialize_response
 
 # Set matplotlib backend for headless operation
 matplotlib.use('Agg')
@@ -119,7 +119,7 @@ async def run_linear_regression(
                 df = pd.DataFrame(result)
         else:
             # Sample from table
-            from .sample import sample
+            from tools.sample import sample
             result = await sample(ctx, table=data_source, n=1000)
             
             if isinstance(result, dict) and 'data' in result:

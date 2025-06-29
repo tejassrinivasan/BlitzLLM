@@ -12,8 +12,8 @@ import asyncpg
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from ..config import get_postgres_url
-from ..models.connection import Connection
+from config import get_postgres_url
+from models.connection import Connection
 
 __all__ = ["search_tables"]
 

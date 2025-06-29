@@ -1,9 +1,9 @@
 """Model classes for the Blitz Agent MCP Server."""
 
-from .connection import Connection
-from .database import MatchMode
-from .query import Query
-from .table import Table
+from models.connection import Connection
+from models.database import MatchMode
+from models.query import Query
+from models.table import Table
 
 __all__ = [
     "Connection",

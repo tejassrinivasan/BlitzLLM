@@ -10,8 +10,8 @@ from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from ..config import MAX_DATA_ROWS
-from ..utils import serialize_response
+from config import MAX_DATA_ROWS
+from utils import serialize_response
 
 __all__ = ["get_api_docs", "call_api_endpoint"]
 

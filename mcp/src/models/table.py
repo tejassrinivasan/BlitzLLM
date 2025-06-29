@@ -2,7 +2,7 @@
 
 from typing import Optional
 from pydantic import BaseModel, Field
-from .connection import Connection
+from models.connection import Connection
 
 
 class Table(BaseModel):

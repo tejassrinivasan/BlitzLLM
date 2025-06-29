@@ -9,7 +9,7 @@ from typing import Any, Dict
 import pandas as pd
 from openai import AzureOpenAI
 
-from .config import MAX_DATA_ROWS, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION
+from config import MAX_DATA_ROWS, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION
 
 __all__ = ["serialize_response"]
 

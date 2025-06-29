@@ -18,10 +18,10 @@ import seaborn as sns
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from ..config import get_postgres_url
-from ..models.connection import Connection
-from ..models.query import Query
-from ..utils import serialize_response
+from config import get_postgres_url
+from models.connection import Connection
+from models.query import Query
+from utils import serialize_response
 
 # Set matplotlib backend for headless operation
 matplotlib.use('Agg')
@@ -86,7 +86,7 @@ async def _execute_query_if_needed(ctx: Context, data_source: str) -> pd.DataFra
             df = pd.DataFrame(result)
     else:
         # Treat as table name and sample it
-        from .sample import sample
+        from tools.sample import sample
         result = await sample(ctx, table=data_source, n=1000)  # Get more rows for graphing
         
         # Convert to DataFrame
