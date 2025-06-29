@@ -27,7 +27,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from .config import load_config
-from .agent_factory import create_hybrid_playground_agent, create_blitz_workflow, AgentType, RuntimeContext, RuntimeMode, ToneStyle, model
+from .agent_factory import create_hybrid_playground_agent, AgentType, RuntimeContext, RuntimeMode, ToneStyle, model
 
 # Allow nested event loops
 nest_asyncio.apply()
@@ -134,33 +134,20 @@ async def run_server() -> None:
             markdown=True,
         )
         
-        # Create workflow (deterministic approach)
-        workflow = await create_blitz_workflow(
-            config=config,
-            context=context,
-            model_override=PLAYGROUND_MODEL if PLAYGROUND_MODEL else None,
-            session_id=f"playground_workflow_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            storage=storage
-        )
-        
-        print("✅ BlitzAgent and BlitzAgent Workflow initialized")
+        print("✅ BlitzAgent initialized")
         print(f"🔧 Tools loaded: {len(tools)} tool groups")
-        print("🚀 Workflow: Deterministic execution with built-in caching and auto query generation")
         
-        # Create playground with single agent and workflow
+        # Create playground with single agent only
         playground = Playground(
             agents=[single_agent],
-            workflows=[workflow],
             app_id="blitzagent-playground",
             name="BlitzAgent Playground",
-            description="Choose between BlitzAgent (single agent) or BlitzAgent Workflow (deterministic multi-agent) for sports analytics"
+            description="BlitzAgent for sports analytics with MCP integration and semantic memory"
         )
         app = playground.get_app()
         
-        print("🌟 Playground ready with single agent and workflow!")
-        print("💡 Choose between:")
-        print("   • BlitzAgent - Single agent for sports analytics")
-        print("   • BlitzAgent Workflow - Deterministic multi-agent with auto query generation")
+        print("🌟 Playground ready with BlitzAgent!")
+        print("📊 BlitzAgent - Single agent for comprehensive sports analytics")
         print("🧠 Conversations will be remembered and provide personalized context!")
         print("🤝 Upload operations will require your confirmation before proceeding!")
 

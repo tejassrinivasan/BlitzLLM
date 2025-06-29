@@ -999,96 +999,7 @@ async def create_hybrid_playground_agent(config: Optional[Config] = None, contex
     return PlaygroundAgentWrapper(blitz_agent, agno_agent, context)
 
 
-# =============================================================================
-# BLITZAGENT WORKFLOW
-# =============================================================================
 
-class BlitzAgentWorkflow:
-    """
-    BlitzAgent Workflow for deterministic sports analytics.
-    
-    This workflow combines multiple agents to provide comprehensive sports analysis
-    with built-in caching and automatic query generation.
-    """
-    
-    def __init__(self, session_id: str):
-        self.session_id = session_id
-        self.main_agent = None
-        self.query_generator = None
-        self._storage = None
-        
-    async def arun(self, message: str, **kwargs):
-        """Execute the workflow with the given message."""
-        if not self.main_agent:
-            raise ValueError("Main agent not configured for workflow")
-            
-        # For now, delegate to main agent - can be extended with workflow logic
-        return await self.main_agent.arun(message, **kwargs)
-        
-    def __getattr__(self, name):
-        """Delegate other attributes to main agent."""
-        if self.main_agent:
-            return getattr(self.main_agent, name)
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-
-
-async def create_blitz_workflow(
-    config: Optional[Config] = None,
-    context: Optional[RuntimeContext] = None, 
-    model_override: Optional[str] = None,
-    session_id: Optional[str] = None,
-    storage = None
-) -> BlitzAgentWorkflow:
-    """
-    Create a BlitzAgent Workflow for deterministic sports analytics.
-    
-    Args:
-        config: Optional configuration
-        context: Optional runtime context
-        model_override: Optional model override (e.g., "gpt-4o", "claude-sonnet-4-20250514")
-        session_id: Optional session ID for caching
-        storage: Optional storage backend (Note: storage passed separately to avoid pickling issues)
-        
-    Returns:
-        Configured BlitzAgent Workflow
-    """
-    if config is None:
-        config = load_config()
-    if context is None:
-        context = RuntimeContext()
-        
-    # Set up storage if not provided - but don't pass it to workflow constructor
-    # to avoid pickling issues
-    if storage is None:
-        storage = await create_agno_storage(config)
-        
-    # Create agents
-    main_agent = await create_playground_agent(
-        config=config,
-        enable_confirmations=False,  # No confirmations in workflow
-        context=context,
-        model_override=model_override
-    )
-    
-    query_generator = await create_query_generator_agent(
-        config=config,
-        context=RuntimeContext(mode=RuntimeMode.INSIGHT, tone=ToneStyle.ANALYTICAL),
-        model_override=model_override
-    )
-    
-    # Create workflow without storage parameter to avoid pickling issues
-    workflow = BlitzAgentWorkflow(
-        session_id=session_id or f"blitz_workflow_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
-    
-    # Assign agents to workflow
-    workflow.main_agent = main_agent
-    workflow.query_generator = query_generator
-    
-    # Store the storage reference separately
-    workflow._storage = storage
-    
-    return workflow
 
 
 # =============================================================================
@@ -1101,7 +1012,6 @@ AGENT_FACTORIES = {
     AgentType.SERVER: create_server_agent,
     AgentType.BASIC: create_blitz_agent,
     AgentType.QUERY_GENERATOR: create_query_generator_agent,
-    "workflow": create_blitz_workflow,  # Deterministic workflow approach
     "hybrid_playground": create_hybrid_playground_agent,
 }
 
