@@ -82,6 +82,7 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None) -> FastMCP:
 
     mcp = FastMCP("Blitz Agent MCP Server", lifespan=app_lifespan)
 
+    # Add tools
     mcp.add_tool(inspect)
     mcp.add_tool(sample)
     mcp.add_tool(query)
@@ -100,15 +101,128 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None) -> FastMCP:
     return mcp
 
 
+def run_sse_server(mcp_instance: FastMCP, host: str = "127.0.0.1", port: int = 8000):
+    """Run SSE server with custom configuration for deployment platforms"""
+    import uvicorn
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
+    
+    # Get or create the FastAPI app from FastMCP
+    if hasattr(mcp_instance, 'app'):
+        app = mcp_instance.app
+    elif hasattr(mcp_instance, '_app'):
+        app = mcp_instance._app
+    else:
+        # If we can't access the app directly, create our own wrapper
+        app = FastAPI(title="Blitz Agent MCP Server")
+        
+        @app.get("/")
+        @app.head("/")
+        async def health_check():
+            """Health check endpoint for deployment platforms"""
+            return JSONResponse({
+                "status": "ok", 
+                "service": "Blitz Agent MCP Server", 
+                "version": "1.0.0"
+            })
+        
+        @app.get("/health")
+        @app.head("/health")
+        async def health():
+            """Alternative health check endpoint"""
+            return JSONResponse({
+                "status": "healthy", 
+                "timestamp": asyncio.get_event_loop().time()
+            })
+        
+        # Try to mount the MCP routes if possible
+        try:
+            if hasattr(mcp_instance, 'router'):
+                app.include_router(mcp_instance.router)
+        except Exception as e:
+            logger.warning(f"Could not mount MCP routes: {e}")
+    
+    # Add health check endpoints if they don't exist
+    if not any(route.path == "/" for route in app.routes):
+        @app.get("/")
+        @app.head("/")
+        async def health_check():
+            """Health check endpoint for deployment platforms"""
+            return JSONResponse({
+                "status": "ok", 
+                "service": "Blitz Agent MCP Server", 
+                "version": "1.0.0"
+            })
+    
+    if not any(route.path == "/health" for route in app.routes):
+        @app.get("/health")
+        @app.head("/health")
+        async def health():
+            """Alternative health check endpoint"""
+            return JSONResponse({
+                "status": "healthy", 
+                "timestamp": asyncio.get_event_loop().time()
+            })
+    
+    logger.info(f"Starting SSE server on {host}:{port}")
+    
+    # Configure uvicorn for deployment
+    config = {
+        "host": host,
+        "port": port,
+        "log_level": "info",
+        "access_log": True,
+    }
+    
+    # Try to use FastMCP's built-in server first
+    try:
+        # Check if FastMCP supports host/port parameters
+        mcp_instance.run(transport="sse", host=host, port=port)
+    except TypeError:
+        # Fallback: run with uvicorn directly
+        logger.info("Using fallback uvicorn server")
+        uvicorn.run(app, **config)
+    except Exception as e:
+        logger.error(f"Error running server: {e}")
+        # Last resort: run with basic uvicorn
+        uvicorn.run(app, **config)
+
+
 @click.command()
 @click.option("--api-key", envvar="BLITZ_API_KEY", help="API key for authentication")
 @click.option("--transport", type=click.Choice(["stdio", "sse"]), default="stdio", help="Transport mode for MCP server")
+@click.option("--host", default="127.0.0.1", help="Host to bind the server to (for SSE transport)")
+@click.option("--port", type=int, default=None, help="Port to bind the server to (for SSE transport)")
 @click.argument("urls", nargs=-1)
-def main(api_key: str | None = None, transport: Literal["stdio", "sse"] = "stdio", urls: tuple[str, ...] = ()) -> None:
+def main(
+    api_key: str | None = None,
+    transport: Literal["stdio", "sse"] = "stdio",
+    host: str = "127.0.0.1",
+    port: int | None = None,
+    urls: tuple[str, ...] = ()
+) -> None:
     """Blitz Agent MCP Server - Run the MCP server"""
     logger.info("Starting MCP server with urls: %s", urls)
+    
+    # For deployment platforms like Render, use environment variables
+    if transport == "sse":
+        # Use PORT env var if available (Render, Heroku, etc.)
+        if port is None:
+            port = int(os.getenv("PORT", "8000"))
+        
+        # For deployment, bind to all interfaces
+        if os.getenv("RENDER") or os.getenv("RAILWAY_PROJECT_ID") or os.getenv("HEROKU_APP_NAME"):
+            host = "0.0.0.0"
+        
+        logger.info(f"SSE server will bind to {host}:{port}")
+    
     mcp_instance = get_mcp(urls, api_key)
-    mcp_instance.run(transport=transport)
+    
+    # Handle different transport modes
+    if transport == "sse":
+        run_sse_server(mcp_instance, host, port)
+    else:
+        mcp_instance.run(transport=transport)
 
 
 if __name__ == "__main__":
