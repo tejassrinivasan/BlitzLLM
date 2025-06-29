@@ -59,7 +59,7 @@ async def create_blitz_fastapi_app(
         
         # Create FastAPI app using Agno's wrapper
         fastapi_app = FastAPIApp(
-            agent=agent,
+            agents=[agent],
             name="BlitzAgent",
             app_id="blitzagent",
             description="Advanced AI Agent for sports analytics and database insights with reasoning and memory capabilities.",
@@ -83,7 +83,7 @@ def create_app() -> FastAPI:
         model_override = os.getenv("MODEL_OVERRIDE")
         port = int(os.getenv("PORT", "8000"))
         
-        # Run the async app creation in a new event loop
+        # Run the async app creation
         async def _create_app():
             fastapi_app = await create_blitz_fastapi_app(
                 model_override=model_override,
@@ -91,15 +91,30 @@ def create_app() -> FastAPI:
             )
             return fastapi_app.get_app(use_async=True, prefix="/v1")
         
-        # Get or create event loop
+        # Handle event loop properly
         try:
-            loop = asyncio.get_event_loop()
+            # Check if we're already in an async context
+            loop = asyncio.get_running_loop()
+            # If we get here, we're in an async context, so we need to create a task
+            import concurrent.futures
+            import threading
+            
+            def run_in_new_loop():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(_create_app())
+                finally:
+                    new_loop.close()
+            
+            # Run in a separate thread with its own event loop
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_new_loop)
+                app = future.result()
+                
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        # Create the FastAPI app
-        app = loop.run_until_complete(_create_app())
+            # No event loop is running, we can create one
+            app = asyncio.run(_create_app())
         
         # Add custom root endpoint for deployment verification
         @app.get("/")
