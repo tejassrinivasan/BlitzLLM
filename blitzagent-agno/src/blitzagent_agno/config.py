@@ -184,10 +184,18 @@ class ServerConfig(BaseModel):
     workers: int = Field(default=1, ge=1, le=16, description="Number of workers")
     auto_reload: bool = Field(default=False, description="Enable auto-reload")
     cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8080"],
+        default=["http://localhost:3000", "http://localhost:8080", "*"],
         description="CORS allowed origins"
     )
     cors_credentials: bool = Field(default=True, description="Allow CORS credentials")
+    cors_methods: List[str] = Field(
+        default=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        description="CORS allowed methods"
+    )
+    cors_headers: List[str] = Field(
+        default=["*"],
+        description="CORS allowed headers"
+    )
     max_request_size: int = Field(default=10485760, ge=1024, description="Max request size in bytes")
     timeout: int = Field(default=60, ge=1, le=300, description="Request timeout in seconds")
 
@@ -195,7 +203,8 @@ class ServerConfig(BaseModel):
 class SecurityConfig(BaseModel):
     """Security configuration."""
     
-    jwt_secret_key: str = Field(..., description="JWT secret key")
+    jwt_secret_key: Optional[str] = Field(default=None, description="JWT secret key (optional)")
+    api_key: Optional[str] = Field(default=None, description="API key for authentication (optional)")
     jwt_expiration_hours: int = Field(default=24, ge=1, le=8760, description="JWT expiration in hours")
     api_rate_limit: int = Field(default=100, ge=1, le=10000, description="API rate limit per minute")
     rate_limit_window_minutes: int = Field(default=1, ge=1, le=60, description="Rate limit window in minutes")
@@ -203,7 +212,7 @@ class SecurityConfig(BaseModel):
     
     @validator('jwt_secret_key')
     def validate_jwt_secret_key(cls, v):
-        if len(v) < 32:
+        if v is not None and len(v) < 32:
             raise ValueError("JWT secret key must be at least 32 characters long")
         return v
 
@@ -270,7 +279,7 @@ class Config(BaseModel):
     memory: Optional[MemoryConfig] = Field(default=None, description="Memory configuration")
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     server: ServerConfig = Field(default_factory=ServerConfig)
-    security: SecurityConfig
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
     
     # Environment settings
     environment: str = Field(default="development", description="Environment (development, production, testing)")
@@ -313,8 +322,8 @@ class Config(BaseModel):
         if not self.database.password:
             errors.append("Database password is required")
         
-        # Check security configuration
-        if len(self.security.jwt_secret_key) < 32:
+        # Check security configuration (if enabled)
+        if self.security and self.security.jwt_secret_key and len(self.security.jwt_secret_key) < 32:
             errors.append("JWT secret key must be at least 32 characters long")
         
         return errors
