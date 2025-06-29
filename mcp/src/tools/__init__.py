@@ -3,7 +3,7 @@
 from .inspect import inspect
 from .sample import sample
 from .query import query
-from .scan import scan
+from .search_tables import search_tables
 from .test import test
 from .recall import recall_similar_db_queries
 from .webscrape import webscrape
@@ -18,7 +18,7 @@ __all__ = [
     "inspect",
     "sample", 
     "query",
-    "scan",
+    "search_tables",
     "test",
     "recall_similar_db_queries",
     "webscrape",

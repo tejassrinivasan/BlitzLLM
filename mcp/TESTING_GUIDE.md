@@ -165,7 +165,7 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key
 - `inspect` - Table structure inspection  
 - `sample` - Data sampling with filtering
 - `query` - SQL execution with comprehensive guidelines
-- `scan` - Pattern matching with similarity algorithms
+- `search_tables` - Pattern matching with similarity algorithms
 - `test` - Database connection testing
 
 ### **AI-Powered Tools**

@@ -145,7 +145,7 @@ Get filtered sample data from tables.
 }
 ```
 
-#### `scan`
+#### `search_tables`
 Search database for patterns or keywords.
 ```json
 {

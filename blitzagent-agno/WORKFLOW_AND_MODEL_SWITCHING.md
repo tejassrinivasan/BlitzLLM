@@ -240,7 +240,7 @@ database_tools = [
     "blitzAgent_recall_similar_db_queries",
     "blitzAgent_inspect",
     "blitzAgent_sample",
-    "blitzAgent_scan"
+    "blitzAgent_search_tables"
 ]
 ```
 

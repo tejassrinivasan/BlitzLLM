@@ -22,7 +22,7 @@ from sqlalchemy.engine.url import make_url
 
 from .config import API_KEY_HEADER, BACKEND_URL, get_postgres_url
 from .models.connection import Connection
-from .tools import inspect, recall_similar_db_queries, query, sample, scan, test, webscrape, validate, upload, get_database_documentation, get_api_docs, call_api_endpoint, generate_graph, run_linear_regression
+from .tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, get_api_docs, call_api_endpoint, generate_graph, run_linear_regression
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -85,7 +85,7 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None) -> FastMCP:
     mcp.add_tool(inspect)
     mcp.add_tool(sample)
     mcp.add_tool(query)
-    mcp.add_tool(scan)
+    mcp.add_tool(search_tables)
     mcp.add_tool(test)
     mcp.add_tool(recall_similar_db_queries)
     mcp.add_tool(get_database_documentation)

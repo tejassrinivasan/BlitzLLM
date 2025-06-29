@@ -182,7 +182,7 @@ export const sportsInsightsAgent = new Agent({
   1. **FIRST:** blitzAgent_get_database_documentation (to understand schema)
   2. **SECOND:** blitzAgent_recall_similar_db_queries (to check for existing similar queries)
   3. **THEN:** If recall provides sufficient info → blitzAgent_query directly
-  4. **OTHERWISE:** blitzAgent_scan → blitzAgent_inspect → blitzAgent_sample → blitzAgent_query
+  4. **OTHERWISE:** blitzAgent_search_tables → blitzAgent_inspect → blitzAgent_sample → blitzAgent_query
   5. **ALWAYS:** blitzAgent_validate (immediate validation required)
   6. **IF VALIDATION PASSES:** blitzAgent_upload (store the query for future recall)
 

@@ -459,12 +459,12 @@ def get_agent_instructions(agent_type: str = AgentType.BASIC, context: Optional[
                     ### 1. HISTORICAL DATABASE (PostgreSQL) - Only contains data until yesterday
 
                     MANDATORY WORKFLOW SEQUENCE (NO EXCEPTIONS):
-                    blitzAgent_get_database_documentation → blitzAgent_recall_similar_db_queries → blitzAgent_scan → blitzAgent_inspect → blitzAgent_sample → blitzAgent_query → blitzAgent_validate → blitzAgent_upload
+                    blitzAgent_get_database_documentation → blitzAgent_recall_similar_db_queries → blitzAgent_search_tables → blitzAgent_inspect → blitzAgent_sample → blitzAgent_query → blitzAgent_validate → blitzAgent_upload
 
                     MANDATORY RULES FOR DATABASE QUERIES:
                     - **STEP 1: ALWAYS CALL blitzAgent_get_database_documentation FIRST**
                     - **STEP 2: IMMEDIATELY AFTER DOCUMENTATION, ALWAYS CALL blitzAgent_recall_similar_db_queries - NEVER SKIP THIS!**
-                    - **STEP 3: THEN PROCEED WITH blitzAgent_scan, blitzAgent_inspect, blitzAgent_sample**
+                    - **STEP 3: THEN PROCEED WITH blitzAgent_search_tables, blitzAgent_inspect, blitzAgent_sample**
                     - **THE blitzAgent_recall_similar_db_queries TOOL IS MANDATORY - DO NOT PROCEED WITHOUT IT**
                     - You MUST use the blitzAgent_validate tool immediately after blitzAgent_query. NEVER return query results as final without validation
                     - If blitzAgent_validate returns that the query is not very accurate or provides recommendations to improve the query, AUTOMATICALLY iterate through the workflow again in a loop until the query is good/accurate.
@@ -527,7 +527,7 @@ def get_query_generator_instructions(context: Optional[RuntimeContext] = None) -
     - Identify relevant data for the query variations
 
     ### Step 2: Database Analysis (ALWAYS USE THESE TOOLS TO INSPIRE YOU TO CREATE VARIATIONS)
-    Call blitzAgent_scan, blitzAgent_inspect, and blitzAgent_sample:
+    Call blitzAgent_search_tables, blitzAgent_inspect, and blitzAgent_sample:
     - Explore table structures and data types
     - Understand data ranges and available values
     - Identify key columns for variations
@@ -1128,7 +1128,7 @@ class BlitzAgentWorkflow(Workflow):
             "blitzAgent_recall_similar_db_queries",
             "blitzAgent_inspect",
             "blitzAgent_sample",
-            "blitzAgent_scan"
+            "blitzAgent_search_tables"
         ]
         
         logger.info("🔍 TOOL DETECTION: Analyzing response for database tool usage...")
