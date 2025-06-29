@@ -1003,14 +1003,33 @@ async def create_hybrid_playground_agent(config: Optional[Config] = None, contex
 # BLITZAGENT WORKFLOW
 # =============================================================================
 
-
+class BlitzAgentWorkflow:
+    """
+    BlitzAgent Workflow for deterministic sports analytics.
     
-
-
+    This workflow combines multiple agents to provide comprehensive sports analysis
+    with built-in caching and automatic query generation.
+    """
+    
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        self.main_agent = None
+        self.query_generator = None
+        self._storage = None
         
-
+    async def arun(self, message: str, **kwargs):
+        """Execute the workflow with the given message."""
+        if not self.main_agent:
+            raise ValueError("Main agent not configured for workflow")
+            
+        # For now, delegate to main agent - can be extended with workflow logic
+        return await self.main_agent.arun(message, **kwargs)
         
-
+    def __getattr__(self, name):
+        """Delegate other attributes to main agent."""
+        if self.main_agent:
+            return getattr(self.main_agent, name)
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
 
 async def create_blitz_workflow(
