@@ -1,0 +1,75 @@
+{
+  "mcpServers": {
+    "blitz-agent-packaged": {
+      "command": "blitz-agent-mcp",
+      "args": [],
+      "env": {
+        "POSTGRES_HOST": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+        "POSTGRES_PORT": "5432", 
+        "POSTGRES_DATABASE": "mlb",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+        "POSTGRES_SSL": "true",
+        "AZURE_OPENAI_API_KEY": "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
+        "AZURE_OPENAI_ENDPOINT": "https://blitzgpt.openai.azure.com/",
+        "AZURE_OPENAI_API_VERSION": "2025-03-01-preview",
+        "AZURE_RESOURCE_NAME": "blitzgpt",
+        "AZURE_SEARCH_ENDPOINT": "https://blitz-ai-search.search.windows.net",
+        "AZURE_SEARCH_API_KEY": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
+        "AZURE_SEARCH_INDEX_NAME": "blitz-mlb-index",
+        "COSMOS_DB_ENDPOINT": "https://blitz-queries.documents.azure.com:443/",
+        "COSMOS_DB_KEY": "TOcf9Xq2Dk4vWkrIwmaiPh31TNwEqfl3AfxZiwErtDzoxQnL5RA8qxtXEKemorcVoLBv7zJ92Ut6ACDbVxU80w==",
+        "FIRECRAWL_API_KEY": "fc-67d24f59ced346bbbfff06ece6295321",
+        "SPORTSDATA_API_KEY": "47ea9395aa1c4bf9906df741e846e979",
+        "GEMINI_API_KEY": "AIzaSyDYEu2NRTlJiRqrRuBPqbeCdZXdEiX-9Vk"
+      }
+    },
+    "blitz-agent-uvx": {
+      "command": "uvx",
+      "args": ["run", "blitz-agent-mcp@./dist/blitz_agent_mcp-0.1.0-py3-none-any.whl"],
+      "env": {
+        "POSTGRES_HOST": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DATABASE": "mlb", 
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+        "POSTGRES_SSL": "true",
+        "AZURE_OPENAI_API_KEY": "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
+        "AZURE_OPENAI_ENDPOINT": "https://blitzgpt.openai.azure.com/",
+        "AZURE_OPENAI_API_VERSION": "2025-03-01-preview",
+        "AZURE_RESOURCE_NAME": "blitzgpt",
+        "AZURE_SEARCH_ENDPOINT": "https://blitz-ai-search.search.windows.net",
+        "AZURE_SEARCH_API_KEY": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
+        "AZURE_SEARCH_INDEX_NAME": "blitz-mlb-index",
+        "COSMOS_DB_ENDPOINT": "https://blitz-queries.documents.azure.com:443/",
+        "COSMOS_DB_KEY": "TOcf9Xq2Dk4vWkrIwmaiPh31TNwEqfl3AfxZiwErtDzoxQnL5RA8qxtXEKemorcVoLBv7zJ92Ut6ACDbVxU80w==",
+        "FIRECRAWL_API_KEY": "fc-67d24f59ced346bbbfff06ece6295321", 
+        "SPORTSDATA_API_KEY": "47ea9395aa1c4bf9906df741e846e979",
+        "GEMINI_API_KEY": "AIzaSyDYEu2NRTlJiRqrRuBPqbeCdZXdEiX-9Vk"
+      }
+    },
+    "blitz-agent-local-dev": {
+      "command": "/Users/tejassrinivasan/Documents/BlitzLLM/mcp/start.sh",
+      "env": {
+        "POSTGRES_HOST": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DATABASE": "mlb",
+        "POSTGRES_USER": "postgres", 
+        "POSTGRES_PASSWORD": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+        "POSTGRES_SSL": "true",
+        "AZURE_OPENAI_API_KEY": "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
+        "AZURE_OPENAI_ENDPOINT": "https://blitzgpt.openai.azure.com/",
+        "AZURE_OPENAI_API_VERSION": "2025-03-01-preview",
+        "AZURE_RESOURCE_NAME": "blitzgpt",
+        "AZURE_SEARCH_ENDPOINT": "https://blitz-ai-search.search.windows.net",
+        "AZURE_SEARCH_API_KEY": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
+        "AZURE_SEARCH_INDEX_NAME": "blitz-mlb-index",
+        "COSMOS_DB_ENDPOINT": "https://blitz-queries.documents.azure.com:443/",
+        "COSMOS_DB_KEY": "TOcf9Xq2Dk4vWkrIwmaiPh31TNwEqfl3AfxZiwErtDzoxQnL5RA8qxtXEKemorcVoLBv7zJ92Ut6ACDbVxU80w==",
+        "FIRECRAWL_API_KEY": "fc-67d24f59ced346bbbfff06ece6295321",
+        "SPORTSDATA_API_KEY": "47ea9395aa1c4bf9906df741e846e979", 
+        "GEMINI_API_KEY": "AIzaSyDYEu2NRTlJiRqrRuBPqbeCdZXdEiX-9Vk"
+      }
+    }
+  }
+} 
