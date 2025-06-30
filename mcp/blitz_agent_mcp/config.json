@@ -1,0 +1,52 @@
+{
+  "services": {
+    "firecrawl": {
+      "enabled": true,
+      "apiKey": "fc-67d24f59ced346bbbfff06ece6295321",
+      "description": "Web scraping service - get API key from https://firecrawl.dev/"
+    },
+    "sportsdata": {
+      "enabled": true,
+      "apiKey": "47ea9395aa1c4bf9906df741e846e979",
+      "description": "MLB Sports Data API for odds, games, and predictive stats"
+    },
+    "azure": {
+      "search": {
+        "enabled": true,
+        "endpoint": "https://blitz-ai-search.search.windows.net",
+        "apiKey": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
+        "indexName": "blitz-mlb-index",
+        "description": "Azure AI Search for contextual query learning"
+      },
+      "openai": {
+        "enabled": true,
+        "apiKey": "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
+        "endpoint": "https://blitzgpt.openai.azure.com/",
+        "resourceName": "blitzgpt",
+        "apiVersion": "2025-03-01-preview",
+        "description": "Azure OpenAI for the MLB insights agent"
+      }
+    },
+    "postgres": {
+      "enabled": true,
+      "host": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+      "port": 5432,
+      "database": "mlb",
+      "user": "postgres",
+      "password": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+      "ssl": true,
+      "description": "PostgreSQL database for structured MLB data"
+    },
+    "cosmosdb": {
+      "enabled": true,
+      "endpoint": "https://blitz-queries.documents.azure.com:443/",
+      "key": "TOcf9Xq2Dk4vWkrIwmaiPh31TNwEqfl3AfxZiwErtDzoxQnL5RA8qxtXEKemorcVoLBv7zJ92Ut6ACDbVxU80w==",
+      "description": "Cosmos DB for query history storage"
+    }
+  },
+  "server": {
+    "name": "mlb-insights-mcp-server",
+    "version": "1.0.0",
+    "description": "MLB Insights MCP Server with configurable data sources"
+  }
+} 
