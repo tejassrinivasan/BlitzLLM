@@ -12,8 +12,8 @@ from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from config import MAX_DATA_ROWS
-from utils import get_azure_chat_client, serialize_response
+from ..config import MAX_DATA_ROWS
+from ..utils import get_azure_chat_client, serialize_response
 
 __all__ = ["validate"]
 

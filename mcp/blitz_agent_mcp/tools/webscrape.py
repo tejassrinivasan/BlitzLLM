@@ -12,8 +12,8 @@ from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from config import FIRECRAWL_API_KEY
-from utils import serialize_response
+from ..config import FIRECRAWL_API_KEY
+from ..utils import serialize_response
 
 __all__ = ["webscrape"]
 

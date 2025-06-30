@@ -11,8 +11,8 @@ from pydantic import Field
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 
-from config import AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY, AZURE_SEARCH_INDEX
-from utils import get_azure_chat_client, serialize_response
+from ..config import AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY, AZURE_SEARCH_INDEX
+from ..utils import get_azure_chat_client, serialize_response
 
 logger = logging.getLogger(__name__)
 

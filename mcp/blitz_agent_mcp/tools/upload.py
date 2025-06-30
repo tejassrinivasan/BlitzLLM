@@ -9,8 +9,8 @@ from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from config import COSMOS_DB_ENDPOINT, COSMOS_DB_KEY
-from utils import serialize_response
+from ..config import COSMOS_DB_ENDPOINT, COSMOS_DB_KEY
+from ..utils import serialize_response
 
 __all__ = ["upload"]
 

@@ -74,8 +74,9 @@ packages = ["blitz_agent_mcp"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/blitz_agent_mcp",
-    "/README.md",
-    "/requirements.txt"
+    "/README.md", 
+    "/requirements.txt",
+    "/config.json"
 ]
 
 [tool.black]

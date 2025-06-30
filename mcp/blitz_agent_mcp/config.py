@@ -8,17 +8,26 @@ from urllib.parse import quote_plus
 # Try to load from config.json if available
 config_data = {}
 try:
-    # First try the mcp-ts directory
-    config_path = Path(__file__).parent.parent.parent / "mcp-ts" / "config.json"
-    if config_path.exists():
-        with open(config_path, 'r') as f:
-            config_data = json.load(f)
-    else:
-        # Fallback to the original location
-        config_path = Path(__file__).parent.parent.parent / "config.json"
+    # Try multiple locations in order of preference
+    config_locations = [
+        # 1. User's home directory (standard location)
+        Path.home() / ".config" / "blitz-agent-mcp" / "config.json",
+        Path.home() / ".blitz-agent-mcp" / "config.json", 
+        # 2. Package directory (bundled config)
+        Path(__file__).parent / "config.json",
+        # 3. Current working directory
+        Path.cwd() / "config.json", 
+        # 4. Package installation directory (for git installs)
+        Path(__file__).parent.parent / "config.json",
+        # 5. Development locations
+        Path(__file__).parent.parent.parent / "mcp" / "config.json",
+    ]
+    
+    for config_path in config_locations:
         if config_path.exists():
             with open(config_path, 'r') as f:
                 config_data = json.load(f)
+            break
 except Exception:
     pass
 

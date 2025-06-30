@@ -18,10 +18,10 @@ import seaborn as sns
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from config import get_postgres_url
-from models.connection import Connection
-from models.query import Query
-from utils import serialize_response
+from ..config import get_postgres_url
+from ..models.connection import Connection
+from ..models.query import Query
+from ..utils import serialize_response
 
 # Set matplotlib backend for headless operation
 matplotlib.use('Agg')

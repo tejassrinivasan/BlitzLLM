@@ -2,7 +2,7 @@
 
 from typing import Optional, Union
 from pydantic import BaseModel, Field, model_validator
-from models.connection import Connection
+from .connection import Connection
 
 
 class Query(BaseModel):

@@ -21,10 +21,10 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
-from config import get_postgres_url
-from models.connection import Connection
-from models.query import Query
-from utils import serialize_response
+from ..config import get_postgres_url
+from ..models.connection import Connection
+from ..models.query import Query
+from ..utils import serialize_response
 
 # Set matplotlib backend for headless operation
 matplotlib.use('Agg')

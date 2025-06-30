@@ -15,7 +15,7 @@ try:
 except ImportError:
     BM25Okapi = None
 
-from models.database import MatchMode
+from .database import MatchMode
 
 # Query timeout in seconds (default 60 seconds)
 QUERY_TIMEOUT = 60

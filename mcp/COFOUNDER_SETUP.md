@@ -17,19 +17,31 @@ Add this to your `~/.cursor/mcp.json` file:
 }
 ```
 
-## Step 2: Copy Config File from Repo
+## Step 2: Get Config File 
 
-Since the config file is already in the repo with all the correct API keys:
+You need to copy the config file from our repo. Choose one option:
 
+### Option A: Download from GitHub (easiest)
+1. Go to https://github.com/tejassrinivasan/BlitzLLM/blob/main/mcp/config.json
+2. Click "Raw" button
+3. Copy all the content
+4. Create the config directory and file:
 ```bash
-# Create the config directory
 mkdir -p ~/.config/blitz-agent-mcp
-
-# Copy the config from the repo (after cloning/pulling)
-cp ~/path/to/BlitzLLM/mcp/config.json ~/.config/blitz-agent-mcp/config.json
+# Then paste the content into this file:
+nano ~/.config/blitz-agent-mcp/config.json
 ```
 
-Or if you don't want to clone the whole repo, just copy the config.json content from GitHub and save it to `~/.config/blitz-agent-mcp/config.json`.
+### Option B: Clone the repo locally
+```bash
+# Clone the repo
+git clone https://github.com/tejassrinivasan/BlitzLLM.git
+cd BlitzLLM
+
+# Copy the config 
+mkdir -p ~/.config/blitz-agent-mcp
+cp mcp/config.json ~/.config/blitz-agent-mcp/config.json
+```
 
 ## Step 3: Restart Cursor
 

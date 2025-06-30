@@ -1,18 +1,18 @@
 """Tools package for the Blitz Agent MCP Server."""
 
-from tools.inspect import inspect
-from tools.sample import sample
-from tools.query import query
-from tools.search_tables import search_tables
-from tools.test import test
-from tools.recall import recall_similar_db_queries
-from tools.webscrape import webscrape
-from tools.api import get_api_docs, call_api_endpoint
-from tools.validate import validate
-from tools.upload import upload
-from tools.db_docs import get_database_documentation
-from tools.graph import generate_graph
-from tools.linear_regression import run_linear_regression
+from .inspect import inspect
+from .sample import sample
+from .query import query
+from .search_tables import search_tables
+from .test import test
+from .recall import recall_similar_db_queries
+from .webscrape import webscrape
+from .api import get_api_docs, call_api_endpoint
+from .validate import validate
+from .upload import upload
+from .db_docs import get_database_documentation
+from .graph import generate_graph
+from .linear_regression import run_linear_regression
 
 __all__ = [
     "inspect",
