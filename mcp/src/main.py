@@ -80,7 +80,8 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
         else:
             yield AppContext(url_map=url_map)
 
-    mcp = FastMCP("Blitz Agent MCP Server", lifespan=app_lifespan, host=host, port=port)
+    # Use stateless HTTP for production deployment
+    mcp = FastMCP("Blitz Agent MCP Server", lifespan=app_lifespan, host=host, port=port, stateless_http=True)
 
     # Add tools
     mcp.add_tool(inspect)
@@ -101,24 +102,24 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
     return mcp
 
 
-def run_sse_server(mcp_instance: FastMCP, host: str = "127.0.0.1", port: int = 8000):
-    """Run SSE server using FastMCP's built-in SSE transport"""
-    logger.info(f"Starting SSE server on {host}:{port}")
+def run_http_server(mcp_instance: FastMCP, transport: str, host: str = "127.0.0.1", port: int = 8000):
+    """Run HTTP server using FastMCP's built-in transport"""
+    logger.info(f"Starting {transport} server on {host}:{port}")
     
-    # Use FastMCP's built-in SSE transport
-    logger.info("Using FastMCP built-in SSE transport")
-    mcp_instance.run(transport="sse")
+    # Use FastMCP's built-in transport
+    logger.info(f"Using FastMCP built-in {transport} transport")
+    mcp_instance.run(transport=transport)
 
 
 @click.command()
 @click.option("--api-key", envvar="BLITZ_API_KEY", help="API key for authentication")
-@click.option("--transport", type=click.Choice(["stdio", "sse"]), default="stdio", help="Transport mode for MCP server")
-@click.option("--host", default="127.0.0.1", help="Host to bind the server to (for SSE transport)")
-@click.option("--port", type=int, default=None, help="Port to bind the server to (for SSE transport)")
+@click.option("--transport", type=click.Choice(["stdio", "sse", "streamable-http"]), default="stdio", help="Transport mode for MCP server (streamable-http recommended for production)")
+@click.option("--host", default="127.0.0.1", help="Host to bind the server to (for HTTP transports)")
+@click.option("--port", type=int, default=None, help="Port to bind the server to (for HTTP transports)")
 @click.argument("urls", nargs=-1)
 def main(
     api_key: str | None = None,
-    transport: Literal["stdio", "sse"] = "stdio",
+    transport: Literal["stdio", "sse", "streamable-http"] = "stdio",
     host: str = "127.0.0.1",
     port: int | None = None,
     urls: tuple[str, ...] = ()
@@ -127,7 +128,7 @@ def main(
     logger.info("Starting MCP server with urls: %s", urls)
     
     # For deployment platforms like Render, use environment variables
-    if transport == "sse":
+    if transport in ("sse", "streamable-http"):
         # Use PORT env var if available (Render, Heroku, etc.)
         if port is None:
             port = int(os.getenv("PORT", "8000"))
@@ -136,17 +137,17 @@ def main(
         if os.getenv("RENDER") or os.getenv("RAILWAY_PROJECT_ID") or os.getenv("HEROKU_APP_NAME"):
             host = "0.0.0.0"
         
-        logger.info(f"SSE server will bind to {host}:{port}")
+        logger.info(f"{transport} server will bind to {host}:{port}")
     else:
-        # For non-SSE transport, use defaults
+        # For non-HTTP transport, use defaults
         if port is None:
             port = 8000
     
     mcp_instance = get_mcp(urls, api_key, host, port)
     
     # Handle different transport modes
-    if transport == "sse":
-        run_sse_server(mcp_instance, host, port)
+    if transport in ("sse", "streamable-http"):
+        run_http_server(mcp_instance, transport, host, port)
     else:
         mcp_instance.run(transport=transport)
 

@@ -796,6 +796,7 @@ async def create_server_agent(config: Optional[Config] = None, context: Optional
     # Create agent
     agent = Agent(
         name="BlitzAgent Server",
+        agent_id="blitzagent-server",  # Explicit agent ID for API access
         tools=tools,
         description=get_agent_description(AgentType.SERVER, context),
         instructions=get_agent_instructions(AgentType.SERVER, context),
