@@ -1,0 +1,47 @@
+# Blitz Agent MCP Server Docker Image
+FROM python:3.11.11-slim
+
+# Create a non-root user and group
+RUN groupadd -r appgroup && useradd --no-log-init -r -m -g appgroup appuser
+
+# Set the working directory for the application
+WORKDIR /app
+
+# Give appuser ownership of the WORKDIR
+RUN chown appuser:appgroup /app
+
+# Install system dependencies and uv (as root, before switching user)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir uv==0.5.2
+
+# Create virtual environment, initially as root, then chown to appuser
+ENV VIRTUAL_ENV=/app/venv
+RUN python -m venv $VIRTUAL_ENV && chown -R appuser:appgroup $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Copy project files and set ownership
+COPY --chown=appuser:appgroup pyproject.toml ./
+COPY --chown=appuser:appgroup blitz_agent_mcp/ blitz_agent_mcp/
+COPY --chown=appuser:appgroup README.md ./
+COPY --chown=appuser:appgroup requirements.txt ./
+
+# Switch to non-root user
+USER appuser
+
+# Install Python dependencies using uv in the virtual environment
+RUN uv pip install --no-cache .[all]
+
+# Entrypoint script
+COPY --chmod=755 --chown=appuser:appgroup <<'EOF' /app/entrypoint.sh
+#!/bin/sh
+set -e
+
+echo "Starting Blitz Agent MCP server with args: $@"
+exec blitz-agent-mcp "$@"
+EOF
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000"] 

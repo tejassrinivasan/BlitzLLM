@@ -5,8 +5,21 @@ build-backend = "hatchling.build"
 [project]
 name = "blitz-agent-mcp"
 version = "0.1.0"
-description = "Blitz Agent MCP Server"
+description = "Blitz Agent MCP Server - Advanced sports database analysis and AI-powered insights"
 authors = [{ name = "Tejas Srinivasan", email = "tejas@blitzagent.com" }]
+readme = "README.md"
+license = "MIT"
+keywords = ["mcp", "server", "sports", "database", "ai", "analysis"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "fastmcp>=0.2.0",
     "httpx>=0.27.0",
@@ -43,17 +56,26 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
+all = [
+    "blitz-agent-mcp[dev]"
+]
 
 [project.scripts]
-blitz-agent-mcp = "src.main:main"
+blitz-agent-mcp = "blitz_agent_mcp.main:main"
+
+[project.urls]
+Homepage = "https://github.com/tejassrinivasan/BlitzLLM"
+Repository = "https://github.com/tejassrinivasan/BlitzLLM"
+Issues = "https://github.com/tejassrinivasan/BlitzLLM/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["blitz_agent_mcp"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src",
+    "/blitz_agent_mcp",
     "/README.md",
+    "/requirements.txt"
 ]
 
 [tool.black]

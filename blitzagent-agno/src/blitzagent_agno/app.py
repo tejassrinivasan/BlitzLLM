@@ -11,12 +11,41 @@ import structlog
 from typing import Optional
 
 from agno.app.fastapi.app import FastAPIApp
+from agno.agent import Agent
+from agno.models.gemini import Gemini
 from fastapi import FastAPI
 
-from .agent_factory import create_server_agent, RuntimeContext, RuntimeMode, ToneStyle
 from .config import get_config, Config
 
 logger = structlog.get_logger(__name__)
+
+
+async def create_simple_agent() -> Agent:
+    """Create a simple agent for testing registration."""
+    try:
+        # Create a simple Gemini model
+        model = Gemini(
+            id="gemini-2.5-pro",
+            api_key=os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY")),
+            temperature=0.1
+        )
+        
+        # Create minimal agent with explicit agent_id
+        agent = Agent(
+            name="BlitzAgent",
+            agent_id="blitzagent",  # Simple ID
+            model=model,
+            description="AI agent for sports analytics",
+            instructions="You are a helpful AI assistant for sports analytics.",
+            markdown=True
+        )
+        
+        logger.info(f"Simple agent created with ID: {agent.agent_id}")
+        return agent
+        
+    except Exception as e:
+        logger.error("Failed to create simple agent", error=str(e))
+        raise
 
 
 async def create_blitz_fastapi_app(
@@ -36,33 +65,18 @@ async def create_blitz_fastapi_app(
         Configured FastAPIApp instance
     """
     try:
-        # Load configuration
-        if config is None:
-            config = get_config()
+        logger.info("Creating simplified BlitzAgent FastAPI app")
         
-        logger.info("Creating BlitzAgent FastAPI app", model_override=model_override)
+        # Create simple agent for testing
+        agent = await create_simple_agent()
         
-        # Create runtime context for server mode
-        context = RuntimeContext(
-            mode=RuntimeMode.CONVERSATION,
-            tone=ToneStyle.PROFESSIONAL
-        )
-        
-        # Create the agent using the server agent factory
-        agent = await create_server_agent(
-            config=config,
-            context=context,
-            model_override=model_override
-        )
-        
-        logger.info("BlitzAgent created successfully")
+        logger.info("Simple agent created successfully")
         
         # Create FastAPI app using Agno's wrapper
         fastapi_app = FastAPIApp(
             agents=[agent],
             name="BlitzAgent",
-            app_id="blitzagent",
-            description="Advanced AI Agent for sports analytics and database insights with reasoning and memory capabilities.",
+            description="Simplified AI Agent for testing.",
         )
         
         logger.info(f"FastAPI app created, will serve on port {port}")
@@ -89,7 +103,38 @@ def create_app() -> FastAPI:
                 model_override=model_override,
                 port=port
             )
-            return fastapi_app.get_app(use_async=True, prefix="/v1")
+            # Get the FastAPI app and add our custom endpoints
+            app = fastapi_app.get_app(use_async=True)
+            
+            # Add custom endpoints to the extracted app
+            @app.get("/")
+            async def root():
+                """Root endpoint for deployment verification."""
+                return {
+                    "service": "BlitzAgent",
+                    "status": "running", 
+                    "description": "Simplified AI Agent for testing",
+                    "version": "0.1.0-simple",
+                    "endpoints": {
+                        "chat": "/v1/runs",
+                        "status": "/v1/status", 
+                        "docs": "/docs",
+                        "health": "/health"
+                    },
+                    "model": model_override or "gemini-2.5-pro"
+                }
+            
+            @app.get("/health")
+            async def health():
+                """Health check endpoint for deployment monitoring."""
+                return {
+                    "status": "healthy",
+                    "service": "BlitzAgent",
+                    "model": model_override or "gemini-2.5-pro",
+                    "timestamp": 0
+                }
+            
+            return app
         
         # Handle event loop properly
         try:
@@ -116,32 +161,7 @@ def create_app() -> FastAPI:
             # No event loop is running, we can create one
             app = asyncio.run(_create_app())
         
-        # Add custom root endpoint for deployment verification
-        @app.get("/")
-        async def root():
-            """Root endpoint for deployment verification."""
-            return {
-                "service": "BlitzAgent",
-                "status": "running", 
-                "description": "Advanced AI Agent for sports analytics and database insights",
-                "version": "0.1.0",
-                "endpoints": {
-                    "chat": "/v1/run",
-                    "docs": "/docs",
-                    "health": "/health"
-                },
-                "model": model_override or "default"
-            }
-        
-        @app.get("/health")
-        async def health():
-            """Health check endpoint for deployment monitoring."""
-            return {
-                "status": "healthy",
-                "service": "BlitzAgent",
-                "model": model_override or "default",
-                "timestamp": asyncio.get_event_loop().time()
-            }
+
         
         logger.info("FastAPI app created successfully", model=model_override, port=port)
         return app
@@ -180,9 +200,13 @@ if __name__ == "__main__":
     import uvicorn
     
     # Get configuration
-    config = get_config()
-    port = int(os.getenv("PORT", str(config.server.port)))
-    host = os.getenv("HOST", config.server.host)
+    try:
+        config = get_config()
+        port = int(os.getenv("PORT", str(config.server.port)))
+        host = os.getenv("HOST", config.server.host)
+    except:
+        port = int(os.getenv("PORT", "8000"))
+        host = os.getenv("HOST", "0.0.0.0")
     
     logger.info(f"Starting BlitzAgent FastAPI server on {host}:{port}")
     
@@ -190,7 +214,7 @@ if __name__ == "__main__":
         "blitzagent_agno.app:app",
         host=host,
         port=port,
-        reload=config.server.auto_reload and not config.is_production(),
-        workers=1,  # Use 1 worker for async app
+        reload=False,
+        workers=1,
         log_level="info"
     ) 

@@ -20,9 +20,9 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 from sqlalchemy.engine.url import make_url
 
-from config import API_KEY_HEADER, BACKEND_URL, get_postgres_url
-from models.connection import Connection
-from tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, get_api_docs, call_api_endpoint, generate_graph, run_linear_regression
+from .config import API_KEY_HEADER, BACKEND_URL, get_postgres_url
+from .models.connection import Connection
+from .tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, get_api_docs, call_api_endpoint, generate_graph, run_linear_regression
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
