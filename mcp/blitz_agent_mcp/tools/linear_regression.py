@@ -8,26 +8,26 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
+from typing import TYPE_CHECKING
 from mcp.server.fastmcp import Context
 from pydantic import Field
-from scipy import stats
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
 from ..config import get_postgres_url
 from ..models.connection import Connection
 from ..models.query import Query
 from ..utils import serialize_response
 
-# Set matplotlib backend for headless operation
-matplotlib.use('Agg')
+if TYPE_CHECKING:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    from scipy import stats
+    from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+    from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+    from sklearn.model_selection import train_test_split, cross_val_score
+    from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
 __all__ = ["run_linear_regression"]
 
@@ -95,6 +95,15 @@ async def run_linear_regression(
     logger = logging.getLogger("blitz-agent-mcp")
     
     try:
+        # Import heavy dependencies only when needed
+        import numpy as np
+        import pandas as pd
+        from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+        from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+        from sklearn.model_selection import train_test_split, cross_val_score
+        from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+        from scipy import stats
+        
         # Get data from query or table
         if any(keyword in data_source.upper() for keyword in ['SELECT', 'FROM', 'WHERE', 'JOIN']):
             # Execute SQL query
@@ -250,6 +259,13 @@ async def run_linear_regression(
         
         # Create diagnostic plots
         if include_plots:
+            import matplotlib
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            
+            # Set matplotlib backend for headless operation
+            matplotlib.use('Agg')
+            
             fig, axes = plt.subplots(2, 2, figsize=(12, 10))
             fig.suptitle('Regression Diagnostic Plots', fontsize=16)
             

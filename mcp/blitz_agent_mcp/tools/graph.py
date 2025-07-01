@@ -9,12 +9,7 @@ import tempfile
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import seaborn as sns
+from typing import TYPE_CHECKING
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
@@ -23,8 +18,13 @@ from ..models.connection import Connection
 from ..models.query import Query
 from ..utils import serialize_response
 
-# Set matplotlib backend for headless operation
-matplotlib.use('Agg')
+if TYPE_CHECKING:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import seaborn as sns
 
 __all__ = ["generate_graph"]
 
@@ -55,8 +55,9 @@ async def _get_context_field(field: str, ctx: Context) -> Any:
     return getattr(getattr(getattr(ctx, "request_context", None), "lifespan_context", None), field, None)
 
 
-async def _execute_query_if_needed(ctx: Context, data_source: str) -> pd.DataFrame:
+async def _execute_query_if_needed(ctx: Context, data_source: str):
     """Execute a SQL query if data_source is a query, otherwise treat as table name."""
+    import pandas as pd
     logger = logging.getLogger("blitz-agent-mcp")
     
     # Check if it looks like a SQL query
@@ -104,7 +105,7 @@ async def _execute_query_if_needed(ctx: Context, data_source: str) -> pd.DataFra
 
 
 def _create_matplotlib_plot(
-    df: pd.DataFrame,
+    df,
     graph_type: GraphType,
     x_column: Optional[str],
     y_column: Optional[str],
@@ -114,6 +115,13 @@ def _create_matplotlib_plot(
     **kwargs
 ) -> str:
     """Create a matplotlib/seaborn plot and return as base64."""
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    
+    # Set matplotlib backend for headless operation
+    matplotlib.use('Agg')
+    
     plt.figure(figsize=(width/100, height/100))
     
     if graph_type == GraphType.LINE:
@@ -205,7 +213,7 @@ def _create_matplotlib_plot(
 
 
 def _create_plotly_plot(
-    df: pd.DataFrame,
+    df,
     graph_type: GraphType,
     x_column: Optional[str],
     y_column: Optional[str],
@@ -215,6 +223,9 @@ def _create_plotly_plot(
     **kwargs
 ) -> Union[str, Dict]:
     """Create a plotly plot and return as HTML or JSON."""
+    import plotly.express as px
+    import plotly.graph_objects as go
+    
     fig = None
     
     if graph_type == GraphType.LINE:
