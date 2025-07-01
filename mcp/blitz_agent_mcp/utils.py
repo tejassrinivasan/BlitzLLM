@@ -6,10 +6,13 @@ import re
 from datetime import datetime
 from typing import Any, Dict
 
-import pandas as pd
-from openai import AzureOpenAI
+from typing import TYPE_CHECKING
 
 from .config import MAX_DATA_ROWS, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from openai import AzureOpenAI
 
 __all__ = ["serialize_response"]
 
@@ -19,8 +22,9 @@ def tokenize(text: str) -> list[str]:
     return [token.lower() for token in re.split(r"[/._-]+", text) if token]
 
 
-def get_azure_chat_client() -> AzureOpenAI:
+def get_azure_chat_client():
     """Get an Azure Chat OpenAI client."""
+    from openai import AzureOpenAI
     return AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
         azure_endpoint=AZURE_OPENAI_ENDPOINT,
@@ -38,7 +42,7 @@ def serialize_response(response: Any) -> Any:
         return response
 
 
-def serialize_dataframe(df: pd.DataFrame) -> dict[str, Any]:
+def serialize_dataframe(df) -> dict[str, Any]:
     """
     Convert a pandas DataFrame to a JSON-serializable response format with pagination.
 
@@ -55,6 +59,7 @@ def serialize_dataframe(df: pd.DataFrame) -> dict[str, Any]:
 
     def serialize_value(v: Any) -> Any:
         """Serialize individual values, handling special types like datetime and NaN."""
+        import pandas as pd
         # Convert pandas and Python datetime objects to ISO format, handle NaT/NaN
         if pd.isna(v):
             return None
