@@ -185,7 +185,8 @@ class BlitzAgent:
     
     def __init__(self, config: Optional[Config] = None, context: Optional[RuntimeContext] = None):
         """Initialize the BlitzAgent."""
-        self.config = config or Config()
+        from .config import load_config
+        self.config = config or load_config()
         self.context = context or RuntimeContext(mode=RuntimeMode.CONVERSATION, tone=ToneStyle.PROFESSIONAL)
         self.metrics = MetricsCollector()
         
@@ -409,14 +410,14 @@ class BlitzAgent:
                         azure_endpoint=self.config.model.reasoning_azure_endpoint,
                         azure_deployment=self.config.model.reasoning_azure_deployment,
                         api_version=self.config.model.azure_api_version,
-                        temperature=0.6,
+                        temperature=0.1,
                         max_tokens=1024
                     )
                 elif self.config.model.reasoning_provider == "gemini":
                     reasoning_model = Gemini(
                         id=self.config.model.reasoning_model_name or "gemini-2.5-pro",
                         api_key=self.config.model.reasoning_api_key,
-                        temperature=0.6,
+                        temperature=0.1,
                         top_p=0.95
                     )
                 

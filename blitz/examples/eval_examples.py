@@ -6,7 +6,7 @@ accuracy, performance, and reliability dimensions.
 """
 
 import asyncio
-from blitzagent_agno.evals import (
+from blitz.evals import (
     BlitzAccuracyEval, 
     BlitzPerformanceEval, 
     BlitzReliabilityEval,
@@ -14,11 +14,11 @@ from blitzagent_agno.evals import (
     EvalConfig,
     quick_eval
 )
-from blitzagent_agno.evals.accuracy_eval import SportsDomainTestCase
-from blitzagent_agno.evals.performance_eval import PerformanceTestCase
-from blitzagent_agno.evals.reliability_eval import ReliabilityTestCase
-from blitzagent_agno.config import Config
-from blitzagent_agno.agent_factory import RuntimeContext, RuntimeMode, ToneStyle
+from blitz.evals.accuracy_eval import SportsDomainTestCase
+from blitz.evals.performance_eval import PerformanceTestCase
+from blitz.evals.reliability_eval import ReliabilityTestCase
+from blitz.config import Config
+from blitz.agent_factory import RuntimeContext, RuntimeMode, ToneStyle
 
 
 async def example_accuracy_evaluation():

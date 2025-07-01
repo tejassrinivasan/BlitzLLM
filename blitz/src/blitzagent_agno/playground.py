@@ -96,12 +96,12 @@ async def run_server() -> None:
     )
     
     # Create MCP tools with proper async context management
-    from .agent_factory import create_mcp_tools
+    from .agent_factory import create_mcp_tools_async
     from agno.tools.reasoning import ReasoningTools
     from agno.agent import Agent
-    from .agent_factory import create_agno_model, create_agno_storage, create_agno_memory, get_agent_instructions, blitzAgent_upload_with_confirmation, create_model_from_config
+    from .agent_factory import create_agno_model, create_agno_storage, create_agno_memory, get_agent_instructions, upload_with_confirmation, create_model_from_config
     
-    async with create_mcp_tools(config) as mcp_tools:
+    async with create_mcp_tools_async(config) as mcp_tools:
         print("✅ MCP Server connected successfully with all tools loaded")
         
         # Create agent components with model override if specified
@@ -115,7 +115,7 @@ async def run_server() -> None:
         memory = await create_agno_memory(config) if context.should_enable_memory() else None
         
         # Create tools list with MCP tools properly included
-        tools = [ReasoningTools(add_instructions=True), mcp_tools, blitzAgent_upload_with_confirmation]
+        tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
         
         # Create single agent
         single_agent = Agent(

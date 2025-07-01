@@ -269,7 +269,7 @@ async def generate_title(client, user_prompt: str) -> str:
                     ),
                 },
             ],
-            temperature=0,
+            temperature=0.1,
             max_tokens=30,
         )
         return response.choices[0].message.content.strip()

@@ -27,7 +27,7 @@ async def create_simple_agent() -> Agent:
         model = Gemini(
             id="gemini-2.5-pro",
             api_key=os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY")),
-            temperature=0.1
+            temperature=0
         )
         
         # Create minimal agent with explicit agent_id
@@ -195,7 +195,7 @@ app = create_app()
 if __name__ == "__main__":
     """
     Run the FastAPI app locally for development.
-    For production, use: uvicorn blitzagent_agno.app:app
+    For production, use: uvicorn blitz.app:app
     """
     import uvicorn
     
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     logger.info(f"Starting BlitzAgent FastAPI server on {host}:{port}")
     
     uvicorn.run(
-        "blitzagent_agno.app:app",
+        "blitz.app:app",
         host=host,
         port=port,
         reload=False,

@@ -251,7 +251,7 @@ blitzagent-server
 
 **Alternative:**
 ```bash
-uvicorn blitzagent_agno.server:app --host 0.0.0.0 --port 8000
+uvicorn blitz.server:app --host 0.0.0.0 --port 8000
 ```
 
 **Available endpoints:**
@@ -546,7 +546,7 @@ COPY . .
 RUN pip install -e .
 
 EXPOSE 8000
-CMD ["uvicorn", "blitzagent_agno.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "blitz.server:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ### Environment Variables for Production
@@ -668,5 +668,5 @@ The system properly handles PostgreSQL's `public.vector` type:
 
 4. **Run playground**:
    ```bash
-   python -m blitzagent_agno.playground
+   python -m blitz.playground
    ``` 

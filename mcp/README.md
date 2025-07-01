@@ -19,7 +19,7 @@ A comprehensive Model Context Protocol (MCP) server for sports database analysis
 
 ### 🌐 External Integrations
 - **Webscrape**: Extract content using Firecrawl
-- **API**: Discover and call OpenAPI endpoints
+- **Betting Tools**: Fetch live MLB betting events and markets from SportsData.io
 - **Upload**: Store successful queries in Cosmos DB
 
 ### 📚 Knowledge Management
@@ -206,12 +206,19 @@ Extract content using Firecrawl.
 }
 ```
 
-#### `api`
-Discover and call OpenAPI endpoints.
+#### `get_betting_events_by_date`
+Fetch all MLB betting events for a specific date.
 ```json
 {
-  "action": "discover",
-  "openapi_url": "https://api.example.com/openapi.json"
+  "date": "2025-06-30"
+}
+```
+
+#### `get_betting_markets_for_event`
+Get detailed betting markets and odds for a specific event.
+```json
+{
+  "event_id": 14219
 }
 ```
 

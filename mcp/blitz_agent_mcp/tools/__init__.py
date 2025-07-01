@@ -13,6 +13,7 @@ from .upload import upload
 from .db_docs import get_database_documentation
 from .graph import generate_graph
 from .linear_regression import run_linear_regression
+from .betting import get_betting_events_by_date, get_betting_markets_for_event
 
 __all__ = [
     "inspect",
@@ -29,4 +30,6 @@ __all__ = [
     "get_database_documentation",
     "generate_graph",
     "run_linear_regression",
+    "get_betting_events_by_date",
+    "get_betting_markets_for_event",
 ] 

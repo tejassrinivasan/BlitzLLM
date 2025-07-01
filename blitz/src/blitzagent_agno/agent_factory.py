@@ -8,10 +8,11 @@ that can be reused across the codebase (CLI, playground, server, etc.).
 import asyncio
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union, Iterator
+from typing import Any, Dict, List, Optional, Union, Iterator, AsyncIterator
 from textwrap import dedent
 from dataclasses import dataclass
 from enum import Enum
+from contextlib import asynccontextmanager
 import structlog
 
 # Load environment variables from .env file
@@ -121,7 +122,7 @@ async def create_model_from_config(model_config: Dict[str, Any], base_config: Op
         temperature = base_config.model.temperature
         max_tokens = base_config.model.max_tokens
     else:
-        temperature = 0.1
+        temperature=0.1
         max_tokens = 4096
     
     provider = model_config["provider"]
@@ -241,7 +242,7 @@ class RuntimeContext:
 # =============================================================================
 
 @tool(requires_confirmation=True)
-def blitzAgent_upload_with_confirmation(
+def upload_with_confirmation(
     description: str,
     query: str
 ) -> str:
@@ -346,43 +347,76 @@ async def create_agno_model(config: Config):
 
 
 def create_mcp_tools(config: Config) -> MCPTools:
-    """Create MCP tools with proper server configuration."""
-    # Get path to MCP server script
+    """Create MCP tools with proper server configuration (sync version)."""
+    # Get absolute path to MCP server script  
     mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
-    mcp_command = f"{mcp_path}/start.sh"
+    mcp_script = mcp_path / "start.sh"
+    
+    # Use absolute path for the command
+    mcp_command = str(mcp_script.absolute())
     
     # Log the MCP path for debugging
     logger.info(f"Looking for MCP server at: {mcp_command}")
     
     # Check if the MCP script exists
-    if not Path(mcp_command).exists():
+    if not mcp_script.exists():
         logger.error(f"MCP start script not found at: {mcp_command}")
-        # Try alternative path
-        alt_mcp_path = Path(__file__).parent.parent.parent.parent / "mcp-ts"
-        alt_mcp_command = f"{alt_mcp_path}/start.sh"
-        logger.info(f"Trying alternative MCP server at: {alt_mcp_command}")
-        mcp_command = alt_mcp_command
+        raise FileNotFoundError(f"MCP start script not found at: {mcp_command}")
     
-    # Initialize the MCP server
+    # Initialize the MCP server with absolute path and proper timeouts
     server_params = StdioServerParameters(
         command="bash",
         args=[mcp_command],
-        read_timeout_seconds=30
+        read_timeout_seconds=30  # Sufficient time for startup
     )
     
     try:
-        # Set timeout_seconds to match the config.mcp.timeout (default 30 seconds)
-        # The default MCPTools timeout is only 5 seconds, which causes webscrape timeouts
+        # Use reasonable timeout for MCP tools initialization
         mcp_tools = MCPTools(
             server_params=server_params,
-            timeout_seconds=config.mcp.timeout  # Use config timeout instead of default 5s
+            timeout_seconds=30  # Sufficient time for initialization
         )
-        logger.info(f"MCP tools created successfully with {config.mcp.timeout}s timeout")
+        logger.info(f"MCP tools created successfully with 30s timeout")
         return mcp_tools
     except Exception as e:
         logger.error(f"Failed to create MCP tools: {e}")
-        # Return a placeholder or raise the error
-        raise
+        # Instead of raising, return None or create a fallback
+        # This prevents the CLI from hanging if MCP tools fail
+        raise RuntimeError(f"MCP tools initialization failed: {e}. The agent will not have database/API access.")
+
+
+@asynccontextmanager
+async def create_mcp_tools_async(config: Config) -> AsyncIterator[MCPTools]:
+    """Create MCP tools as an async context manager for proper connection handling."""
+    # Get absolute path to MCP server script  
+    mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
+    mcp_script = mcp_path / "start.sh"
+    
+    # Use absolute path for the command
+    mcp_command = str(mcp_script.absolute())
+    
+    # Log the MCP path for debugging
+    logger.info(f"Looking for MCP server at: {mcp_command}")
+    
+    # Check if the MCP script exists
+    if not mcp_script.exists():
+        logger.error(f"MCP start script not found at: {mcp_command}")
+        raise FileNotFoundError(f"MCP start script not found at: {mcp_command}")
+    
+    # Initialize the MCP server with absolute path and proper timeouts
+    server_params = StdioServerParameters(
+        command="bash",
+        args=[mcp_command],
+        read_timeout_seconds=30  # Sufficient time for startup
+    )
+    
+    # Use MCPTools directly as an async context manager
+    async with MCPTools(
+        server_params=server_params,
+        timeout_seconds=30  # Sufficient time for initialization
+    ) as mcp_tools:
+        logger.info(f"MCP tools connected successfully")
+        yield mcp_tools
 
 
 async def create_agno_storage(config: Config) -> PostgresStorage:
@@ -452,42 +486,94 @@ def get_agent_instructions(agent_type: str = AgentType.BASIC, context: Optional[
         return get_query_generator_instructions(context)
     
     # Base instructions for all other agent types
-    base_instructions = dedent(f"""
-                    You have access to three distinct sources where the tools get their data from:
+    base_instructions = dedent("""
+                    You are an AI sports analytics agent with deep expertise in MLB data.
+                    Your job is to use the tools available to you to answer the user's question. 
+
+                    ---
+                    Today's Date: 6/30/2025
+
+                    You have access to two distinct sources where the tools get their data from:
 
                     ### 1. HISTORICAL DATABASE (PostgreSQL) - Only contains data until yesterday
 
                     MANDATORY WORKFLOW SEQUENCE (NO EXCEPTIONS):
-                    blitzAgent_get_database_documentation → blitzAgent_recall_similar_db_queries → blitzAgent_search_tables → blitzAgent_inspect → blitzAgent_sample → blitzAgent_query → blitzAgent_validate → blitzAgent_upload
+                    get_database_documentation → recall_similar_db_queries → search_tables → inspect → sample → query → validate → upload
 
                     MANDATORY RULES FOR DATABASE QUERIES:
-                    - **STEP 1: ALWAYS CALL blitzAgent_get_database_documentation FIRST**
-                    - **STEP 2: IMMEDIATELY AFTER DOCUMENTATION, ALWAYS CALL blitzAgent_recall_similar_db_queries - NEVER SKIP THIS!**
-                    - **STEP 3: THEN PROCEED WITH blitzAgent_search_tables, blitzAgent_inspect, blitzAgent_sample**
-                    - **THE blitzAgent_recall_similar_db_queries TOOL IS MANDATORY - DO NOT PROCEED WITHOUT IT**
-                    - You MUST use the blitzAgent_validate tool immediately after blitzAgent_query. NEVER return query results as final without validation
-                    - If blitzAgent_validate returns that the query is not very accurate or provides recommendations to improve the query, AUTOMATICALLY iterate through the workflow again in a loop until the query is good/accurate.
-                    - **CRITICAL: When blitzAgent_validate confirms the query is good/accurate, you MUST IMMEDIATELY use the blitzAgent_upload tool to store the query**
-                    - **NEVER complete your response without calling blitzAgent_upload after a successful validation**
-                    - **THE UPLOAD STEP IS MANDATORY - DO NOT SKIP IT**
-                
-                    FOR FOLLOWUP QUESTIONS IN A CONVERSATION:
-                    - First check if you still have the database documentation in memory. If not, use the blitzAgent_get_database_documentation tool again to refresh it.
-                    - **MANDATORY: ALWAYS use the blitzAgent_recall_similar_db_queries tool again to find relevant past queries that can help answer the current question.**
-                    - **DO NOT SKIP blitzAgent_recall_similar_db_queries - IT IS REQUIRED FOR EVERY DATABASE QUERY**
-                    - ALWAYS use the blitzAgent_validate tool again after running a query - iterate if needed
+                    - **STEP 1: ALWAYS CALL get_database_documentation FIRST**
+                    - **STEP 2: IMMEDIATELY AFTER DOCUMENTATION, ALWAYS CALL recall_similar_db_queries - NEVER SKIP THIS!**
+                    - **STEP 3: THEN PROCEED WITH search_tables, inspect, sample if needed**
+                    - **THE recall_similar_db_queries TOOL IS MANDATORY - DO NOT PROCEED WITHOUT IT**
+                    - You MUST use the validate tool immediately after query. NEVER return query results as final without validation
+                    - If validate returns that the query is not very accurate or provides recommendations to improve the query, AUTOMATICALLY iterate through the workflow again in a loop until the query is good/accurate.
+
+                    ---
+                    ### 2. LIVE BETTING DATA (SportsData.io)
+                    - Use this for real-time betting lines and odds for scheduled games
+                    - For questions about upcoming betting lines or odds for specific games
                     
-                    ---
-                    ### 2. API ENDPOINTS
-                    - Use this for real-time betting lines, starting lineups, scheduled games, or projections
+                    **Specialized Betting Tools:**
+                    You have access to dedicated betting tools that automatically handle API authentication and data formatting:
+                    
+                    **Required Two-Step Workflow:**
+                    1. **Get Betting Events by Date:** Use `get_betting_events_by_date(date="2025-06-30")`
+                       - Returns list of games with BettingEventID for each game
+                       - Takes a date in YYYY-MM-DD format
+                    2. **Get Betting Markets for Event:** Use `get_betting_markets_for_event(event_id=14219)`
+                       - Use BettingEventID from step 1
+                       - Automatically includes available markets only
+                       - Returns comprehensive odds, spreads, totals, and props
+                    
+                    **Complete Workflow Example:**
+                    ```
+                    # Step 1: Get betting events for the date
+                    get_betting_events_by_date(date="2025-06-30")
+                    
+                    # Step 2: Get betting markets for specific game (use BettingEventID from step 1)
+                    get_betting_markets_for_event(event_id=14219)
+                    ```
+                    
+                    **Key Benefits:**
+                    - No need to manage API keys or endpoints manually
+                    - Automatic error handling and data validation
+                    - Always returns available betting markets only
+                    - Structured, consistent data format
 
                     ---
-                    ### 3. WEB SCRAPING & SEARCH - Be generous with using this tool to supplement the other data sources
-                    - Always cite source URLs
-                    - Use to fill gaps not covered by the database or API and supplement the other data sources
+                    ### BETTING ANALYSIS - MANDATORY TWO-PART WORKFLOW
+                    
+                    When a user asks for **prop or bet recommendations**, you MUST always perform BOTH analyses below:
+                    
+                    ## PART 1: EV-BASED ANALYSIS (REQUIRED)
+                    **Step 1:** Get betting data using get_betting_events_by_date/get_betting_markets_for_event
+                    **Step 2:** For each bet, compare odds across ALL available sportsbooks and calculate:
+                    - Convert each odds format to implied probability: 
+                      * American odds (+150) = 100/(150+100) = 40% implied probability
+                      * American odds (-150) = 150/(150+100) = 60% implied probability
+                    - **FLAG any props where sportsbooks have >10% difference in implied probability**
+                    - **These are your best EV plays** - recommend the sportsbook with the most favorable odds
+                    
+                    **Example:** If DraftKings has "Player A Over 0.5 Singles" at +150 (40% implied) but FanDuel has it at +120 (45.5% implied), DraftKings offers better value.
+                    
+                    ## PART 2: TREND-BASED ANALYSIS (REQUIRED AND MUST BE DONE, NO EXCEPTIONS)  
+                    **Step 1:** Use get_database_documentation
+                    **Step 2:** Check how often the upcoming bet lines have hit in the last 10 games by querying the games, battingstatsgame, and pitchingstatsgame tables
+                    - Calculate hit rate. For example, "Player X has hit Over 0.5 Singles in 8 of last 10 games (80%)"
+                    - Compare hit rate to implied probability from odds
+                    
+                    **Step 3:** Flag props where historical performance significantly differs from bookmaker odds:
+                    - If player hits prop 80% historically but odds imply 40%, that's a STRONG BUY
+                    - If player hits prop 30% historically but odds imply 60%, that's a STRONG FADE
 
                     ---
-                    {context.get_response_standards()}
+                    ## RESPONSE STANDARDS
+                    - Provide a comprehensive analysis
+                    - Include specific data points, time frames, numbers, player/team names, matchups, and statistics to support insights
+                    - Focus on actionable intelligence and trends
+                    - Cite all sources used (URLs for web scraping, API endpoints)
+                    - Do NOT reference any tool names, methods, table names, database names, or ANY other proprietary information
+                    - Handle edge cases gracefully (e.g., no data, tool failure)
                     """)
     
     # Add custom instructions if provided
@@ -502,7 +588,11 @@ def get_query_generator_description(context: Optional[RuntimeContext] = None) ->
     if context is None:
         context = RuntimeContext(mode=RuntimeMode.INSIGHT, tone=ToneStyle.ANALYTICAL)
     
-    description = dedent("""You are a specialized SQL Query Generation Agent for sports analytics databases.
+    description = dedent(f"""
+    
+    Today's Date: {datetime.now().strftime("%Y-%m-%d")}
+
+    You are a specialized SQL Query Generation Agent for sports analytics databases.
 
     ## YOUR PRIMARY MISSION: DISCOVER NEW QUERIES THAT CAN BE USED TO ANSWER QUESTIONS IN THE FUTURE
     Generate 5-10 similar/reworded query variations based on a provided description and base query.
@@ -517,16 +607,18 @@ def get_query_generator_instructions(context: Optional[RuntimeContext] = None) -
     if context is None:
         context = RuntimeContext(mode=RuntimeMode.INSIGHT, tone=ToneStyle.ANALYTICAL)
     
-    instructions = dedent("""
+    instructions = dedent(f"""
+    Today's Date: {datetime.now().strftime("%Y-%m-%d")}
+
     ## MANDATORY 6-STEP PROCESS (STRICTLY FOLLOW THIS ORDER)
 
     ### Step 1: Database Documentation
-    **ALWAYS START HERE** - Call blitzAgent_get_database_documentation
+    **ALWAYS START HERE** - Call get_database_documentation
     - Understand available tables, columns, and relationships
     - Identify relevant data for the query variations
 
     ### Step 2: Database Analysis (ALWAYS USE THESE TOOLS TO INSPIRE YOU TO CREATE VARIATIONS)
-    Call blitzAgent_search_tables, blitzAgent_inspect, and blitzAgent_sample:
+    Call search_tables, inspect, and sample:
     - Explore table structures and data types
     - Understand data ranges and available values
     - Identify key columns for variations
@@ -553,7 +645,7 @@ def get_query_generator_instructions(context: Optional[RuntimeContext] = None) -
     - Various statistical functions (avg, sum, max, percentiles, etc.)
 
     ### Step 4: Query Recall (MOST IMPORTANT STEP - NEVER SKIP)
-    **MANDATORY: Call blitzAgent_recall_similar_db_queries**
+    **MANDATORY: Call recall_similar_db_queries**
     - This tool is REQUIRED before writing any queries
     - Search for similar existing queries
     - Learn from past patterns and approaches
@@ -562,13 +654,13 @@ def get_query_generator_instructions(context: Optional[RuntimeContext] = None) -
 
     ### Step 5: Execute and Validate Each Query
     For EACH variation:
-    - Call blitzAgent_query to execute
-    - Call blitzAgent_validate to check accuracy
+    - Call query to execute
+    - Call validate to check accuracy
     - If validation fails, refine the query and re-validate
     - Only proceed to upload after successful validation
 
     ### Step 6: Upload Successful Queries
-    - Call blitzAgent_upload for each validated query
+    - Call upload for each validated query
     - Provide clear descriptions of what each variation explores
     - Build the learning database for future use
 
@@ -662,7 +754,7 @@ async def create_playground_agent(
     if context.should_enable_memory():
         memory = await create_agno_memory(config)
     
-    # Create tools
+    # Create tools (same as playground)
     tools = [ReasoningTools(add_instructions=True)]
     
     # Add MCP tools
@@ -671,7 +763,7 @@ async def create_playground_agent(
     
     # Add confirmation tool if enabled
     if enable_confirmations:
-        tools.append(blitzAgent_upload_with_confirmation)
+        tools.append(upload_with_confirmation)
     
     # Create agent
     agent = Agent(
@@ -695,17 +787,19 @@ async def create_playground_agent(
     return agent
 
 
-async def create_cli_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> Agent:
+@asynccontextmanager 
+async def create_cli_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> AsyncIterator[Agent]:
     """
-    Create an Agno Agent specifically configured for CLI use.
+    Create a CLI agent with properly managed MCP tools in an async context manager.
+    This mirrors the playground approach and ensures MCP tools are properly connected.
     
     Args:
         config: Optional configuration. If None, loads from default config.
         context: Optional runtime context for mode and tone
         model_override: Optional model override (e.g., "gpt-4o", "claude-sonnet-4-20250514")
         
-    Returns:
-        Configured Agno Agent instance for CLI
+    Yields:
+        Configured Agno Agent instance for CLI with connected MCP tools
     """
     if config is None:
         config = load_config()
@@ -727,31 +821,29 @@ async def create_cli_agent(config: Optional[Config] = None, context: Optional[Ru
     if context.should_enable_memory():
         memory = await create_agno_memory(config)
     
-    # Create tools
-    tools = [ReasoningTools(add_instructions=True)]
-    
-    # Add MCP tools
-    mcp_tools = create_mcp_tools(config)
-    tools.append(mcp_tools)
-    
-    # Create agent
-    agent = Agent(
-        name="BlitzAgent CLI",
-        tools=tools,
-        description=get_agent_description(AgentType.CLI, context),
-        instructions=get_agent_instructions(AgentType.CLI, context),
-        model=model_instance,
-        storage=storage,
-        memory=memory,
-        # CLI specific settings
-        add_history_to_messages=True,
-        num_history_responses=3 if context.should_enable_memory() else 1,
-        add_datetime_to_instructions=True,
-        monitoring=True,
-        markdown=False,  # Plain text for CLI
-    )
-    
-    return agent
+    # Create MCP tools using async context manager (mirrors playground approach)
+    async with create_mcp_tools_async(config) as mcp_tools:
+        # Create tools with properly connected MCP tools
+        tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
+        
+        # Create agent
+        agent = Agent(
+            name="BlitzAgent CLI",
+            tools=tools,
+            description=get_agent_description(AgentType.CLI, context),
+            instructions=get_agent_instructions(AgentType.CLI, context),
+            model=model_instance,
+            storage=storage,
+            memory=memory,
+            # CLI specific settings
+            add_history_to_messages=True,
+            num_history_responses=3 if context.should_enable_memory() else 1,
+            add_datetime_to_instructions=True,
+            monitoring=True,
+            markdown=False,  # Plain text for CLI
+        )
+        
+        yield agent
 
 
 async def create_server_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> Agent:

@@ -12,7 +12,7 @@
         "POSTGRES_PORT": "5432",
         "POSTGRES_DATABASE": "mlb",
         "POSTGRES_USER": "postgres",
-        "POSTGRES_PASSWORD": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+        "POSTGRES_PASSWORD": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
         "POSTGRES_SSL": "true",
         "AZURE_SEARCH_ENDPOINT": "https://blitz-ai-search.search.windows.net",
         "AZURE_SEARCH_API_KEY": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
@@ -31,7 +31,7 @@
       "command": "uvx",
       "args": [
         "toolfront",
-        "postgresql://postgres:utB2qrwktKA#nq-GZ*8unmMC1Y~[@blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com:5432/mlb"
+        "postgresql://postgres:_V8fn.eo62B(gZD|OcQcu~0|aP8[@blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com:5432/mlb"
       ]
     },
     "mastra": {
@@ -71,8 +71,8 @@
         "POSTGRES_PORT": "5432",
         "POSTGRES_DATABASE": "mlb",
         "POSTGRES_USER": "postgres",
-        "POSTGRES_PASSWORD": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
-        "POSTGRES_PASSWORD_ENCODED": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+        "POSTGRES_PASSWORD": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
+        "POSTGRES_PASSWORD_ENCODED": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
         "POSTGRES_SSL": "true",
         "SPORTSDATA_API_KEY": "47ea9395aa1c4bf9906df741e846e979",
         "FIRECRAWL_API_KEY": "fc-67d24f59ced346bbbfff06ece6295321",

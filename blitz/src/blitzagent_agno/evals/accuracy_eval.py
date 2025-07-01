@@ -125,26 +125,26 @@ class BlitzAccuracyEval:
         if "gpt-4" in self.judge_model or "gpt-3.5" in self.judge_model:
             return OpenAIChat(
                 id=self.judge_model,
-                temperature=0.1,
+                temperature=0,
                 max_tokens=2000
             )
         elif "gemini" in self.judge_model:
             return Gemini(
                 id=self.judge_model,
-                temperature=0.1,
+                temperature=0,
                 max_tokens=2000
             )
         elif "azure" in self.judge_model:
             return AzureOpenAI(
                 id=self.judge_model.replace("azure:", ""),
-                temperature=0.1,
+                temperature=0,
                 max_tokens=2000
             )
         else:
             # Default to GPT-4o
             return OpenAIChat(
                 id="gpt-4o",
-                temperature=0.1,
+                temperature=0,
                 max_tokens=2000
             )
     

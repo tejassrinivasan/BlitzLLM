@@ -33,7 +33,7 @@
       "port": 5432,
       "database": "mlb",
       "user": "postgres",
-      "password": "utB2qrwktKA#nq-GZ*8unmMC1Y~[",
+      "password": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
       "ssl": true,
       "description": "PostgreSQL database for structured MLB data"
     },

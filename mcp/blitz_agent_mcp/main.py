@@ -22,7 +22,7 @@ from sqlalchemy.engine.url import make_url
 
 from .config import API_KEY_HEADER, BACKEND_URL, get_postgres_url
 from .models.connection import Connection
-from .tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, get_api_docs, call_api_endpoint, generate_graph, run_linear_regression
+from .tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, generate_graph, run_linear_regression, get_betting_events_by_date, get_betting_markets_for_event
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +36,32 @@ class AppContext:
     url_map: dict = Field(default_factory=dict)
 
 
-async def test_connections(urls: tuple[str, ...]) -> None:
+def configure_logging(quiet: bool = False):
+    """Configure logging based on mode"""
+    if quiet:
+        # For CLI usage, suppress most logging except critical errors
+        logging.getLogger().setLevel(logging.ERROR)
+        # Suppress our own module and all submodules
+        logging.getLogger("blitz-agent-mcp").setLevel(logging.ERROR)
+        logging.getLogger("blitz_agent_mcp").setLevel(logging.ERROR)
+        # Suppress MCP protocol logs
+        logging.getLogger("mcp").setLevel(logging.ERROR)
+        # Suppress Azure SDK logs
+        logging.getLogger("azure").setLevel(logging.ERROR)
+        logging.getLogger("azure.core").setLevel(logging.ERROR)
+        logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.ERROR)
+        logging.getLogger("azure.search").setLevel(logging.ERROR)
+        # Suppress HTTP client logs
+        logging.getLogger("httpx").setLevel(logging.ERROR)
+        logging.getLogger("urllib3").setLevel(logging.ERROR)
+        # Suppress other tool logs
+        logging.getLogger("toolfront").setLevel(logging.ERROR)
+    else:
+        # Default verbose logging for direct server usage
+        logging.basicConfig(level=logging.INFO)
+
+
+async def test_connections(urls: tuple[str, ...], quiet: bool = False) -> None:
     """Test all connections in parallel"""
     if not urls:
         return
@@ -47,20 +72,23 @@ async def test_connections(urls: tuple[str, ...]) -> None:
         result = await connection.test_connection()
         if not result.connected:
             raise RuntimeError(f"Failed to connect to {url}: {result.message}")
-        logger.info(f"Connection successful to {url}")
+        if not quiet:
+            logger.info(f"Connection successful to {url}")
 
     await asyncio.gather(*(_test_connection(url) for url in urls))
 
 
-def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.0.0.1", port: int = 8000, quiet: bool = False) -> FastMCP:
     # If no URLs provided, try to use the PostgreSQL URL from config
     if not urls:
         postgres_url = get_postgres_url()
         if postgres_url:
             urls = (postgres_url,)
-            logger.info(f"Using PostgreSQL URL from configuration: {postgres_url}")
+            if not quiet:
+                logger.info(f"Using PostgreSQL URL from configuration: {postgres_url}")
         else:
-            logger.warning("No database URLs provided and PostgreSQL configuration incomplete")
+            if not quiet:
+                logger.warning("No database URLs provided and PostgreSQL configuration incomplete")
     
     cleaned_urls = [url.lstrip("'").rstrip("'") for url in urls]
 
@@ -71,7 +99,7 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
     async def app_lifespan(mcp_server: FastMCP) -> AsyncIterator[AppContext]:
         """Manage application lifecycle with type-safe context"""
         # Test connections when the server starts
-        await test_connections(cleaned_urls)
+        await test_connections(cleaned_urls, quiet=quiet)
         
         if api_key:
             headers = {API_KEY_HEADER: api_key}
@@ -91,23 +119,25 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
     mcp.add_tool(test)
     mcp.add_tool(recall_similar_db_queries)
     mcp.add_tool(get_database_documentation)
-    mcp.add_tool(get_api_docs)
-    mcp.add_tool(call_api_endpoint)
+   #mcp.add_tool(get_api_docs)
+    #mcp.add_tool(call_api_endpoint)
     mcp.add_tool(upload)
     mcp.add_tool(validate)
-    mcp.add_tool(webscrape)
+    #mcp.add_tool(webscrape)
     mcp.add_tool(generate_graph)
     mcp.add_tool(run_linear_regression)
+    mcp.add_tool(get_betting_events_by_date)
+    mcp.add_tool(get_betting_markets_for_event)
 
     return mcp
 
 
-def run_http_server(mcp_instance: FastMCP, transport: str, host: str = "127.0.0.1", port: int = 8000):
+def run_http_server(mcp_instance: FastMCP, transport: str, host: str = "127.0.0.1", port: int = 8000, quiet: bool = False):
     """Run HTTP server using FastMCP's built-in transport"""
-    logger.info(f"Starting {transport} server on {host}:{port}")
+    if not quiet:
+        logger.info(f"Starting {transport} server on {host}:{port}")
+        logger.info(f"Using FastMCP built-in {transport} transport")
     
-    # Use FastMCP's built-in transport
-    logger.info(f"Using FastMCP built-in {transport} transport")
     mcp_instance.run(transport=transport)
 
 
@@ -116,16 +146,22 @@ def run_http_server(mcp_instance: FastMCP, transport: str, host: str = "127.0.0.
 @click.option("--transport", type=click.Choice(["stdio", "sse", "streamable-http"]), default="stdio", help="Transport mode for MCP server (streamable-http recommended for production)")
 @click.option("--host", default="127.0.0.1", help="Host to bind the server to (for HTTP transports)")
 @click.option("--port", type=int, default=None, help="Port to bind the server to (for HTTP transports)")
+@click.option("--quiet", is_flag=True, help="Suppress verbose logging (useful for CLI integration)")
 @click.argument("urls", nargs=-1)
 def main(
     api_key: str | None = None,
     transport: Literal["stdio", "sse", "streamable-http"] = "stdio",
     host: str = "127.0.0.1",
     port: int | None = None,
+    quiet: bool = False,
     urls: tuple[str, ...] = ()
 ) -> None:
     """Blitz Agent MCP Server - Run the MCP server"""
-    logger.info("Starting MCP server with urls: %s", urls)
+    # Configure logging based on quiet mode
+    configure_logging(quiet=quiet)
+    
+    if not quiet:
+        logger.info("Starting MCP server with urls: %s", urls)
     
     # For deployment platforms like Render, use environment variables
     if transport in ("sse", "streamable-http"):
@@ -137,17 +173,18 @@ def main(
         if os.getenv("RENDER") or os.getenv("RAILWAY_PROJECT_ID") or os.getenv("HEROKU_APP_NAME"):
             host = "0.0.0.0"
         
-        logger.info(f"{transport} server will bind to {host}:{port}")
+        if not quiet:
+            logger.info(f"{transport} server will bind to {host}:{port}")
     else:
         # For non-HTTP transport, use defaults
         if port is None:
             port = 8000
     
-    mcp_instance = get_mcp(urls, api_key, host, port)
+    mcp_instance = get_mcp(urls, api_key, host, port, quiet=quiet)
     
     # Handle different transport modes
     if transport in ("sse", "streamable-http"):
-        run_http_server(mcp_instance, transport, host, port)
+        run_http_server(mcp_instance, transport, host, port, quiet=quiet)
     else:
         mcp_instance.run(transport=transport)
 

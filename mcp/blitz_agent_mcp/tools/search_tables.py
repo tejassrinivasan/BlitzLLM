@@ -176,7 +176,7 @@ async def _get_context_field(field: str, ctx: Context) -> Any:
 
 async def search_tables(
     ctx: Context,
-    connection: Connection = Field(..., description="The data source to search."),
+    connection: Optional[Connection] = Field(default=None, description="The data source to search. If not provided, uses the configured PostgreSQL database."),
     pattern: str = Field(..., description="Pattern to search for. "),
     limit: int = Field(default=10, description="Number of results to return.", ge=1, le=MAX_DATA_ROWS),
     mode: SearchMode = Field(default=SearchMode.BM25, description="The search mode to use."),
@@ -213,6 +213,14 @@ async def search_tables(
     logger.debug(f"Searching tables with pattern '{pattern}', mode '{mode}', limit {limit}")
 
     try:
+        # If no connection provided, use the configured PostgreSQL URL
+        if connection is None:
+            postgres_url = get_postgres_url()
+            if not postgres_url:
+                raise ConnectionError("No connection provided and PostgreSQL configuration is incomplete. Please provide a connection or configure PostgreSQL settings.")
+            connection = Connection(url=postgres_url)
+            logger.debug("Using configured PostgreSQL connection")
+        
         url_map = await _get_context_field("url_map", ctx)
         db = await connection.connect(url_map=url_map)
         result = await db.search_tables(pattern=pattern, limit=limit, mode=mode)
@@ -222,9 +230,9 @@ async def search_tables(
         logger.error(f"Failed to search tables: {e}", exc_info=True)
         if "pattern" in str(e).lower() and mode == SearchMode.REGEX:
             raise ConnectionError(
-                f"Failed to search {connection.url} - Invalid regex pattern: {pattern}. Please try a different pattern or use a different search mode."
+                f"Failed to search {connection.url if connection else 'database'} - Invalid regex pattern: {pattern}. Please try a different pattern or use a different search mode."
             )
         elif "connection" in str(e).lower() or "connect" in str(e).lower():
-            raise ConnectionError(f"Failed to connect to {connection.url} - {str(e)}")
+            raise ConnectionError(f"Failed to connect to {connection.url if connection else 'database'} - {str(e)}")
         else:
-            raise ConnectionError(f"Failed to search tables in {connection.url} - {str(e)}") 
+            raise ConnectionError(f"Failed to search tables in {connection.url if connection else 'database'} - {str(e)}") 

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # BlitzAgent MCP Server Startup Script
-echo "🚀 Starting BlitzAgent MCP Server" >&2
 
 # Get the directory of the script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -10,6 +9,16 @@ VENV_DIR="$PROJECT_ROOT/.venv"
 
 # Set PYTHONPATH to include the blitz_agent_mcp directory
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
+
+# Check if this is being called from CLI (quiet mode)
+# Default to quiet mode for cleaner CLI experience
+QUIET_MODE="--quiet"
+
+# If BLITZ_MCP_VERBOSE is set, use verbose mode
+if [ "$BLITZ_MCP_VERBOSE" = "true" ]; then
+    QUIET_MODE=""
+    echo "🚀 Starting BlitzAgent MCP Server" >&2
+fi
 
 # Activate virtual environment
 if [ -d "$VENV_DIR" ]; then
@@ -26,5 +35,5 @@ python -c "from blitz_agent_mcp.main import main" 2>/dev/null || {
     pip install -e "$PROJECT_ROOT" >&2
 }
 
-# Start the MCP server
-exec python -m blitz_agent_mcp.main "$@" 
+# Start the MCP server with appropriate flags
+exec python -m blitz_agent_mcp.main $QUIET_MODE "$@" 

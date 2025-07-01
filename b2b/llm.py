@@ -253,7 +253,7 @@ async def check_clarification(
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0,
+            temperature=0.1,
             max_tokens=200,
             response_format={"type": "json_object"},
         )
@@ -303,7 +303,7 @@ async def determine_live_endpoints(
         resp = await client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt_context}],
-            temperature=0,
+            temperature=0.1,
         )
 
         print(resp.choices[0].message.content.strip())
@@ -619,7 +619,7 @@ async def determine_sql_query(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": "Partner's message: " + partner_prompt}
             ],
-            temperature=0
+            temperature=0.1
         )
 
         response_text = response.choices[0].message.content.strip()
@@ -783,7 +783,7 @@ async def rank_search_results(client, query_text, search_results):
                 {"role": "system", "content": f"You are an expert on baseball and PostgreSQL. Your job is to see which questions from the search results are most similar to the user's question in terms of meaning/intent or the ones you think would be answered with a similar PostgreSQL query. **TODAY'S DATE:** {datetime.now().strftime('%Y-%m-%d')}"},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0
+            temperature=0.1
         )
 
         # Parse the response to get ordered document IDs
