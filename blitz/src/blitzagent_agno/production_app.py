@@ -266,10 +266,65 @@ async def create_blitz_agent(mode: RuntimeMode, tone: ToneStyle, length: Optiona
     try:
         # Import here to avoid circular imports
         from .agent_factory import create_blitz_agent as factory_create_blitz_agent, RuntimeContext
-        from .config import load_config
+        from .config import Config, ModelConfig, DatabaseConfig, MCPConfig, AgentConfig, MonitoringConfig, ServerConfig, SecurityConfig
         
-        # Load configuration
-        config = load_config()
+        # Try to load full config first
+        try:
+            from .config import load_config
+            config = load_config()
+        except Exception as config_error:
+            logger.warning(f"Failed to load full config, creating minimal config: {config_error}")
+            
+            # Create minimal config with defaults for production
+            model_provider = os.getenv("MODEL_PROVIDER", "azure_openai").lower()
+            
+            # Create model config from environment
+            model_config = ModelConfig(
+                provider=model_provider,
+                name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"),
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+                azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"),
+                azure_api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2025-03-01-preview")
+            )
+            
+            # Create minimal database config (even if not used)
+            database_url = os.getenv("DATABASE_URL")
+            if database_url:
+                # Parse DATABASE_URL if available
+                import urllib.parse
+                parsed = urllib.parse.urlparse(database_url)
+                database_config = DatabaseConfig(
+                    host=parsed.hostname or "localhost",
+                    port=parsed.port or 5432,
+                    database=parsed.path.lstrip('/') or "postgres",
+                    user=parsed.username or "postgres",
+                    password=parsed.password or "",
+                    ssl_mode="require" if "sslmode=require" in database_url else "prefer"
+                )
+            else:
+                # Default database config (won't be used if memory disabled)
+                database_config = DatabaseConfig(
+                    host="localhost",
+                    port=5432,
+                    database="postgres",  # Required field
+                    user="postgres",      # Required field
+                    password="",          # Required field (empty string is valid)
+                    ssl_mode="prefer"
+                )
+            
+            # Create minimal config
+            config = Config(
+                model=model_config,
+                database=database_config,
+                mcp=MCPConfig(),
+                agent=AgentConfig(),
+                monitoring=MonitoringConfig(enabled=False),
+                server=ServerConfig(),
+                security=SecurityConfig(),
+                environment="production",
+                debug=False
+            )
         
         # Create runtime context
         context = RuntimeContext(
