@@ -348,26 +348,31 @@ async def create_agno_model(config: Config):
 
 def create_mcp_tools(config: Config) -> MCPTools:
     """Create MCP tools with proper server configuration (sync version)."""
-    # Get absolute path to MCP server script  
-    mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
-    mcp_script = mcp_path / "start.sh"
+    # Use the uvx command directly as configured in mcp.json
+    mcp_command = "uvx"
+    mcp_args = ["--from", "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp", "blitz-agent-mcp"]
     
-    # Use absolute path for the command
-    mcp_command = str(mcp_script.absolute())
+    # Log the MCP command for debugging
+    logger.info(f"Creating MCP tools with command: {mcp_command} {' '.join(mcp_args)}")
     
-    # Log the MCP path for debugging
-    logger.info(f"Looking for MCP server at: {mcp_command}")
+    # Use current environment and override with database config
+    import os
+    mcp_env = os.environ.copy()
+    mcp_env.update({
+        "POSTGRES_HOST": config.database.host,
+        "POSTGRES_PORT": str(config.database.port),
+        "POSTGRES_DATABASE": config.database.database,
+        "POSTGRES_USER": config.database.user,
+        "POSTGRES_PASSWORD": config.database.password,
+        "POSTGRES_SSL": "true",
+    })
     
-    # Check if the MCP script exists
-    if not mcp_script.exists():
-        logger.error(f"MCP start script not found at: {mcp_command}")
-        raise FileNotFoundError(f"MCP start script not found at: {mcp_command}")
-    
-    # Initialize the MCP server with absolute path and proper timeouts
+    # Initialize the MCP server with uvx command and proper timeouts
     server_params = StdioServerParameters(
-        command="bash",
-        args=[mcp_command],
-        read_timeout_seconds=30  # Sufficient time for startup
+        command=mcp_command,
+        args=mcp_args,
+        read_timeout_seconds=30,  # Sufficient time for startup
+        env=mcp_env  # Pass environment variables
     )
     
     try:
@@ -376,7 +381,7 @@ def create_mcp_tools(config: Config) -> MCPTools:
             server_params=server_params,
             timeout_seconds=30  # Sufficient time for initialization
         )
-        logger.info(f"MCP tools created successfully with 30s timeout")
+        logger.info(f"MCP tools created successfully with uvx command")
         return mcp_tools
     except Exception as e:
         logger.error(f"Failed to create MCP tools: {e}")
@@ -388,26 +393,31 @@ def create_mcp_tools(config: Config) -> MCPTools:
 @asynccontextmanager
 async def create_mcp_tools_async(config: Config) -> AsyncIterator[MCPTools]:
     """Create MCP tools as an async context manager for proper connection handling."""
-    # Get absolute path to MCP server script  
-    mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
-    mcp_script = mcp_path / "start.sh"
+    # Use the uvx command directly as configured in mcp.json
+    mcp_command = "uvx"
+    mcp_args = ["--from", "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp", "blitz-agent-mcp"]
     
-    # Use absolute path for the command
-    mcp_command = str(mcp_script.absolute())
+    # Log the MCP command for debugging
+    logger.info(f"Creating async MCP tools with command: {mcp_command} {' '.join(mcp_args)}")
     
-    # Log the MCP path for debugging
-    logger.info(f"Looking for MCP server at: {mcp_command}")
+    # Use current environment and override with database config
+    import os
+    mcp_env = os.environ.copy()
+    mcp_env.update({
+        "POSTGRES_HOST": config.database.host,
+        "POSTGRES_PORT": str(config.database.port),
+        "POSTGRES_DATABASE": config.database.database,
+        "POSTGRES_USER": config.database.user,
+        "POSTGRES_PASSWORD": config.database.password,
+        "POSTGRES_SSL": "true",
+    })
     
-    # Check if the MCP script exists
-    if not mcp_script.exists():
-        logger.error(f"MCP start script not found at: {mcp_command}")
-        raise FileNotFoundError(f"MCP start script not found at: {mcp_command}")
-    
-    # Initialize the MCP server with absolute path and proper timeouts
+    # Initialize the MCP server with uvx command and proper timeouts
     server_params = StdioServerParameters(
-        command="bash",
-        args=[mcp_command],
-        read_timeout_seconds=30  # Sufficient time for startup
+        command=mcp_command,
+        args=mcp_args,
+        read_timeout_seconds=30,  # Sufficient time for startup
+        env=mcp_env  # Pass environment variables
     )
     
     # Use MCPTools directly as an async context manager
@@ -415,7 +425,7 @@ async def create_mcp_tools_async(config: Config) -> AsyncIterator[MCPTools]:
         server_params=server_params,
         timeout_seconds=30  # Sufficient time for initialization
     ) as mcp_tools:
-        logger.info(f"MCP tools connected successfully")
+        logger.info(f"MCP tools connected successfully with uvx command")
         yield mcp_tools
 
 

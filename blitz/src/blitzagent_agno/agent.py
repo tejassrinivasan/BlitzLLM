@@ -33,9 +33,8 @@ from .config import Config
 from .memory import AgentMemory
 from .semantic_memory import SemanticMemory
 from .metrics import MetricsCollector
-from .mcp_client import MCPClient
 from .tools import ToolRegistry
-from .exceptions import BlitzAgentError, ConfigurationError, MCPError
+from .exceptions import BlitzAgentError, ConfigurationError
 from .models import SportsAnalysisResponse
 from .agent_factory import get_agent_instructions, AgentType, RuntimeContext, RuntimeMode, ToneStyle
 
@@ -196,11 +195,14 @@ class BlitzAgent:
             raise ConfigurationError(f"Configuration errors: {', '.join(errors)}")
         
         # Initialize components
-        self._agent: Optional[Agent] = None
         self._memory: Optional[AgentMemory] = None
         self._semantic_memory: Optional[SemanticMemory] = None
-        self._mcp_client: Optional[MCPClient] = None
         self._tool_registry: Optional[ToolRegistry] = None
+        self._agent: Optional[Agent] = None
+        
+        # MCP command info for agent initialization
+        self._mcp_command: Optional[str] = None
+        self._mcp_args: Optional[List[str]] = None
         
         # Setup logging
         self.logger = logger.bind(agent_name=self.config.agent.name)
@@ -232,9 +234,6 @@ class BlitzAgent:
             
             # Initialize semantic memory
             await self._initialize_semantic_memory()
-            
-            # Initialize MCP client
-            await self._initialize_mcp_client()
             
             # Initialize tool registry
             await self._initialize_tools()
@@ -291,41 +290,19 @@ class BlitzAgent:
             # Don't raise - allow agent to continue without semantic memory
             self._semantic_memory = None
     
-    async def _initialize_mcp_client(self) -> None:
-        """Initialize MCP client for tool communication."""
-        try:
-            # Skip MCP client initialization - we'll use MCPTools directly
-            self.logger.info(
-                "Skipping MCP client initialization - using MCPTools directly",
-                transport=self.config.mcp.transport
-            )
-            
-        except Exception as e:
-            self.logger.warning("MCP client initialization warning", error=str(e))
-            # Don't raise - allow agent to continue without MCP client
-    
     async def _initialize_tools(self) -> None:
         """Initialize tool registry with MCP tools."""
         try:
-            # Initialize tool registry
-            self._tool_registry = ToolRegistry(self.config, self._mcp_client)
+            # Initialize tool registry - tools are now handled directly in agent initialization
+            self._tool_registry = ToolRegistry(self.config, None)  # No longer need MCP client
             
-            # Get path to MCP server script
-            mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
-            mcp_command = f"{mcp_path}/start.sh"
-            
-            self.logger.info(
-                "Setting up MCP tools",
-                mcp_command=mcp_command,
-                mcp_path=str(mcp_path)
-            )
-            
-            # Store MCP command for later use in agent initialization
-            self._mcp_command = mcp_command
+            # Store MCP command for agent initialization
+            self._mcp_command = "uvx"
+            self._mcp_args = ["--from", "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp", "blitz-agent-mcp"]
             
             self.logger.info(
                 "Tool registry initialized",
-                mcp_command=mcp_command
+                mcp_command=f"{self._mcp_command} {' '.join(self._mcp_args)}"
             )
             
         except Exception as e:
@@ -465,15 +442,36 @@ class BlitzAgent:
             # Add MCP tools if command is available
             if hasattr(self, '_mcp_command') and self._mcp_command:
                 try:
-                    # Use Agno's MCPTools with the MCP server command and proper timeout
-                    mcp_tools = MCPTools(
+                    # Use Agno's MCPTools with the uvx command and proper timeout
+                    from mcp import StdioServerParameters
+                    import os
+                    
+                    # Use current environment and override with database config
+                    mcp_env = os.environ.copy()
+                    mcp_env.update({
+                        "POSTGRES_HOST": self.config.database.host,
+                        "POSTGRES_PORT": str(self.config.database.port),
+                        "POSTGRES_DATABASE": self.config.database.database,
+                        "POSTGRES_USER": self.config.database.user,
+                        "POSTGRES_PASSWORD": self.config.database.password,
+                        "POSTGRES_SSL": "true",
+                    })
+                    
+                    server_params = StdioServerParameters(
                         command=self._mcp_command,
+                        args=self._mcp_args,
+                        read_timeout_seconds=30,
+                        env=mcp_env  # Pass environment variables
+                    )
+                    
+                    mcp_tools = MCPTools(
+                        server_params=server_params,
                         timeout_seconds=self.config.mcp.timeout  # Use config timeout instead of default 5s
                     )
                     tools.append(mcp_tools)
                     self.logger.info(
                         "MCP tools added to agent", 
-                        command=self._mcp_command, 
+                        command=f"{self._mcp_command} {' '.join(self._mcp_args)}", 
                         timeout=self.config.mcp.timeout
                     )
                 except Exception as e:
@@ -738,21 +736,25 @@ class BlitzAgent:
         tool_name: str,
         parameters: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Call an MCP tool directly."""
-        if not self._mcp_client:
-            raise AgentError("MCP client not initialized")
+        """Call an MCP tool directly via the agent's tool system."""
+        if not self._agent:
+            raise AgentError("Agent not initialized")
         
         try:
-            result = await self._mcp_client.call_tool(tool_name, parameters)
-            self.metrics.increment_tool_usage(tool_name)
-            return result
+            # MCP tools are now integrated directly into the agent
+            # Use the agent's tool system instead of direct MCP client calls
+            self.logger.info(
+                "MCP tools are integrated into agent - use agent.arun() instead",
+                tool_name=tool_name
+            )
+            raise AgentError("MCP tools are now integrated into the agent. Use agent conversation methods instead of direct tool calls.")
         except Exception as e:
             self.logger.error(
-                "MCP tool call failed",
+                "MCP tool access failed",
                 tool_name=tool_name,
                 error=str(e)
             )
-            raise MCPError(f"Tool call failed: {e}") from e
+            raise AgentError(f"Tool access failed: {e}") from e
     
     async def register_custom_tool(self, tool) -> None:
         """Register a custom tool with the agent."""
@@ -793,17 +795,6 @@ class BlitzAgent:
         else:
             health["components"]["memory"] = {"status": "not_initialized"}
         
-        # Check MCP client
-        if self._mcp_client:
-            try:
-                await self._mcp_client.health_check()
-                health["components"]["mcp"] = {"status": "healthy"}
-            except Exception as e:
-                health["components"]["mcp"] = {"status": "unhealthy", "error": str(e)}
-                health["status"] = "degraded"
-        else:
-            health["components"]["mcp"] = {"status": "not_initialized"}
-        
         # Check semantic memory
         if self._semantic_memory:
             try:
@@ -823,8 +814,7 @@ class BlitzAgent:
         """Clean up resources."""
         self.logger.info("Cleaning up BlitzAgent resources")
         
-        if self._mcp_client:
-            await self._mcp_client.disconnect()
+        # MCP tools are now handled directly by the agent - no separate cleanup needed
         
         if self._memory:
             await self._memory.cleanup()
@@ -846,11 +836,6 @@ class BlitzAgent:
     def semantic_memory(self) -> Optional[SemanticMemory]:
         """Access to semantic memory."""
         return self._semantic_memory
-    
-    @property
-    def mcp_client(self) -> Optional[MCPClient]:
-        """Access to MCP client."""
-        return self._mcp_client
     
     @property
     def tool_registry(self) -> Optional[ToolRegistry]:

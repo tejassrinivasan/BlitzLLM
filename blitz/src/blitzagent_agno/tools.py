@@ -117,7 +117,9 @@ class ToolRegistry:
     
     def __init__(self, config: Config, mcp_client: Optional[MCPClient] = None):
         self.config = config
-        self.mcp_client = mcp_client
+        # MCPClient is deprecated - tools are now handled directly via MCPTools
+        if mcp_client:
+            logger.warning("MCPClient parameter is deprecated. Tools are now handled directly via MCPTools.")
         self._tools: Dict[str, ToolInfo] = {}
         self._tool_functions: Dict[str, Callable] = {}
         self._categories: Dict[str, List[str]] = {}
@@ -134,9 +136,8 @@ class ToolRegistry:
             # Load local tools
             await self._load_local_tools()
             
-            # Load MCP tools if client is available
-            if self.mcp_client:
-                await self._load_mcp_tools()
+            # MCP tools are now handled directly via MCPTools in agent initialization
+            logger.info("MCP tools are handled directly via MCPTools integration")
             
             # Load Agno built-in tools
             await self._load_agno_tools()
@@ -191,24 +192,6 @@ class ToolRegistry:
             source="local"
         )
     
-    async def _load_mcp_tools(self) -> None:
-        """Load tools from MCP server."""
-        if not self.mcp_client or not self.mcp_client.connected:
-            logger.warning("MCP client not available or not connected")
-            return
-        
-        try:
-            # Get available tools from MCP
-            tools_info = await self.mcp_client.list_tools()
-            
-            for tool_info in tools_info:
-                await self._register_mcp_tool(tool_info)
-                
-            logger.info(f"Loaded {len(tools_info)} tools from MCP")
-            
-        except Exception as e:
-            logger.error(f"Failed to load MCP tools: {str(e)}")
-    
     async def _load_agno_tools(self) -> None:
         """Load Agno built-in tools."""
         # This would integrate with Agno's tool system
@@ -260,26 +243,6 @@ class ToolRegistry:
         self._categories[category].append(name)
         
         logger.debug(f"Registered tool: {name} (category: {category}, source: {source})")
-    
-    async def _register_mcp_tool(self, tool_info: Dict[str, Any]) -> None:
-        """Register a tool from MCP server."""
-        name = tool_info.get("name")
-        if not name:
-            logger.warning("MCP tool missing name, skipping")
-            return
-        
-        async def mcp_tool_wrapper(**kwargs):
-            """Wrapper for MCP tool execution."""
-            return await self.mcp_client.call_tool(name, kwargs)
-        
-        await self._register_tool(
-            name=name,
-            description=tool_info.get("description", "MCP tool"),
-            parameters=tool_info.get("inputSchema", {}).get("properties", {}),
-            function=mcp_tool_wrapper,
-            category="mcp",
-            source="mcp"
-        )
     
     async def execute_tool(
         self,
