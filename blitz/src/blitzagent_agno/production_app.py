@@ -264,35 +264,30 @@ async def create_memory():
 async def create_blitz_agent(mode: RuntimeMode, tone: ToneStyle, length: Optional[AnalysisLength] = None, custom_instructions: Optional[str] = None, enable_memory: bool = False):
     """Create the BlitzAgent for production with runtime context."""
     try:
-        model = create_model_from_env()
+        # Import here to avoid circular imports
+        from .agent_factory import create_blitz_agent as factory_create_blitz_agent, RuntimeContext
+        from .config import load_config
         
-        # Create storage and memory for conversation mode
-        storage = None
-        memory = None
-        if enable_memory and mode == RuntimeMode.CONVERSATION:
-            storage = await create_storage()
-            memory = await create_memory()
+        # Load configuration
+        config = load_config()
         
-        agent = Agent(
-            name="BlitzAgent",
-            agent_id=f"blitzagent_{mode.value}_{tone.value}",
-            model=model,
-            description="BlitzAgent - AI assistant for sports analytics",
-            instructions=get_instructions_for_mode(mode, tone, length, custom_instructions),
-            storage=storage,
-            memory=memory,
-            enable_user_memories=enable_memory and mode == RuntimeMode.CONVERSATION,
-            enable_session_summaries=enable_memory and mode == RuntimeMode.CONVERSATION,
-            add_history_to_messages=enable_memory and mode == RuntimeMode.CONVERSATION,
-            num_history_responses=5 if enable_memory else 1,
-            markdown=True
+        # Create runtime context
+        context = RuntimeContext(
+            mode=mode,
+            tone=tone,
+            length=length,
+            enable_memory=enable_memory and mode == RuntimeMode.CONVERSATION,
+            custom_instructions=custom_instructions
         )
         
-        logger.info(f"Agent created successfully with model: {model.id}, mode: {mode.value}, tone: {tone.value}, memory: {enable_memory}")
-        return agent
+        # Use the proper BlitzAgent creation function that includes semantic memory
+        blitz_agent = await factory_create_blitz_agent(config, context)
+        
+        logger.info(f"BlitzAgent created successfully with mode: {mode.value}, tone: {tone.value}, memory: {enable_memory}")
+        return blitz_agent
         
     except Exception as e:
-        logger.error("Failed to create agent", error=str(e))
+        logger.error("Failed to create BlitzAgent", error=str(e))
         raise
 
 
@@ -395,6 +390,7 @@ def create_production_app() -> FastAPI:
         @app.post("/api/query", response_model=AgentResponse)
         async def query_agent(request: QueryRequest):
             """Basic query endpoint - simple conversation mode."""
+            agent = None
             try:
                 agent = await create_blitz_agent(
                     mode=RuntimeMode.CONVERSATION,
@@ -402,10 +398,11 @@ def create_production_app() -> FastAPI:
                     enable_memory=False
                 )
                 
-                response = await agent.arun(
+                response = await agent.run(
                     message=request.message,
                     user_id=request.user_id,
-                    session_id=request.session_id
+                    session_id=request.session_id,
+                    stream=False
                 )
                 
                 return AgentResponse(
@@ -421,10 +418,17 @@ def create_production_app() -> FastAPI:
             except Exception as e:
                 logger.error("Error during basic query", error=str(e))
                 raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+            finally:
+                if agent:
+                    try:
+                        await agent.cleanup()
+                    except Exception as cleanup_error:
+                        logger.warning("Error cleaning up agent", error=str(cleanup_error))
         
         @app.post("/api/insights", response_model=AgentResponse)
         async def get_insights(request: InsightRequest):
             """Insights endpoint - focused on analytical insights with length control."""
+            agent = None
             try:
                 agent = await create_blitz_agent(
                     mode=RuntimeMode.INSIGHT,
@@ -433,10 +437,11 @@ def create_production_app() -> FastAPI:
                     enable_memory=False  # Insights don't need memory
                 )
                 
-                response = await agent.arun(
+                response = await agent.run(
                     message=request.message,
                     user_id=request.user_id,
-                    session_id=request.session_id
+                    session_id=request.session_id,
+                    stream=False
                 )
                 
                 return AgentResponse(
@@ -453,10 +458,17 @@ def create_production_app() -> FastAPI:
             except Exception as e:
                 logger.error("Error during insights generation", error=str(e))
                 raise HTTPException(status_code=500, detail=f"Insights failed: {str(e)}")
+            finally:
+                if agent:
+                    try:
+                        await agent.cleanup()
+                    except Exception as cleanup_error:
+                        logger.warning("Error cleaning up agent", error=str(cleanup_error))
         
         @app.post("/api/conversation", response_model=AgentResponse)
         async def conversation(request: ConversationRequest):
             """Conversation endpoint - interactive chat with memory and session handling."""
+            agent = None
             try:
                 # Generate session_id if not provided
                 session_id = request.session_id or generate_session_id()
@@ -468,10 +480,11 @@ def create_production_app() -> FastAPI:
                     enable_memory=app.state.memory_enabled  # Enable memory if database is available
                 )
                 
-                response = await agent.arun(
+                response = await agent.run(
                     message=request.message,
                     user_id=request.user_id,
-                    session_id=session_id
+                    session_id=session_id,
+                    stream=False
                 )
                 
                 return AgentResponse(
@@ -487,6 +500,13 @@ def create_production_app() -> FastAPI:
             except Exception as e:
                 logger.error("Error during conversation", error=str(e))
                 raise HTTPException(status_code=500, detail=f"Conversation failed: {str(e)}")
+            finally:
+                # Clean up agent resources to prevent memory leaks
+                if agent:
+                    try:
+                        await agent.cleanup()
+                    except Exception as cleanup_error:
+                        logger.warning("Error cleaning up agent", error=str(cleanup_error))
         
         @app.get("/api/info")
         async def info():
