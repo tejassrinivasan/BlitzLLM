@@ -18,9 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from agno.agent import Agent
-from agno.models.gemini import Gemini
-from agno.models.openai import OpenAI
-from agno.models.azure_openai import AzureOpenAI
+from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
+from agno.models.azure import AzureOpenAI
 from agno.models.anthropic import Claude
 from agno.storage.postgres import PostgresStorage
 from agno.memory.v2.db.postgres import PostgresMemoryDb
@@ -163,7 +163,7 @@ def create_model_from_env():
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
-        return OpenAI(
+        return OpenAIChat(
             id="gpt-4o-mini",
             api_key=api_key,
             temperature=get_temperature()
