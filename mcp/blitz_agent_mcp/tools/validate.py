@@ -8,11 +8,12 @@ from typing import Any, Optional, Union, List, Dict
 from datetime import datetime
 from pathlib import Path
 
+import httpx
 from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from ..config import MAX_DATA_ROWS
+from ..config import MAX_DATA_ROWS, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION
 from ..utils import get_azure_chat_client, serialize_response
 
 __all__ = ["validate"]

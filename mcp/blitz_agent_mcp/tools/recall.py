@@ -134,7 +134,7 @@ async def recall_similar_db_queries(
         # Perform hybrid search
         results = search_client.search(
             search_text,
-            select=["id", "UserPrompt", "Query", "AssistantPrompt"],
+            select=["id", "UserPrompt", "Query"],
             search_mode='any',
             query_type='semantic',
             semantic_configuration_name='my-semantic-config',
@@ -168,7 +168,6 @@ async def recall_similar_db_queries(
                     "id": result.get("id"),
                     "user_prompt": result.get("UserPrompt"),
                     "query": result.get("Query"),
-                    "assistant_prompt": result.get("AssistantPrompt"),
                     "relevance": "high"
                 }
                 for result in ranked_results

@@ -73,9 +73,8 @@ async function uploadDocumentsToCosmos() {
             id: doc.id,
             UserPrompt: doc.UserPrompt,
             Query: doc.Query,
-            AssistantPrompt: doc.AssistantPrompt,
             UserPromptVector: doc.UserPromptVector,
-            QueryVector: doc.QueryVector, // Note: using actual field name from data
+            QueryVector: doc.QueryVector,
             // Add metadata
             uploadedAt: new Date().toISOString(),
             sourceIndex: "blitz-mlb-index"

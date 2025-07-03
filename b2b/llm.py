@@ -733,7 +733,7 @@ async def perform_search(partner_prompt: str, current_user: dict, conversation_h
         results = search_client.search(
             search_text=search_text,
             vector_queries=[vector_query],
-            select=["id", "UserPrompt", "Query", "AssistantPrompt"],
+            select=["id", "UserPrompt", "Query"],
             query_type=QueryType.SEMANTIC,
             semantic_configuration_name="my-semantic-config",
             query_caption=QueryCaptionType.EXTRACTIVE,
