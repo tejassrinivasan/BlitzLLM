@@ -11,7 +11,7 @@ from pydantic import Field
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 
-from ..config import AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY, AZURE_SEARCH_INDEX
+from ..config import AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY
 from ..utils import get_azure_chat_client, serialize_response
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,10 @@ async def _get_context_field(field: str, ctx: Context) -> Any:
 async def rank_search_results(query_text: str, search_results: List[Any], league: str) -> List[Any]:
     """Rank search results using GPT-4o-mini via Azure OpenAI."""
     try:
+        # If no results to rank, return empty list
+        if not search_results:
+            return []
+            
         # Format the search results for ranking
         formatted_results = []
         for result in search_results:
@@ -35,20 +39,25 @@ async def rank_search_results(query_text: str, search_results: List[Any], league
                 "prompt": result.get("UserPrompt", "")
             })
 
+        logger.info(f"Ranking {len(formatted_results)} search results for query: {query_text}")
+
         chat_client = get_azure_chat_client()
         
-        system_prompt = f"You are an expert on {league.upper()} and PostgreSQL. Your job is to see which questions from the search results are most similar to the user's question in terms of meaning/intent or the ones you think would be answered with a similar PostgreSQL query. Return a JSON object with a single key 'documentIds' containing a list of the relevant document IDs in order of relevance."
+        # Updated prompt to be less restrictive and more inclusive
+        system_prompt = f"""You are an expert on {league.upper()} and PostgreSQL. Your job is to identify which questions from the search results are similar to the user's question in terms of meaning, intent, or would require similar data/analysis.
+
+Be inclusive - if a question involves similar players, statistics, timeframes, or analytical approaches, it's likely relevant. For sports queries, questions about the same players or similar statistical analysis should generally be considered relevant.
+
+Return a JSON object with a single key 'documentIds' containing a list of the relevant document IDs in order of relevance (most relevant first)."""
         
-        human_prompt = f"""
-                        USER QUESTION:
-                        {query_text}
+        human_prompt = f"""USER QUESTION:
+{query_text}
 
-                        SEARCH RESULTS:
-                        {json.dumps(formatted_results, indent=2)}
+SEARCH RESULTS:
+{json.dumps(formatted_results, indent=2)}
 
-                        Return document IDs in order of relevance to the user's message or the ones you think would be answered with a similar PostgreSQL query.
-                        Only include documents that are actually relevant - you don't need to return all of them.
-                        """
+Return document IDs for questions that are similar or would help answer the user's question. Be generous in your relevance assessment - if there's any connection in terms of players, statistics, or analytical approach, include it."""
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": human_prompt},
@@ -63,8 +72,11 @@ async def rank_search_results(query_text: str, search_results: List[Any], league
         try:
             ranking_result = json.loads(response.choices[0].message.content)
             document_ids = ranking_result.get("documentIds", [])
-        except (json.JSONDecodeError, AttributeError):
-            logger.error("Failed to decode JSON from model response.")
+            logger.info(f"GPT-4o-mini ranked results: {len(document_ids)} documents selected")
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.error(f"Failed to decode JSON from model response: {e}")
+            logger.error(f"Raw response: {response.choices[0].message.content}")
+            # Fallback to returning top search results
             return search_results[:10]
 
         # Create a mapping of document ID to full document
@@ -72,7 +84,8 @@ async def rank_search_results(query_text: str, search_results: List[Any], league
 
         # Return ranked results in order
         ranked_results = [doc_map[doc_id] for doc_id in document_ids if doc_id in doc_map]
-
+        
+        logger.info(f"Final ranked results: {len(ranked_results)} documents")
         return ranked_results
 
     except Exception as error:
@@ -102,7 +115,10 @@ async def recall_similar_db_queries(
     try:
         endpoint = AZURE_SEARCH_ENDPOINT
         api_key = AZURE_SEARCH_KEY
-        index_name = AZURE_SEARCH_INDEX or f"blitz-{league.lower()}-index"
+        
+        index_name = f"blitz-{league.lower()}-index"
+        
+        logger.info(f"Using search index: {index_name} for league: {league}")
 
         if not endpoint or not api_key:
             logger.warning(f"Azure Search credentials not configured. endpoint: {bool(endpoint)}, api_key: {bool(api_key)}")
@@ -138,6 +154,8 @@ async def recall_similar_db_queries(
         for result in results:
             collected_results.append(result)
         
+        logger.info(f"Azure Search returned {len(collected_results)} results")
+        
         if not collected_results:
             return {
                 "success": False,
@@ -146,10 +164,16 @@ async def recall_similar_db_queries(
                 "league": league
             }
         
+        # Log some details about the search results for debugging
+        for i, result in enumerate(collected_results[:3]):  # Log first 3 results
+            logger.info(f"Search result {i+1}: ID={result.get('id', 'N/A')}, Score={getattr(result, '@search.score', 'N/A')}")
+        
         # Rank the results using GPT-4o-mini
         logger.info("Ranking search results with GPT-4o-mini...")
         ranked_results = await rank_search_results(query_description, collected_results, league)
         
+        logger.info(f"Returning {len(ranked_results)} final results to user")
+
         return {
             "success": True,
             "source": "azure_ai_search_hybrid",
