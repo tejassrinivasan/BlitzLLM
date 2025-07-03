@@ -83,10 +83,8 @@ async def rank_search_results(query_text: str, search_results: List[Any], league
 
 async def recall_similar_db_queries(
     ctx: Context,
-    query: str = Field(..., description="Query to search for"),
+    query_description: str = Field(..., description="Description of what the query does"),
     league: str = Field("mlb", description="League to search within"),
-    conversation_history: List[str] = Field(default_factory=list, description="Previous conversation context"),
-    recall_similar_db_queries_type: str = Field("historical_queries", description="Type of recall_similar_db_queries data to retrieve")
 ) -> dict[str, Any]:
     """
     Retrieve most relevant historical queries using Azure AI Search hybrid search and GPT-4o-mini reranking.
@@ -98,8 +96,8 @@ async def recall_similar_db_queries(
     2. Reranks results using GPT-4o-mini for relevance
     3. Returns the most relevant historical queries for recall_similar_db_queries
     """
-    if not query:
-        raise ValueError("query is required")
+    if not query_description:
+        raise ValueError("query_description is required")
     
     try:
         endpoint = AZURE_SEARCH_ENDPOINT
@@ -111,16 +109,10 @@ async def recall_similar_db_queries(
             return {
                 "success": False,
                 "error": "Azure Search credentials not configured. Please set AZURE_SEARCH_ENDPOINT and AZURE_SEARCH_API_KEY environment variables or configure them in config.json",
-                "query": query,
+                "query": query_description,
                 "league": league,
                 "fallback_suggestion": "You can continue without historical context, but recall_similar_db_queries from previous queries will not be available."
             }
-
-        # Combine query with conversation history for better context
-        search_text = query
-        if conversation_history and len(conversation_history) > 0:
-            last_user_messages = conversation_history[-3:]  # Get last 3 messages
-            search_text = '\n'.join(last_user_messages + [query])
 
         # Create SearchClient
         search_client = SearchClient(
@@ -133,7 +125,7 @@ async def recall_similar_db_queries(
         
         # Perform hybrid search
         results = search_client.search(
-            search_text,
+            query_description,
             select=["id", "UserPrompt", "Query"],
             search_mode='any',
             query_type='semantic',
@@ -150,18 +142,18 @@ async def recall_similar_db_queries(
             return {
                 "success": False,
                 "error": "No results found in search index",
-                "query": query,
+                "query": query_description,
                 "league": league
             }
         
         # Rank the results using GPT-4o-mini
         logger.info("Ranking search results with GPT-4o-mini...")
-        ranked_results = await rank_search_results(search_text, collected_results, league)
+        ranked_results = await rank_search_results(query_description, collected_results, league)
         
         return {
             "success": True,
             "source": "azure_ai_search_hybrid",
-            "query": query,
+            "query": query_description,
             "league": league,
             "results": [
                 {
@@ -181,6 +173,6 @@ async def recall_similar_db_queries(
         return {
             "success": False,
             "error": f"Failed to recall_similar_db_queries from history: {str(e)}",
-            "query": query,
+            "query": query_description,
             "league": league
         } 
