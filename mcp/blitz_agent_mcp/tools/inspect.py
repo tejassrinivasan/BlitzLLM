@@ -24,6 +24,7 @@ async def _get_context_field(field: str, ctx: Context) -> Any:
 async def inspect(
     ctx: Context,
     table: str = Field(..., description="The database table name to inspect (e.g., 'pitchingstatsgame', 'battingstatsgame')."),
+    league: str = Field(default=None, description="League to inspect (e.g., 'mlb', 'nba'). If not specified, uses default database."),
 ) -> Dict[str, Any]:
     """
     Inspect the structure of a database table.
@@ -33,6 +34,7 @@ async def inspect(
     2. Inspecting tables helps understand the structure of the data
     3. Always inspect tables before writing queries to understand their structure and prevent errors
     4. Simply provide the table name as a string (e.g., "pitchingstatsgame", "battingstatsgame")
+    5. Specify the league parameter to inspect tables in the appropriate database (mlb, nba, etc.)
     """
     logger = logging.getLogger("blitz-agent-mcp")
     
@@ -40,13 +42,17 @@ async def inspect(
         # Create Table object from string input
         table_obj = Table(table_name=table)
         
-        # If no connection provided in the table, use the configured PostgreSQL URL
+        # If no connection provided in the table, use the configured PostgreSQL URL for the specified league
         if table_obj.connection is None:
-            postgres_url = get_postgres_url()
+            postgres_url = get_postgres_url(league)
             if not postgres_url:
-                raise ConnectionError("No connection provided and PostgreSQL configuration is incomplete. Please provide a connection or configure PostgreSQL settings.")
+                league_info = f" for league '{league}'" if league else ""
+                raise ConnectionError(f"No connection provided and PostgreSQL configuration{league_info} is incomplete. Please provide a connection or configure PostgreSQL settings.")
             table_obj.connection = Connection(url=postgres_url)
-            logger.debug("Using configured PostgreSQL connection")
+            if league:
+                logger.debug(f"Using configured PostgreSQL connection for league: {league}")
+            else:
+                logger.debug("Using configured PostgreSQL connection (default)")
         
         url_map = await _get_context_field("url_map", ctx)
         db = await table_obj.connection.connect(url_map=url_map)

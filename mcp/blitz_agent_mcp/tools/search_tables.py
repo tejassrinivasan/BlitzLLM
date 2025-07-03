@@ -176,11 +176,12 @@ async def _get_context_field(field: str, ctx: Context) -> Any:
 
 async def search_tables(
     ctx: Context,
-    connection: Optional[Connection] = Field(default=None, description="The data source to search. If not provided, uses the configured PostgreSQL database."),
     pattern: str = Field(..., description="Pattern to search for. "),
-    limit: int = Field(default=10, description="Number of results to return.", ge=1, le=MAX_DATA_ROWS),
-    mode: SearchMode = Field(default=SearchMode.BM25, description="The search mode to use."),
-) -> dict[str, Any]:
+    mode: SearchMode = Field(SearchMode.BM25, description="The search mode to use."),
+    limit: int = Field(10, description="Number of results to return.", ge=1, le=50),
+    connection: Optional[Connection] = Field(default=None, description="The data source to search. If not provided, uses the configured PostgreSQL database."),
+    league: str = Field(default=None, description="League to search (e.g., 'mlb', 'nba'). If not specified, uses default database."),
+) -> Dict[str, Any]:
     """
     Find and return fully qualified table names that match the given pattern.
 
@@ -208,31 +209,32 @@ async def search_tables(
             * Use for fuzzy matching based on character overlap
     2. Search operates on fully-qualified table names (e.g., schema.table_name or database.schema.table_name).
     3. When search returns unexpected results, examine the returned tables and retry with a different pattern and/or search mode.
+    4. Specify the league parameter to search tables in the appropriate database (mlb, nba, etc.)
     """
-    logger = logging.getLogger("toolfront")
-    logger.debug(f"Searching tables with pattern '{pattern}', mode '{mode}', limit {limit}")
-
+    logger = logging.getLogger("blitz-agent-mcp")
+    
     try:
-        # If no connection provided, use the configured PostgreSQL URL
+        # If no connection provided, use the configured PostgreSQL URL for the specified league
         if connection is None:
-            postgres_url = get_postgres_url()
+            postgres_url = get_postgres_url(league)
             if not postgres_url:
-                raise ConnectionError("No connection provided and PostgreSQL configuration is incomplete. Please provide a connection or configure PostgreSQL settings.")
+                league_info = f" for league '{league}'" if league else ""
+                raise ConnectionError(f"No connection provided and PostgreSQL configuration{league_info} is incomplete. Please provide a connection or configure PostgreSQL settings.")
             connection = Connection(url=postgres_url)
-            logger.debug("Using configured PostgreSQL connection")
+            if league:
+                logger.debug(f"Using configured PostgreSQL connection for league: {league}")
+            else:
+                logger.debug("Using configured PostgreSQL connection (default)")
         
         url_map = await _get_context_field("url_map", ctx)
         db = await connection.connect(url_map=url_map)
         result = await db.search_tables(pattern=pattern, limit=limit, mode=mode)
-
-        return {"tables": result}  # Return as dict with key
+        return {
+            "pattern": pattern,
+            "mode": mode.value,
+            "limit": limit,
+            "league": league,
+            "tables": result
+        }
     except Exception as e:
-        logger.error(f"Failed to search tables: {e}", exc_info=True)
-        if "pattern" in str(e).lower() and mode == SearchMode.REGEX:
-            raise ConnectionError(
-                f"Failed to search {connection.url if connection else 'database'} - Invalid regex pattern: {pattern}. Please try a different pattern or use a different search mode."
-            )
-        elif "connection" in str(e).lower() or "connect" in str(e).lower():
-            raise ConnectionError(f"Failed to connect to {connection.url if connection else 'database'} - {str(e)}")
-        else:
-            raise ConnectionError(f"Failed to search tables in {connection.url if connection else 'database'} - {str(e)}") 
+        raise RuntimeError(f"Table search failed: {str(e)}") 

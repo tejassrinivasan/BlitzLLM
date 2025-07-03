@@ -35,7 +35,27 @@
       "user": "postgres",
       "password": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
       "ssl": true,
-      "description": "PostgreSQL database for structured MLB data"
+      "description": "PostgreSQL database for structured MLB data (default/fallback)"
+    },
+    "postgres_mlb": {
+      "enabled": true,
+      "host": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+      "port": 5432,
+      "database": "mlb",
+      "user": "postgres",
+      "password": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
+      "ssl": true,
+      "description": "PostgreSQL database for MLB data"
+    },
+    "postgres_nba": {
+      "enabled": true,
+      "host": "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
+      "port": 5432,
+      "database": "nba",
+      "user": "postgres",
+      "password": "_V8fn.eo62B(gZD|OcQcu~0|aP8[",
+      "ssl": true,
+      "description": "PostgreSQL database for NBA data"
     },
     "cosmosdb": {
       "enabled": true,

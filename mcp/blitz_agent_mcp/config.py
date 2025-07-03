@@ -66,15 +66,55 @@ POSTGRES_USER=os.getenv("POSTGRES_USER", config_data.get("services", {}).get("po
 POSTGRES_PASSWORD=os.getenv("POSTGRES_PASSWORD", config_data.get("services", {}).get("postgres", {}).get("password"))
 POSTGRES_SSL=os.getenv("POSTGRES_SSL", str(config_data.get("services", {}).get("postgres", {}).get("ssl", "true")).lower())
 
+# League-specific PostgreSQL settings
+POSTGRES_MLB_HOST=os.getenv("POSTGRES_MLB_HOST", config_data.get("services", {}).get("postgres_mlb", {}).get("host", POSTGRES_HOST))
+POSTGRES_MLB_PORT=os.getenv("POSTGRES_MLB_PORT", str(config_data.get("services", {}).get("postgres_mlb", {}).get("port", POSTGRES_PORT)))
+POSTGRES_MLB_DATABASE=os.getenv("POSTGRES_MLB_DATABASE", config_data.get("services", {}).get("postgres_mlb", {}).get("database", POSTGRES_DATABASE))
+POSTGRES_MLB_USER=os.getenv("POSTGRES_MLB_USER", config_data.get("services", {}).get("postgres_mlb", {}).get("user", POSTGRES_USER))
+POSTGRES_MLB_PASSWORD=os.getenv("POSTGRES_MLB_PASSWORD", config_data.get("services", {}).get("postgres_mlb", {}).get("password", POSTGRES_PASSWORD))
+POSTGRES_MLB_SSL=os.getenv("POSTGRES_MLB_SSL", str(config_data.get("services", {}).get("postgres_mlb", {}).get("ssl", POSTGRES_SSL)).lower())
+
+POSTGRES_NBA_HOST=os.getenv("POSTGRES_NBA_HOST", config_data.get("services", {}).get("postgres_nba", {}).get("host", POSTGRES_HOST))
+POSTGRES_NBA_PORT=os.getenv("POSTGRES_NBA_PORT", str(config_data.get("services", {}).get("postgres_nba", {}).get("port", POSTGRES_PORT)))
+POSTGRES_NBA_DATABASE=os.getenv("POSTGRES_NBA_DATABASE", config_data.get("services", {}).get("postgres_nba", {}).get("database", "nba"))
+POSTGRES_NBA_USER=os.getenv("POSTGRES_NBA_USER", config_data.get("services", {}).get("postgres_nba", {}).get("user", POSTGRES_USER))
+POSTGRES_NBA_PASSWORD=os.getenv("POSTGRES_NBA_PASSWORD", config_data.get("services", {}).get("postgres_nba", {}).get("password", POSTGRES_PASSWORD))
+POSTGRES_NBA_SSL=os.getenv("POSTGRES_NBA_SSL", str(config_data.get("services", {}).get("postgres_nba", {}).get("ssl", POSTGRES_SSL)).lower())
+
 SPORTSDATA_API_KEY=os.getenv("SPORTSDATA_API_KEY", config_data.get("services", {}).get("sportsdata", {}).get("apiKey"))
 
 GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
 
-def get_postgres_url():
-    """Build PostgreSQL connection URL from configuration."""
-    if all([POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DATABASE, POSTGRES_USER, POSTGRES_PASSWORD]):
+def get_postgres_url(league: str = None):
+    """Build PostgreSQL connection URL from configuration for specified league."""
+    if league:
+        league = league.lower()
+        if league == "mlb":
+            host, port, database, user, password, ssl = (
+                POSTGRES_MLB_HOST, POSTGRES_MLB_PORT, POSTGRES_MLB_DATABASE, 
+                POSTGRES_MLB_USER, POSTGRES_MLB_PASSWORD, POSTGRES_MLB_SSL
+            )
+        elif league == "nba":
+            host, port, database, user, password, ssl = (
+                POSTGRES_NBA_HOST, POSTGRES_NBA_PORT, POSTGRES_NBA_DATABASE,
+                POSTGRES_NBA_USER, POSTGRES_NBA_PASSWORD, POSTGRES_NBA_SSL
+            )
+        else:
+            # Fallback to default postgres config for unknown leagues
+            host, port, database, user, password, ssl = (
+                POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DATABASE,
+                POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_SSL
+            )
+    else:
+        # Default behavior when no league specified
+        host, port, database, user, password, ssl = (
+            POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DATABASE,
+            POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_SSL
+        )
+    
+    if all([host, port, database, user, password]):
         # URL encode the password to handle special characters
-        encoded_password = quote_plus(POSTGRES_PASSWORD)
-        ssl_param = "?sslmode=require" if POSTGRES_SSL == "true" else ""
-        return f"postgresql://{POSTGRES_USER}:{encoded_password}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DATABASE}{ssl_param}"
+        encoded_password = quote_plus(password)
+        ssl_param = "?sslmode=require" if ssl == "true" else ""
+        return f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}{ssl_param}"
     return None

@@ -72,12 +72,12 @@ async def validate(
     user_question: str = Field(..., description="Original user question"),
     context: str = Field(..., description="Additional context"),
     league: str = Field(..., description="The league being queried (e.g., 'mlb', 'nba') - this will be used to attach the appropriate database schema for better validation")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Validate and analyze query results using AI to determine if the results make sense and 
     properly answer the user's question. This tool provides intelligent analysis of whether 
     the query results are correct, relevant, and complete.
-    
+
     Validation Instructions:
     1. Provide the executed SQL query and its ACTUAL RESULTS DATA (not a summary)
     2. The results parameter must contain the raw JSON data returned from the query
@@ -89,136 +89,142 @@ async def validate(
     IMPORTANT: The 'results' parameter should contain the actual data rows returned by the SQL query 
     in JSON format, NOT a summary or description of the results.
     """
-    if not query:
-        raise ValueError("query is required")
-    
-    # Handle cases where results or description might be missing due to MCP adapter issues
-    if not results or results == "[]" or results == []:
-        return {
-            "success": False,
-            "error": "No results provided for validation",
-            "query": query,
-            "description": description,
-            "message": "Cannot validate query without results data."
-        }
-    
-    # Use fallback description if missing
-    if not description or description == "Query validation":
-        description = f"SQL query validation for: {query[:100]}..."
+    logger = logging.getLogger("blitz-agent-mcp")
     
     try:
-        chat_client = get_azure_chat_client()
-        
+        # Prepare the validation prompt with schema context
         # Read the schema file for the specified league
         schema_content = _read_schema_file(league)
-        schema_section = ""
-        if schema_content:
-            schema_section = f"""
-        DATABASE SCHEMA DOCUMENTATION ({league.upper()}):
-        {schema_content}
         
-        """
+        schema_context = ""
+        if schema_content:
+            schema_context = f"""
+DATABASE SCHEMA DOCUMENTATION ({league.upper()}):
+{schema_content}
+
+"""
         else:
             logging.warning(f"Could not load schema for league: {league}")
         
-        # Just pass the raw results to the AI without parsing, but truncate if too long
-        query_results = results
-        if len(query_results) > 5000:
-            query_results = query_results[:5000] + "... (TRUNCATED)"
+        # Convert results to string if needed
+        if not isinstance(results, str):
+            results_str = json.dumps(results, indent=2, default=str)
+        else:
+            results_str = results
         
-        analysis_prompt = f"""
-        QUERY VALIDATION AND ANALYSIS
+        validation_prompt = f"""
+You are an expert database analyst specializing in sports data validation. Please analyze the following SQL query execution and its results to determine if they properly answer the user's question.
 
-        USER'S ORIGINAL QUESTION:
-        {user_question or 'Not provided'}
+{schema_context}
 
-        QUERY DESCRIPTION:
-        {description}
+ORIGINAL USER QUESTION:
+{user_question}
 
-        SQL QUERY EXECUTED:
-        {query}
+SQL QUERY EXECUTED:
+{query}
 
-        QUERY RESULTS:
-        {query_results}
+QUERY DESCRIPTION:
+{description}
 
-        ADDITIONAL CONTEXT:
-        {context or 'None provided'}
+ACTUAL QUERY RESULTS:
+{results_str}
 
-        {schema_section}
+ADDITIONAL CONTEXT:
+{context}
 
-        ## CRITICAL VALIDATION FRAMEWORK:
+Please provide a comprehensive validation analysis covering:
 
-        ### 1. COMPLETENESS ANALYSIS:
-        - If question asks for "all teams", "each team", or similar comprehensive language, ensure all teams are included
-        - If question is about league-wide stats, ensure no arbitrary LIMIT or ORDER BY is preventing complete results
-        - Check if the scope of results matches the scope of the question
+1. **Result Correctness**: Do the results make logical sense for the query?
+2. **Data Completeness**: Are there missing or unexpected data points?
+3. **Query Appropriateness**: Does the SQL query properly address the user's question?
+4. **Sports Logic Validation**: Do the results align with expected sports statistics and rules?
+5. **Potential Issues**: Any red flags, anomalies, or concerns?
+6. **Recommendations**: Suggestions for improvement if needed
 
-        ### 2. LOGICAL CONSISTENCY CHECKS:
-        - **Home/Away Logic**: For queries involving home vs away performance, verify correct team assignment
-        - **Mathematical Integrity**: Verify calculations make sense and aggregations use appropriate grouping
-        - **Sports Logic**: Ensure results align with sports reality (realistic stat ranges)
+Focus particularly on:
+- If question is about league-wide stats, ensure no arbitrary LIMIT or ORDER BY is preventing complete results
+- Verify date ranges and filters make sense for the sport's calendar
+- Check if player/team names are correctly matched
+- Validate statistical ranges are realistic for the sport
+- Ensure aggregations and calculations are appropriate
 
-        ### 3. DATA QUALITY ASSESSMENT:
-        - Are numbers realistic for the sport and time period?
-            - For example, there are 162 games and 30 teams in an MLB season per team, so 2430 total games are played in an MLB season (for MLB we have 2012-2025 so around 30k games)
-        - Do aggregate values seem plausible?
-        - Are there any suspicious patterns or outliers?
-                
-        ### 4. QUESTION ALIGNMENT:
-        - Does the query structure actually answer what was asked?
-        - Are the right metrics being calculated?
-        - Is the time period correct?
-
-        ### 5. SCHEMA COMPLIANCE:
-        - Does the query follow the database schema rules and interpretation guidelines provided above?
-        - Are the correct tables and joins being used based on the schema documentation?
-        - Are any schema-specific constraints or limitations being violated?
-
-        Please analyze these query results and provide a comprehensive validation as a JSON object with the following schema:
-        {{
-            "isValid": boolean,
-            "confidenceResultsAreCorrect": number,
-            "answersUserQuestion": boolean,
-            "issues": string[],
-            "insights": string[],
-            "recommendations": string[],
-            "summary": string,
-            "interpretation": string
-        }}
-        """
+Provide your analysis as a structured JSON response with the following format:
+{{
+    "validation_score": <float between 0.0 and 1.0>,
+    "is_correct": <boolean>,
+    "confidence": <float between 0.0 and 1.0>,
+    "issues_found": [<list of issues>],
+    "insights": [<list of insights>],
+    "recommendations": [<list of recommendations>],
+    "summary": "<brief overall assessment>"
+}}
+"""
         
-        system_prompt = f"You are an expert data analyst specializing in sports statistics and SQL query validation. Your job is to analyze query results and determine if they make sense, are complete, and properly answer the user's question. Use the provided database schema documentation to ensure queries follow the correct interpretation rules and data model constraints. Be thorough but concise in your analysis. **TODAY'S DATE:** {datetime.now().strftime('%Y-%m-%d')}. You must respond with only a valid JSON object."
-
-        response = chat_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": analysis_prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0,
-        )
-        
-        validation_result = json.loads(response.choices[0].message.content)
-        
-        return {
-            "success": True,
-            "validation": validation_result,
-            "metadata": {
-                "analysis_timestamp": datetime.now().isoformat(),
-                "query_analyzed": query,
-                "description_analyzed": description,
-                "user_question": user_question,
+        # Make the API call to Azure OpenAI
+        azure_client = httpx.AsyncClient()
+        try:
+            response = await azure_client.post(
+                f"{AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-4o-mini/chat/completions?api-version={AZURE_OPENAI_API_VERSION}",
+                headers={
+                    "api-key": AZURE_OPENAI_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": validation_prompt
+                        }
+                    ],
+                    "max_tokens": 2000,
+                    "temperature": 0.1
+                },
+                timeout=30.0
+            )
+            response.raise_for_status()
+            ai_response = response.json()
+            
+            # Extract the validation analysis
+            validation_text = ai_response["choices"][0]["message"]["content"]
+            
+            # Try to parse as JSON
+            try:
+                validation_result = json.loads(validation_text)
+            except json.JSONDecodeError:
+                # If not valid JSON, create a structured response
+                validation_result = {
+                    "validation_score": 0.5,
+                    "is_correct": None,
+                    "confidence": 0.3,
+                    "issues_found": ["Unable to parse AI validation response as JSON"],
+                    "insights": [],
+                    "recommendations": ["Manual review recommended"],
+                    "summary": validation_text[:500] + "..." if len(validation_text) > 500 else validation_text
+                }
+            
+            return {
+                "success": True,
+                "query": query,
                 "league": league,
-                "schema_loaded": schema_content is not None
+                "validation": validation_result,
+                "metadata": {
+                    "user_question": user_question,
+                    "description": description,
+                    "context": context,
+                    "results_length": len(results_str),
+                    "timestamp": datetime.now().isoformat()
+                }
             }
-        }
-        
+            
+        finally:
+            await azure_client.aclose()
+            
     except Exception as e:
+        logger.error(f"Validation failed: {str(e)}")
         return {
             "success": False,
-            "error": f"Validation failed: {str(e)}",
+            "error": str(e),
             "query": query,
-            "description": description,
-            "message": "Unable to validate query results. The query executed but validation analysis failed."
+            "league": league,
+            "timestamp": datetime.now().isoformat()
         } 

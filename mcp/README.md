@@ -1,6 +1,264 @@
-# Blitz Agent MCP Server (Python)
+# 🚀 Blitz Agent MCP Server
 
-A comprehensive Model Context Protocol (MCP) server for sports database analysis, AI-powered insights, and data validation using the official Python MCP SDK.
+A powerful Model Context Protocol (MCP) server for sports database analysis, combining real-time data access, AI-powered insights, and comprehensive validation tools. Built with FastMCP for optimal performance and scalability.
+
+## 🎯 Key Features
+
+- **Multi-League Database Support**: Separate database connections for MLB and NBA data
+- **Advanced Query Tools**: SQL execution with league-specific context
+- **AI-Powered Validation**: Intelligent query result analysis
+- **Historical Query Recall**: Learn from previous successful queries
+- **Real-time Data Integration**: Live betting odds and sports data
+- **Comprehensive Schema Support**: Detailed documentation for all sports leagues
+
+## 📊 Multi-League Database Configuration
+
+The server supports separate database instances for different sports leagues. This allows you to:
+
+- **Query MLB data**: Use `league="mlb"` parameter
+- **Query NBA data**: Use `league="nba"` parameter  
+- **Automatic fallback**: Default database when no league is specified
+
+### Configuration Structure
+
+Each league can have its own database configuration in `config.json`:
+
+```json
+{
+  "services": {
+    "postgres": {
+      "description": "Default/fallback PostgreSQL database",
+      "host": "your-host.com",
+      "database": "mlb"
+    },
+    "postgres_mlb": {
+      "description": "MLB-specific database",
+      "host": "your-host.com", 
+      "database": "mlb"
+    },
+    "postgres_nba": {
+      "description": "NBA-specific database",
+      "host": "your-host.com",
+      "database": "nba"
+    }
+  }
+}
+```
+
+### Environment Variables
+
+You can also configure league-specific databases using environment variables:
+
+```bash
+# MLB Database
+POSTGRES_MLB_HOST=your-mlb-host.com
+POSTGRES_MLB_DATABASE=mlb
+POSTGRES_MLB_USER=postgres
+POSTGRES_MLB_PASSWORD=your-password
+
+# NBA Database  
+POSTGRES_NBA_HOST=your-nba-host.com
+POSTGRES_NBA_DATABASE=nba
+POSTGRES_NBA_USER=postgres
+POSTGRES_NBA_PASSWORD=your-password
+```
+
+## 🛠️ Database Tools with League Support
+
+All core database tools now support the `league` parameter:
+
+### `query`
+Execute SQL queries against league-specific databases.
+```json
+{
+  "query": "SELECT * FROM games WHERE season = 2024",
+  "description": "Get all 2024 games",
+  "league": "mlb"
+}
+```
+
+### `inspect`
+Inspect table structure in specific league databases.
+```json
+{
+  "table": "battingstatsgame",
+  "league": "mlb"
+}
+```
+
+### `sample` 
+Sample data from league-specific tables.
+```json
+{
+  "table": "playerstatsgame",
+  "n": 10,
+  "league": "nba"
+}
+```
+
+### `search_tables`
+Search for tables within a specific league database.
+```json
+{
+  "pattern": "player stats",
+  "league": "nba",
+  "mode": "bm25"
+}
+```
+
+### `test`
+Test database connections for specific leagues.
+```json
+{
+  "league": "mlb"
+}
+```
+
+### `validate`
+Validate query results with league-specific schema context.
+```json
+{
+  "query": "SELECT * FROM standings",
+  "results": "[{\"team\": \"Lakers\", \"wins\": 45}]",
+  "league": "nba",
+  "user_question": "What are the current standings?",
+  "description": "Season standings query",
+  "context": "Regular season analysis"
+}
+```
+
+### `upload`
+Upload successful queries to league-specific Cosmos DB containers.
+```json
+{
+  "description": "Get team standings for current season",
+  "query": "SELECT team, wins, losses FROM standings WHERE season = 2024",
+  "league": "nba",
+  "results": "[{\"team\": \"Lakers\", \"wins\": 45, \"losses\": 20}]",
+  "context": "Season analysis",
+  "validation_score": 0.92
+}
+```
+
+## 📈 Usage Examples
+
+### Querying MLB Data
+```python
+# Query MLB batting statistics
+await query(
+    ctx=ctx,
+    query="SELECT player_name, avg FROM battingstatsgame WHERE season = 2024",
+    description="Get 2024 batting averages",
+    league="mlb"
+)
+```
+
+### Querying NBA Data  
+```python
+# Query NBA player statistics
+await query(
+    ctx=ctx, 
+    query="SELECT player_name, points FROM playerstatsgame WHERE season = 2024",
+    description="Get 2024 scoring stats",
+    league="nba"
+)
+```
+
+### Testing Connections
+```python
+# Test MLB database connection
+await test(ctx=ctx, league="mlb")
+
+# Test NBA database connection  
+await test(ctx=ctx, league="nba")
+
+# Test default database connection
+await test(ctx=ctx)
+```
+
+### Uploading Successful Queries
+```python
+# Upload MLB query to mlb-unofficial container
+await upload(
+    ctx=ctx,
+    description="Get top 10 home run leaders in 2024",
+    query="SELECT player_name, home_runs FROM battingstatsgame WHERE season = 2024 ORDER BY home_runs DESC LIMIT 10",
+    league="mlb",
+    results="[{\"player_name\": \"Judge\", \"home_runs\": 62}]",
+    validation_score=0.95
+)
+
+# Upload NBA query to nba-unofficial container
+await upload(
+    ctx=ctx,
+    description="Get top scorers in 2024 season",
+    query="SELECT player_name, points FROM playerstatsgame WHERE season = 2024 ORDER BY points DESC LIMIT 10",
+    league="nba",
+    results="[{\"player_name\": \"Embiid\", \"points\": 33.1}]",
+    validation_score=0.88
+)
+```
+
+## 🔧 Migration Guide
+
+If you're upgrading from a single-database setup:
+
+1. **Update your config.json** to include league-specific database configurations
+2. **Add league parameters** to your database tool calls
+3. **Test connections** for each league using the `test` tool
+4. **Update your queries** to specify the appropriate league
+
+### Backward Compatibility
+
+- Tools without the `league` parameter will use the default database
+- Existing queries will continue to work unchanged
+- The system gracefully falls back to default settings when league-specific configs are missing
+
+## 🏆 Supported Leagues
+
+- **MLB**: Complete baseball database schema with historical and current data
+- **NBA**: Complete basketball database schema with player, team, and game statistics
+- **Extensible**: Easily add support for additional leagues
+
+## 🔍 Schema Documentation
+
+Each league has comprehensive schema documentation:
+
+- **MLB Schema**: `/schemas/mlb-schema.md`
+- **NBA Schema**: `/schemas/nba-schema.md`
+
+Use the `get_database_documentation` tool to access league-specific schema information:
+
+```json
+{
+  "league": "mlb"
+}
+```
+
+## 🚦 Error Handling
+
+The system provides detailed error messages for configuration issues:
+
+- **Missing league config**: Clear indication of what's missing
+- **Connection failures**: Specific error details for troubleshooting  
+- **Invalid league**: Helpful suggestions for supported leagues
+
+## 🎛️ Configuration Validation
+
+Before using the tools, validate your setup:
+
+```bash
+# Test MLB connection
+mcp-client test --league mlb
+
+# Test NBA connection  
+mcp-client test --league nba
+
+# List available tables
+mcp-client search_tables --pattern "stats" --league mlb
+```
+
+This multi-league support enables sophisticated cross-sport analysis while maintaining data isolation and optimal performance for each sport's specific requirements.
 
 ## Features
 
@@ -223,15 +481,22 @@ Get detailed betting markets and odds for a specific event.
 ```
 
 #### `upload`
-Store successful queries in Cosmos DB.
+Store successful queries in league-specific Cosmos DB containers.
 ```json
 {
-  "query": "SELECT * FROM games",
+  "description": "Get 2024 season games",
+  "query": "SELECT * FROM games WHERE season = 2024",
+  "league": "mlb",
   "results": "[{\"game_id\": 1, \"score\": \"10-7\"}]",
   "context": "Game results query",
   "validation_score": 0.95
 }
 ```
+
+**Container Mapping:**
+- `league="mlb"` → `mlb-unofficial` container
+- `league="nba"` → `nba-unofficial` container  
+- `league=None` → `agent-learning` container (fallback)
 
 ### Knowledge Tools
 
@@ -250,12 +515,6 @@ Retrieve sport-specific schema documentation.
 - **Connection validation**: Automatic connection testing
 - **Rate limiting**: Built-in request throttling
 - **Error handling**: Comprehensive error reporting
-
-## Supported Leagues
-
-- **MLB**: Complete baseball database schema
-- **NBA**: Complete basketball database schema
-- **More leagues**: Easily extensible
 
 ## Development
 
