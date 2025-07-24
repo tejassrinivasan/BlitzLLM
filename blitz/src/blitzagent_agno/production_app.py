@@ -133,7 +133,7 @@ def create_model_from_env():
                      os.getenv("MODEL__AZURE_DEPLOYMENT") or
                      os.getenv("MODEL__NAME", "gpt-4o"))
         api_version = (os.getenv("AZURE_OPENAI_API_VERSION") or 
-                      os.getenv("MODEL__AZURE_API_VERSION", "2024-10-21"))
+                      os.getenv("MODEL__AZURE_API_VERSION", "2025-03-01-preview"))
         
         if not api_key or not endpoint:
             raise ValueError("AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT environment variables are required for Azure OpenAI")

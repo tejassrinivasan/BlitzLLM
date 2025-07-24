@@ -68,7 +68,7 @@ def model(model_name: str) -> Dict[str, Any]:
             "provider": "azure_openai",
             "name": actual_model,
             "azure_deployment": actual_model,  # Use model name as deployment name
-            "azure_api_version": "2024-10-21",
+            "azure_api_version": "2025-03-01-preview",
         })
         # Auto-detect from environment
         import os
@@ -133,7 +133,7 @@ async def create_model_from_config(model_config: Dict[str, Any], base_config: Op
             api_key=model_config["api_key"],
             azure_endpoint=model_config["azure_endpoint"],
             azure_deployment=model_config["azure_deployment"],
-            api_version=model_config.get("azure_api_version", "2024-10-21"),
+            api_version=model_config.get("azure_api_version", "2025-03-01-preview"),
             temperature=temperature,
             max_tokens=max_tokens
         )
@@ -346,22 +346,48 @@ async def create_agno_model(config: Config):
         raise ConfigurationError(f"Unsupported model provider: {config.model.provider}")
 
 
-def create_mcp_tools(config: Config) -> MCPTools:
+def create_mcp_tools(config: Config, league: str = "mlb") -> MCPTools:
     """Create MCP tools with proper server configuration (sync version)."""
     # Use the uvx command directly as configured in mcp.json
     mcp_command = "uvx"
     mcp_args = ["--from", "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp", "blitz-agent-mcp"]
     
     # Log the MCP command for debugging
-    logger.info(f"Creating MCP tools with command: {mcp_command} {' '.join(mcp_args)}")
+    logger.info(f"Creating MCP tools with command: {mcp_command} {' '.join(mcp_args)} for league: {league}")
     
     # Use current environment and override with database config
     import os
     mcp_env = os.environ.copy()
+    
+    # Set both NBA and MLB database configuration for multi-league support
+    # NBA configuration
+    mcp_env.update({
+        "POSTGRES_NBA_HOST": config.database.host,
+        "POSTGRES_NBA_PORT": str(config.database.port),
+        "POSTGRES_NBA_DATABASE": "nba",  # NBA database name
+        "POSTGRES_NBA_USER": config.database.user,
+        "POSTGRES_NBA_PASSWORD": config.database.password,
+        "POSTGRES_NBA_SSL": "true",
+    })
+    
+    # MLB configuration  
+    mcp_env.update({
+        "POSTGRES_MLB_HOST": config.database.host,
+        "POSTGRES_MLB_PORT": str(config.database.port),
+        "POSTGRES_MLB_DATABASE": "mlb",  # MLB database name
+        "POSTGRES_MLB_USER": config.database.user,
+        "POSTGRES_MLB_PASSWORD": config.database.password,
+        "POSTGRES_MLB_SSL": "true",
+    })
+    
+    logger.info(f"Configured MCP tools for multi-league support (primary: {league})")
+    
+    # Set general postgres config to match the primary league
+    primary_database = "nba" if league.lower() == "nba" else "mlb"
     mcp_env.update({
         "POSTGRES_HOST": config.database.host,
         "POSTGRES_PORT": str(config.database.port),
-        "POSTGRES_DATABASE": config.database.database,
+        "POSTGRES_DATABASE": primary_database,  # Set to match the primary league
         "POSTGRES_USER": config.database.user,
         "POSTGRES_PASSWORD": config.database.password,
         "POSTGRES_SSL": "true",
@@ -391,22 +417,48 @@ def create_mcp_tools(config: Config) -> MCPTools:
 
 
 @asynccontextmanager
-async def create_mcp_tools_async(config: Config) -> AsyncIterator[MCPTools]:
+async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIterator[MCPTools]:
     """Create MCP tools as an async context manager for proper connection handling."""
     # Use the uvx command directly as configured in mcp.json
     mcp_command = "uvx"
     mcp_args = ["--from", "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp", "blitz-agent-mcp"]
     
     # Log the MCP command for debugging
-    logger.info(f"Creating async MCP tools with command: {mcp_command} {' '.join(mcp_args)}")
+    logger.info(f"Creating async MCP tools with command: {mcp_command} {' '.join(mcp_args)} for league: {league}")
     
     # Use current environment and override with database config
     import os
     mcp_env = os.environ.copy()
+    
+    # Set both NBA and MLB database configuration for multi-league support
+    # NBA configuration
+    mcp_env.update({
+        "POSTGRES_NBA_HOST": config.database.host,
+        "POSTGRES_NBA_PORT": str(config.database.port),
+        "POSTGRES_NBA_DATABASE": "nba",  # NBA database name
+        "POSTGRES_NBA_USER": config.database.user,
+        "POSTGRES_NBA_PASSWORD": config.database.password,
+        "POSTGRES_NBA_SSL": "true",
+    })
+    
+    # MLB configuration  
+    mcp_env.update({
+        "POSTGRES_MLB_HOST": config.database.host,
+        "POSTGRES_MLB_PORT": str(config.database.port),
+        "POSTGRES_MLB_DATABASE": "mlb",  # MLB database name
+        "POSTGRES_MLB_USER": config.database.user,
+        "POSTGRES_MLB_PASSWORD": config.database.password,
+        "POSTGRES_MLB_SSL": "true",
+    })
+    
+    logger.info(f"Configured async MCP tools for multi-league support (primary: {league})")
+    
+    # Set general postgres config to match the primary league
+    primary_database = "nba" if league.lower() == "nba" else "mlb"
     mcp_env.update({
         "POSTGRES_HOST": config.database.host,
         "POSTGRES_PORT": str(config.database.port),
-        "POSTGRES_DATABASE": config.database.database,
+        "POSTGRES_DATABASE": primary_database,  # Set to match the primary league
         "POSTGRES_USER": config.database.user,
         "POSTGRES_PASSWORD": config.database.password,
         "POSTGRES_SSL": "true",
@@ -496,30 +548,52 @@ def get_agent_instructions(agent_type: str = AgentType.BASIC, context: Optional[
         return get_query_generator_instructions(context)
     
     # Base instructions for all other agent types
-    base_instructions = dedent("""
-                    You are an AI sports analytics agent with deep expertise in MLB data.
+    base_instructions = dedent(f"""
+                    You are an AI sports analytics agent with deep expertise in both NBA and MLB data.
                     Your job is to use the tools available to you to answer the user's question. 
 
                     ---
-                    Today's Date: 6/30/2025
+                    Today's Date: {datetime.now().strftime("%Y-%m-%d")}
 
-                    You have access to two distinct sources where the tools get their data from:
+                    You have access to three distinct data sources with the following priority order:
 
-                    ### 1. HISTORICAL DATABASE (PostgreSQL) - Only contains data until yesterday
+                    ### 1. HISTORICAL DATABASE (PostgreSQL) - PREFERRED SOURCE - Only contains data until yesterday
+
+                    **ALWAYS TRY HISTORICAL DATABASE FIRST** - Most comprehensive and reliable source for player stats, team records, and historical performance.
 
                     MANDATORY WORKFLOW SEQUENCE (NO EXCEPTIONS):
                     get_database_documentation → recall_similar_db_queries → search_tables → inspect → sample → query → validate → upload
 
                     MANDATORY RULES FOR DATABASE QUERIES:
-                    - **STEP 1: ALWAYS CALL get_database_documentation FIRST**
-                    - **STEP 2: IMMEDIATELY AFTER DOCUMENTATION, ALWAYS CALL recall_similar_db_queries - NEVER SKIP THIS!**
-                    - **STEP 3: THEN PROCEED WITH search_tables, inspect, sample if needed**
+                    - **CRITICAL: CHOOSE THE CORRECT LEAGUE DATABASE**
+                    - **For NBA questions (Stephen Curry, Klay Thompson, Lakers, Warriors, basketball): Use league="nba"**
+                    - **For MLB questions (baseball players, teams, pitching, batting): Use league="mlb"**
+                    - **STEP 1: ALWAYS CALL get_database_documentation(league="nba" or "mlb") FIRST**
+                    - **STEP 2: IMMEDIATELY AFTER DOCUMENTATION, ALWAYS CALL recall_similar_db_queries(league="nba" or "mlb") - NEVER SKIP THIS!**
+                    - **STEP 3: THEN PROCEED WITH search_tables(league="nba" or "mlb"), inspect(league="nba" or "mlb"), sample(league="nba" or "mlb") if needed**
                     - **THE recall_similar_db_queries TOOL IS MANDATORY - DO NOT PROCEED WITHOUT IT**
                     - You MUST use the validate tool immediately after query. NEVER return query results as final without validation
                     - If validate returns that the query is not very accurate or provides recommendations to improve the query, AUTOMATICALLY iterate through the workflow again in a loop until the query is good/accurate.
 
                     ---
-                    ### 2. LIVE BETTING DATA (SportsData.io)
+                    ### 2. WEB SCRAPING - SECONDARY SOURCE - Use only if historical database doesn't have the data
+
+                    **USE ONLY WHEN HISTORICAL DATABASE IS INSUFFICIENT** - For recent news, current injuries, today's games, breaking news, or data not in historical database.
+
+                    Available webscraping capabilities:
+                    - Real-time sports news and updates
+                    - Current player injury reports
+                    - Today's game schedules and results
+                    - Breaking trades and signings
+                    - Current standings and playoff scenarios
+
+                    When to use webscraping:
+                    - Question asks about "today", "current", "recent", "latest", "breaking"
+                    - Historical database doesn't contain the needed information
+                    - User asks about very recent events (last few days)
+
+                    ---
+                    ### 3. LIVE BETTING DATA (SportsData.io) - TERTIARY SOURCE
                     - Use this for real-time betting lines and odds for scheduled games
                     - For questions about upcoming betting lines or odds for specific games
                     
@@ -730,7 +804,8 @@ async def create_playground_agent(
     config: Optional[Config] = None,
     enable_confirmations: bool = True,
     context: Optional[RuntimeContext] = None,
-    model_override: Optional[str] = None
+    model_override: Optional[str] = None,
+    league: str = "mlb"
 ) -> Agent:
     """
     Create an Agno Agent specifically configured for playground use.
@@ -768,7 +843,7 @@ async def create_playground_agent(
     tools = [ReasoningTools(add_instructions=True)]
     
     # Add MCP tools
-    mcp_tools = create_mcp_tools(config)
+    mcp_tools = create_mcp_tools(config, league)
     tools.append(mcp_tools)
     
     # Add confirmation tool if enabled
@@ -798,7 +873,7 @@ async def create_playground_agent(
 
 
 @asynccontextmanager 
-async def create_cli_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> AsyncIterator[Agent]:
+async def create_cli_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None, league: str = "mlb") -> AsyncIterator[Agent]:
     """
     Create a CLI agent with properly managed MCP tools in an async context manager.
     This mirrors the playground approach and ensures MCP tools are properly connected.
@@ -832,7 +907,7 @@ async def create_cli_agent(config: Optional[Config] = None, context: Optional[Ru
         memory = await create_agno_memory(config)
     
     # Create MCP tools using async context manager (mirrors playground approach)
-    async with create_mcp_tools_async(config) as mcp_tools:
+    async with create_mcp_tools_async(config, league) as mcp_tools:
         # Create tools with properly connected MCP tools
         tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
         
@@ -856,7 +931,7 @@ async def create_cli_agent(config: Optional[Config] = None, context: Optional[Ru
         yield agent
 
 
-async def create_server_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> Agent:
+async def create_server_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None, league: str = "mlb") -> Agent:
     """
     Create an Agno Agent specifically configured for server/API use.
     
@@ -892,7 +967,7 @@ async def create_server_agent(config: Optional[Config] = None, context: Optional
     tools = [ReasoningTools(add_instructions=True)]
     
     # Add MCP tools
-    mcp_tools = create_mcp_tools(config)
+    mcp_tools = create_mcp_tools(config, league)
     tools.append(mcp_tools)
     
     # Create agent
@@ -916,7 +991,7 @@ async def create_server_agent(config: Optional[Config] = None, context: Optional
     return agent
 
 
-async def create_query_generator_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None) -> Agent:
+async def create_query_generator_agent(config: Optional[Config] = None, context: Optional[RuntimeContext] = None, model_override: Optional[str] = None, league: str = "mlb") -> Agent:
     """
     Create an Agno Agent specifically for generating multiple query variations.
     
@@ -954,7 +1029,7 @@ async def create_query_generator_agent(config: Optional[Config] = None, context:
     tools = [ReasoningTools(add_instructions=True)]
     
     # Add MCP tools
-    mcp_tools = create_mcp_tools(config)
+    mcp_tools = create_mcp_tools(config, league)
     tools.append(mcp_tools)
     
     # Note: MCP tools already includes blitzAgent_upload (no confirmation needed)
@@ -1123,7 +1198,8 @@ async def create_agent(
     agent_type: str, 
     config: Optional[Config] = None, 
     context: Optional[RuntimeContext] = None,
-    model_override: Optional[str] = None
+    model_override: Optional[str] = None,
+    league: str = "mlb"
 ):
     """
     Factory function to create different types of agents.
@@ -1155,5 +1231,7 @@ async def create_agent(
         kwargs['context'] = context
     if 'model_override' in sig.parameters:
         kwargs['model_override'] = model_override
+    if 'league' in sig.parameters:
+        kwargs['league'] = league
         
     return await factory_func(config, **kwargs) 

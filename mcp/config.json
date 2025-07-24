@@ -8,14 +8,14 @@
     "sportsdata": {
       "enabled": true,
       "apiKey": "47ea9395aa1c4bf9906df741e846e979",
-      "description": "MLB Sports Data API for odds, games, and predictive stats"
+        "description": "Sports Data API for odds, games, and predictive stats (MLB and NBA)"
     },
     "azure": {
       "search": {
         "enabled": true,
         "endpoint": "https://blitz-ai-search.search.windows.net",
         "apiKey": "LcU87PCPYwAUa8jMxAYo6AqNNr538wRmc1v1LUg36NAzSeACYRk2",
-        "indexName": "blitz-mlb-index",
+        "indexName": "blitz-sports-index",
         "description": "Azure AI Search for contextual query learning"
       },
       "openai": {
@@ -24,7 +24,7 @@
         "endpoint": "https://blitzgpt.openai.azure.com/",
         "resourceName": "blitzgpt",
         "apiVersion": "2025-03-01-preview",
-        "description": "Azure OpenAI for the MLB insights agent"
+        "description": "Azure OpenAI for the sports insights agent"
       }
     },
     "postgres": {
@@ -65,8 +65,8 @@
     }
   },
   "server": {
-    "name": "mlb-insights-mcp-server",
+    "name": "blitz-sports-mcp-server",
     "version": "1.0.0",
-    "description": "MLB Insights MCP Server with configurable data sources"
+    "description": "Blitz Sports MCP Server with NBA and MLB data sources"
   }
 } 

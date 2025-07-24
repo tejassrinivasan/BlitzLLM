@@ -48,7 +48,7 @@ Use this section to validate scale and interpret frequency-based queries with re
    When multiple conditions are given (e.g., “player scores 30 and team wins”), assume **AND logic**, not conditional probabilities or independent stats.
 
 3. **Duplicate players**:
-   If a user asks a question that involves a player with a common name, first find the player inside playersmetadata to make sure there aren't multiple players with the same name. If there are, then assume who they are talking about with other context clues or make sure you say you figure out which one they are talking about before executing the query (e.g. Max Muncy on the Dodgers and Max Muncy on the Athletics).
+   If a user asks a question that involves a player with a common name, first find the player inside playersmetadata to make sure there aren't multiple players with the same name. If there are, then assume who they are talking about with other context clues or make sure you say you figure out which one they are talking about before executing the query
 
 3. **Don't Split Conditional Logic**:  
    If a query includes a condition (e.g., "when Player A scores 20+, what’s Team B’s win rate?"), evaluate within the **same game context** — do not break into separate subqueries and combine.

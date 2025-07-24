@@ -348,9 +348,9 @@ class BlitzAgent:
     async def _initialize_agent(self) -> None:
         """Initialize the main Agno agent with tools and configuration."""
         try:
-            # Get MCP command for tools
-            mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
-            self._mcp_command = f"{mcp_path}/start.sh"
+            # MCP command already set in _initialize_tools() - don't overwrite it
+            # mcp_path = Path(__file__).parent.parent.parent.parent / "mcp"
+            # self._mcp_command = f"{mcp_path}/start.sh"  # DON'T OVERWRITE uvx command!
             
             # Setup model based on provider
             if self.config.model.provider == "gemini":
@@ -448,10 +448,33 @@ class BlitzAgent:
                     
                     # Use current environment and override with database config
                     mcp_env = os.environ.copy()
+                    
+                    # Set both NBA and MLB database configuration for multi-league support
+                    # NBA configuration
+                    mcp_env.update({
+                        "POSTGRES_NBA_HOST": self.config.database.host,
+                        "POSTGRES_NBA_PORT": str(self.config.database.port),
+                        "POSTGRES_NBA_DATABASE": "nba",  # NBA database name
+                        "POSTGRES_NBA_USER": self.config.database.user,
+                        "POSTGRES_NBA_PASSWORD": self.config.database.password,
+                        "POSTGRES_NBA_SSL": "true",
+                    })
+                    
+                    # MLB configuration  
+                    mcp_env.update({
+                        "POSTGRES_MLB_HOST": self.config.database.host,
+                        "POSTGRES_MLB_PORT": str(self.config.database.port),
+                        "POSTGRES_MLB_DATABASE": "mlb",  # MLB database name
+                        "POSTGRES_MLB_USER": self.config.database.user,
+                        "POSTGRES_MLB_PASSWORD": self.config.database.password,
+                        "POSTGRES_MLB_SSL": "true",
+                    })
+                    
+                    # Set general postgres config for fallback - use NBA as default for now
                     mcp_env.update({
                         "POSTGRES_HOST": self.config.database.host,
                         "POSTGRES_PORT": str(self.config.database.port),
-                        "POSTGRES_DATABASE": self.config.database.database,
+                        "POSTGRES_DATABASE": "nba",  # Default to NBA database
                         "POSTGRES_USER": self.config.database.user,
                         "POSTGRES_PASSWORD": self.config.database.password,
                         "POSTGRES_SSL": "true",
@@ -464,18 +487,63 @@ class BlitzAgent:
                         env=mcp_env  # Pass environment variables
                     )
                     
-                    mcp_tools = MCPTools(
-                        server_params=server_params,
-                        timeout_seconds=self.config.mcp.timeout  # Use config timeout instead of default 5s
-                    )
-                    tools.append(mcp_tools)
+                    # Create MCP tools and initialize properly as context manager
+                    try:
+                        print(f"🔧 Initializing MCP tools as context manager with timeout {self.config.mcp.timeout}s...")
+                        
+                        mcp_tools = MCPTools(
+                            server_params=server_params,
+                            timeout_seconds=self.config.mcp.timeout
+                        )
+                        
+                        # Initialize the session properly
+                        await mcp_tools.__aenter__()
+                        print("✅ MCP context manager initialized")
+                        
+                        # Now try to get tools list
+                        try:
+                            # Try the correct method name for listing tools
+                            if hasattr(mcp_tools, 'get_tools'):
+                                tools_list = await mcp_tools.get_tools()
+                            elif hasattr(mcp_tools, 'list_tools'):
+                                tools_list = await mcp_tools.list_tools()
+                            else:
+                                tools_list = []
+                                print("❓ No list_tools or get_tools method found")
+                                
+                            if tools_list:
+                                print(f"✅ MCP tools loaded successfully! Found {len(tools_list)} tools:")
+                                for tool in tools_list[:5]:  # Show first 5
+                                    name = getattr(tool, 'name', str(tool))
+                                    print(f"   - {name}")
+                            else:
+                                print("❌ No MCP tools found")
+                                
+                        except Exception as list_error:
+                            print(f"❌ Failed to list MCP tools: {list_error}")
+                            
+                        tools.append(mcp_tools)
+                        
+                    except Exception as init_error:
+                        print(f"❌ MCP context manager initialization failed: {init_error}")
+                        # Fallback to regular initialization
+                        mcp_tools = MCPTools(
+                            server_params=server_params,
+                            timeout_seconds=self.config.mcp.timeout
+                        )
+                        tools.append(mcp_tools)
+                        print("🔄 Using fallback MCP initialization")
                     self.logger.info(
                         "MCP tools added to agent", 
                         command=f"{self._mcp_command} {' '.join(self._mcp_args)}", 
                         timeout=self.config.mcp.timeout
                     )
                 except Exception as e:
-                    self.logger.warning("Failed to add MCP tools", error=str(e))
+                    self.logger.error("Failed to add MCP tools", error=str(e))
+                    # Also print to console for debugging
+                    print(f"❌ MCP INITIALIZATION FAILED: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             # Add any additional tools from registry
             if self._tool_registry:
@@ -493,10 +561,10 @@ class BlitzAgent:
                 "monitoring": self.config.agent.monitoring,
                 "debug_mode": self.config.agent.debug_mode or self.config.monitoring.debug_mode,
                 "show_tool_calls": True,
-                "instructions": get_agent_instructions(AgentType.SERVER, self.context),
+                "instructions": "You are a helpful assistant.",  # Minimal to avoid context overflow
                 "markdown": True,
-                "add_history_to_messages": True,
-                "num_history_responses": 5
+                "add_history_to_messages": False,  # Disable history to save context
+                "num_history_responses": 0        # No history to avoid context overflow
             }
             
             # Add reasoning model if configured

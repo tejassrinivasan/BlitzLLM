@@ -44,7 +44,7 @@ class ModelConfig(BaseModel):
     # Azure OpenAI specific fields
     azure_endpoint: Optional[str] = Field(default=None, description="Azure OpenAI endpoint URL")
     azure_deployment: Optional[str] = Field(default=None, description="Azure OpenAI deployment name")
-    azure_api_version: str = Field(default="2024-10-21", description="Azure OpenAI API version")
+    azure_api_version: str = Field(default="2025-03-01-preview", description="Azure OpenAI API version")
     azure_ad_token: Optional[str] = Field(default=None, description="Azure AD token")
     azure_ad_token_provider: Optional[str] = Field(default=None, description="Azure AD token provider")
     

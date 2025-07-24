@@ -177,7 +177,7 @@ Provide your analysis as a structured JSON response with the following format:
                             "content": validation_prompt
                         }
                     ],
-                    "max_tokens": 2000,
+                    "max_tokens": 4000,
                     "temperature": 0.1
                 },
                 timeout=30.0
@@ -191,17 +191,38 @@ Provide your analysis as a structured JSON response with the following format:
             # Try to parse as JSON
             try:
                 validation_result = json.loads(validation_text)
-            except json.JSONDecodeError:
-                # If not valid JSON, create a structured response
-                validation_result = {
-                    "validation_score": 0.5,
-                    "is_correct": None,
-                    "confidence": 0.3,
-                    "issues_found": ["Unable to parse AI validation response as JSON"],
-                    "insights": [],
-                    "recommendations": ["Manual review recommended"],
-                    "summary": validation_text[:500] + "..." if len(validation_text) > 500 else validation_text
-                }
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON response: {e}")
+                logger.error(f"Raw response: {validation_text}")
+                
+                # Try to extract JSON from the response if it's wrapped in markdown
+                if "```json" in validation_text and "```" in validation_text:
+                    try:
+                        json_start = validation_text.find("```json") + 7
+                        json_end = validation_text.find("```", json_start)
+                        json_content = validation_text[json_start:json_end].strip()
+                        validation_result = json.loads(json_content)
+                    except (json.JSONDecodeError, ValueError):
+                        validation_result = {
+                            "validation_score": 0.5,
+                            "is_correct": None,
+                            "confidence": 0.3,
+                            "issues_found": ["Unable to parse AI validation response as JSON"],
+                            "insights": [],
+                            "recommendations": ["Manual review recommended"],
+                            "summary": validation_text[:1000] + "..." if len(validation_text) > 1000 else validation_text
+                        }
+                else:
+                    # If not valid JSON, create a structured response
+                    validation_result = {
+                        "validation_score": 0.5,
+                        "is_correct": None,
+                        "confidence": 0.3,
+                        "issues_found": ["Unable to parse AI validation response as JSON"],
+                        "insights": [],
+                        "recommendations": ["Manual review recommended"],
+                        "summary": validation_text[:1000] + "..." if len(validation_text) > 1000 else validation_text
+                    }
             
             return {
                 "success": True,
