@@ -459,14 +459,17 @@ async def post_question(question, reply_to_id=None):
     else:
         print("📱 Posting standalone question...")
     
+    # Add @BlitzAIBot mention at the beginning of the question
+    question_with_mention = f"@BlitzAIBot {question}"
+    
     try:
         if reply_to_id:
             response = tejsri_client.create_tweet(
-                text=question,
+                text=question_with_mention,
                 in_reply_to_tweet_id=reply_to_id
             )
         else:
-            response = tejsri_client.create_tweet(text=question)
+            response = tejsri_client.create_tweet(text=question_with_mention)
             
         tweet_id = response.data['id']
         tweet_url = f"https://twitter.com/tejsri01/status/{tweet_id}"
