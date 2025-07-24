@@ -429,28 +429,30 @@ async def generate_smart_question(original_tweet=None):
                     agent_id="blitz_question_gen",
                     tools=tools,
                     instructions="""
-                    You are an expert NBA analytics question generator with access to a comprehensive NBA database.
-                    Your goal is to generate ONE compelling, specific NBA analytics question that leverages our unique database capabilities.
+                    You are an expert NBA analytics question generator with access to comprehensive NBA data.
+                    Your goal is to generate ONE compelling, specific NBA analytics question that leverages unique statistical insights.
                     
                     PROCESS:
-                    1. First, explore what tables and data we have available using get_database_documentation and search_tables
+                    1. First, explore what tables and data are available using get_database_documentation and search_tables
                     2. Use inspect to understand key table structures and available columns
                     3. Use sample to see what actual data looks like
-                    4. Based on the Twitter context (if provided) and database exploration, generate a targeted question
+                    4. Based on the Twitter context (if provided) and data exploration, generate a targeted question
                     
                     QUESTION REQUIREMENTS:
-                    - Must be answerable with our NBA database (focus on 2024 season and earlier)
-                    - Should leverage unique insights only our database can provide
+                    - Must be answerable with available NBA data (focus on 2024 season and earlier)
+                    - Should leverage unique insights only our analytics can provide
                     - Be specific to players, teams, or interesting statistical patterns
                     - Keep under 100 characters for Twitter
-                    - Focus on standard box score stats, not granular play-by-play data
+                    - Focus on standard box score stats (points, rebounds, field goal %)
                     - Be engaging and likely to generate discussion
                     
                     AVOID:
                     - Generic questions available elsewhere
                     - Questions about current 2025 season (we're in offseason)
                     - Super granular play-by-play questions
-                    - Questions that don't leverage our database advantages
+                    - Questions about dunks, highlights, or individual plays
+                    - Questions about specific games or moments
+                    - Questions that don't leverage our unique analytics
                     
                     Return ONLY the final question, no explanations or additional text.
                     """,
@@ -473,14 +475,14 @@ async def generate_smart_question(original_tweet=None):
                 
                 # Question generation prompt
                 question_prompt = f"""
-                Generate ONE compelling NBA analytics question that leverages our unique database capabilities.
+                Generate ONE compelling NBA analytics question that leverages our unique statistical insights.
                 
                 Current Date: {current_date} (NBA Offseason - focus on 2024 season and earlier data)
                 
                 {tweet_context}
                 
-                First explore our database to understand what unique insights we can provide, then generate a targeted question that:
-                1. Can ONLY be answered with our specific NBA database
+                First explore available data to understand what unique insights we can provide, then generate a targeted question that:
+                1. Can ONLY be answered with our specific NBA analytics
                 2. Is relevant to current NBA discussions{' and the Twitter context above' if original_tweet else ''}
                 3. Will generate engagement and discussion
                 4. Under 100 characters for Twitter
@@ -654,17 +656,19 @@ async def generate_mcp_analytics_response(question):
             
             # Twitter-optimized analytics prompt with proper formatting
             twitter_prompt = f"""
-            Answer this NBA question with factual data from the historical database: {question}
+            Answer this NBA question with accurate stats and data: {question}
 
             TWITTER RESPONSE REQUIREMENTS:
             - Provide a casual, engaging Twitter response (no markdown formatting)
             - NO ### headers, NO ** bold text, NO bullet points
             - NO conversational elements like "Let me know how you'd like to proceed" 
             - NO overly analytical language or academic tone
+            - NO mentions of databases, data sources, or technical infrastructure
             - Keep it casual and informative - MAX 250 characters including hashtags
             - NO emojis - just clean, casual basketball language
             - Simply answer the question with relevant stats and context
             - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
+            - If you don't have specific data, just say "I don't have that info" - no technical explanations
             - End with relevant hashtags (#NBA #PlayerName)
             """
             
