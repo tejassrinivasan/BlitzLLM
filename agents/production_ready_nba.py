@@ -99,14 +99,28 @@ def get_current_date():
     """Get current date for analytics context."""
     return date.today().strftime("%Y-%m-%d")
 
-async def has_tejsri_replied_to_tweet(tweet_id):
-    """Check if tejsri01 has already replied to a specific tweet."""
+# Cache for recent replies to avoid repeated API calls
+_tejsri_recent_replies_cache = None
+_cache_timestamp = None
+
+async def get_tejsri_recent_replies():
+    """Get tejsri01's recent replies once and cache them."""
+    global _tejsri_recent_replies_cache, _cache_timestamp
+    
+    # Use cache if it's less than 5 minutes old
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    if (_tejsri_recent_replies_cache is not None and 
+        _cache_timestamp is not None and 
+        (now - _cache_timestamp).total_seconds() < 300):  # 5 minutes
+        return _tejsri_recent_replies_cache
+    
     try:
-        # Get recent tweets from tejsri01 (last 48 hours to be safe)
-        from datetime import datetime, timedelta, timezone
-        forty_eight_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=48))
-        # Format for Twitter API: yyyy-MM-dd'T'HH:mm:ss[.SSS]Z
+        # Get recent tweets from tejsri01 (last 48 hours)
+        forty_eight_hours_ago = now - timedelta(hours=48)
         start_time_iso = forty_eight_hours_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        print(f"   🔄 Fetching tejsri01's recent tweets for reply checking...")
         
         # Get tejsri01's recent tweets to check for replies (using BlitzAnalytics client with paid access)
         recent_tweets = blitzanalytics_client.get_users_tweets(
@@ -116,24 +130,31 @@ async def has_tejsri_replied_to_tweet(tweet_id):
             start_time=start_time_iso
         )
         
+        replied_tweet_ids = set()
         if recent_tweets.data:
             for tweet in recent_tweets.data:
-                # Check if this tweet references our target tweet as a reply
+                # Check if this tweet references another tweet as a reply
                 if hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets:
                     for ref in tweet.referenced_tweets:
-                        if ref.type == 'replied_to' and str(ref.id) == str(tweet_id):
-                            print(f"      ✅ Found existing reply from tejsri01 to tweet {tweet_id}")
-                            return True
-                
-                # Note: We could also check for @BlitzAIBot mentions, but let's keep it simple
-                # and only rely on the referenced_tweets approach for accuracy
-            
-        return False
+                        if ref.type == 'replied_to':
+                            replied_tweet_ids.add(str(ref.id))
+        
+        # Cache the results
+        _tejsri_recent_replies_cache = replied_tweet_ids
+        _cache_timestamp = now
+        
+        print(f"   ✅ Found {len(replied_tweet_ids)} tweets that tejsri01 has replied to")
+        return replied_tweet_ids
         
     except Exception as e:
-        print(f"   ⚠️ Error checking for existing replies: {e}")
-        # If we can't check, assume no reply to be safe
-        return False
+        print(f"   ⚠️ Error fetching recent replies: {e}")
+        # Return empty set if we can't check
+        return set()
+
+async def has_tejsri_replied_to_tweet(tweet_id):
+    """Check if tejsri01 has already replied to a specific tweet."""
+    replied_tweets = await get_tejsri_recent_replies()
+    return str(tweet_id) in replied_tweets
 
 async def search_smart_nba_content(return_all=False):
     """Smart NBA content search using BlitzAnalytics (no rate limits) - LAST 24 HOURS ONLY."""
