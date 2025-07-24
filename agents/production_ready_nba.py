@@ -99,6 +99,41 @@ def get_current_date():
     """Get current date for analytics context."""
     return date.today().strftime("%Y-%m-%d")
 
+async def has_tejsri_replied_to_tweet(tweet_id):
+    """Check if tejsri01 has already replied to a specific tweet."""
+    try:
+        # Get recent tweets from tejsri01 (last 48 hours to be safe)
+        from datetime import datetime, timedelta, timezone
+        forty_eight_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=48))
+        start_time_iso = forty_eight_hours_ago.isoformat()
+        
+        # Get tejsri01's recent tweets to check for replies
+        recent_tweets = tejsri_client.get_users_tweets(
+            id="1194703284583354370",  # tejsri01's user ID
+            max_results=100,  # Check more tweets to be thorough
+            tweet_fields=['created_at', 'referenced_tweets', 'text'],
+            start_time=start_time_iso
+        )
+        
+        if recent_tweets.data:
+            for tweet in recent_tweets.data:
+                # Check if this tweet references our target tweet as a reply
+                if hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets:
+                    for ref in tweet.referenced_tweets:
+                        if ref.type == 'replied_to' and str(ref.id) == str(tweet_id):
+                            print(f"      ✅ Found existing reply from tejsri01 to tweet {tweet_id}")
+                            return True
+                
+                # Note: We could also check for @BlitzAIBot mentions, but let's keep it simple
+                # and only rely on the referenced_tweets approach for accuracy
+            
+        return False
+        
+    except Exception as e:
+        print(f"   ⚠️ Error checking for existing replies: {e}")
+        # If we can't check, assume no reply to be safe
+        return False
+
 async def search_smart_nba_content(return_all=False):
     """Smart NBA content search using BlitzAnalytics (no rate limits) - LAST 24 HOURS ONLY."""
     print("🔍 Smart NBA content search (BlitzAnalytics - LAST 24 HOURS ONLY)...")
@@ -208,7 +243,13 @@ async def search_smart_nba_content(return_all=False):
                         if similar_found:
                             continue
                     
-                    # Only add if it has NBA content AND explicit NBA references AND doesn't have excluded content
+                    # Check if tejsri01 has already replied to this tweet
+                    has_already_replied = await has_tejsri_replied_to_tweet(tweet.id)
+                    if has_already_replied:
+                        print(f"      🔄 Skipping - tejsri01 already replied to this tweet")
+                        continue
+                    
+                    # Only add if it has NBA content AND explicit NBA references AND doesn't have excluded content AND tejsri hasn't replied
                     if has_nba_content and has_explicit_nba and not has_excluded_content:
                         all_tweets.append({
                             'id': tweet.id,
