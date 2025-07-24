@@ -107,8 +107,8 @@ async def has_tejsri_replied_to_tweet(tweet_id):
         forty_eight_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=48))
         start_time_iso = forty_eight_hours_ago.isoformat()
         
-        # Get tejsri01's recent tweets to check for replies
-        recent_tweets = tejsri_client.get_users_tweets(
+        # Get tejsri01's recent tweets to check for replies (using BlitzAnalytics client with paid access)
+        recent_tweets = blitzanalytics_client.get_users_tweets(
             id="1194703284583354370",  # tejsri01's user ID
             max_results=100,  # Check more tweets to be thorough
             tweet_fields=['created_at', 'referenced_tweets', 'text'],
@@ -461,8 +461,15 @@ async def generate_smart_question(original_tweet=None):
                 2. Is relevant to current NBA discussions{' and the Twitter context above' if original_tweet else ''}
                 3. Will generate engagement and discussion
                 4. Under 100 characters for Twitter
+                5. Use ALL LOWERCASE and casual language like a normal person asking
+                6. NO formal punctuation - sound natural and conversational
                 
-                Return ONLY the final question.
+                Examples of good style:
+                - "how many threes did curry make last season"
+                - "what was lebrons shooting percentage in losses"
+                - "who had more rebounds giannis or embiid in 2024"
+                
+                Return ONLY the final question in lowercase casual style.
                 """
                 
                 print("   🎯 Agent exploring database and generating question...")
