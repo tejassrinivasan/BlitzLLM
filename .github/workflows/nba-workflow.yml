@@ -1,0 +1,47 @@
+name: NBA Production Workflow
+
+on:
+  schedule:
+    # 6 times daily (UTC times)
+    - cron: '0 13 * * *'  # 8:00 AM EST
+    - cron: '0 17 * * *'  # 12:00 PM EST  
+    - cron: '0 21 * * *'  # 4:00 PM EST
+    - cron: '0 1 * * *'   # 8:00 PM EST
+    - cron: '0 4 * * *'   # 11:00 PM EST
+    - cron: '0 7 * * *'   # 2:00 AM EST
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  nba-analytics:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd agents
+        pip install -r nba_workflow_requirements.txt
+        # Also install uvx for MCP tools
+        pip install uvx
+    
+    - name: Run NBA Production Workflow
+      env:
+        # Add your API keys as GitHub Secrets
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE }}
+        POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+        POSTGRES_SSL: ${{ secrets.POSTGRES_SSL }}
+      run: |
+        cd agents
+        export PYTHONPATH="$PYTHONPATH:../blitz/src"
+        python production_ready_nba.py 
