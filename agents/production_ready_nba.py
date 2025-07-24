@@ -619,12 +619,20 @@ async def generate_smart_question(original_tweet=None):
                 
                 # Question generation prompt
                 question_prompt = f"""
-                Current Date: {current_date} (NBA Offseason - focus on earlier seasons)
+                Current Date: {current_date} (NBA Offseason)
                 
                 {tweet_context}
                 
                 CRITICAL: DO NOT ask questions about two-way contracts, G-League, or contract types.
-                If the tweet mentions "two-way contract" or contract status, ask about regular player performance instead.
+                If the tweet mentions contracts, focus on the TEAM or POSITION mentioned instead.
+                
+                Examples of how to handle contract tweets:
+                - Tweet: "Lakers sign guard Chris Mañon to a two-way contract" 
+                  → Ask about: "how did lakers guards perform last season" (focus on team + position)
+                - Tweet: "Warriors sign center to two-way deal"
+                  → Ask about: "what was warriors rebounding average last season" (focus on team + center stats)
+                
+                Always find the relevant team/position/player elements and ask about those instead.
                 
                 Additional formatting requirements for this question:
                 - Use ALL LOWERCASE and casual language like a normal person asking
@@ -809,6 +817,7 @@ async def generate_mcp_analytics_response(question):
             - Simply answer the question with relevant stats and context
             - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
             - If you don't have specific data, just say "I don't have that info" - no technical explanations
+            - End with relevant hashtags (#NBA #PlayerName)
             """
             
             response = await agent.arun(twitter_prompt)
