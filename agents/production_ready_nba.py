@@ -451,6 +451,8 @@ async def generate_smart_question(original_tweet=None):
                     - Super granular play-by-play questions
                     - Questions about dunks, highlights, or individual plays
                     - Questions about specific moments
+                    - NEVER ask about dunks, blocks, steals, or any specific plays/actions
+                    - NO questions about "who had the most dunks" or similar specific play counting
                     - Questions that don't leverage our unique analytics
                     - Questions about contract types, two-way contracts, G-League assignments, or contract comparisons
                     - Questions about rookie contracts, veteran minimums, or any contract-related performance
@@ -624,6 +626,7 @@ async def generate_smart_question(original_tweet=None):
                 {tweet_context}
                 
                 CRITICAL: DO NOT ask questions about two-way contracts, G-League, or contract types.
+                CRITICAL: DO NOT ask about dunks, blocks, steals, or specific plays/actions.
                 If the tweet mentions contracts, focus on the TEAM or POSITION mentioned instead.
                 
                 Examples of how to handle contract tweets:
@@ -817,7 +820,7 @@ async def generate_mcp_analytics_response(question):
             - Simply answer the question with relevant stats and context
             - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
             - If you don't have specific data, just say "I don't have that info" - no technical explanations
-            - End with relevant hashtags (#NBA #PlayerName)
+            - NO hashtags - just clean text response
             """
             
             response = await agent.arun(twitter_prompt)
