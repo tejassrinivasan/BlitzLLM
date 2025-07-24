@@ -6,7 +6,7 @@ Uses the EXACT same sports analytics prompt as blitzagent_agno with all rules co
 1. Historical Database (PostgreSQL) - PREFERRED SOURCE with mandatory workflow sequence
 2. Web Scraping - SECONDARY SOURCE for recent/breaking news
 3. Live Betting Data - TERTIARY SOURCE with two-step workflow and EV analysis
-4. Agent-based question generation with MCP database exploration to create unique, targeted questions
+4. Intelligent question generation with database-focused prompting to create unique, targeted questions
 """
 
 import asyncio
@@ -277,175 +277,100 @@ async def search_smart_nba_content(return_all=False):
         return None if not return_all else []
 
 async def generate_smart_question(original_tweet=None):
-    """Generate analytics question using agent with MCP database exploration tools."""
-    print("🤖 Generating smart analytics question using agent with database exploration...")
+    """Generate analytics question using intelligent Twitter context analysis."""
+    print("🤖 Generating smart analytics question using intelligent context analysis...")
     
     current_date = get_current_date()
     
-    # Import BlitzAgent factory
-    import sys
-    from pathlib import Path
-    from datetime import datetime
-    
-    blitz_path = Path(__file__).parent.parent / "blitz" / "src"
-    if str(blitz_path) not in sys.path:
-        sys.path.append(str(blitz_path))
-    
-    from blitzagent_agno.agent_factory import create_mcp_tools_async, create_agno_model, create_agno_storage, create_agno_memory, get_agent_instructions, RuntimeContext, RuntimeMode, ToneStyle
-    from blitzagent_agno.config import Config, DatabaseConfig, ModelConfig
-    from agno.tools.reasoning import ReasoningTools
-    from agno.agent import Agent
-    
-    print("   🔧 Creating question generation agent with database exploration...")
-    
-    # Create database config for NBA using environment variables
-    database_config = DatabaseConfig(
-        host=os.getenv("POSTGRES_HOST", "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com"),
-        port=int(os.getenv("POSTGRES_PORT", "5432")),
-        database=os.getenv("POSTGRES_DATABASE", "nba"),
-        user=os.getenv("POSTGRES_USER", "postgres"),
-        password=os.getenv("POSTGRES_PASSWORD", "_V8fn.eo62B(gZD|OcQcu~0|aP8["),
-        ssl_mode="require" if os.getenv("POSTGRES_SSL", "true").lower() == "true" else "disable"
-    )
-    
-    # Create model config using environment variables
-    model_config = ModelConfig(
-        provider="azure_openai",
-        name="gpt-4o",
+    # Create direct Azure OpenAI client using environment variables
+    client = AzureOpenAI(
         api_key=os.getenv("AZURE_OPENAI_API_KEY", "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR"),
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://blitzgpt.openai.azure.com"),
-        azure_deployment="gpt-4o",
-        azure_api_version="2025-03-01-preview"
+        api_version="2025-03-01-preview"
     )
     
-    # Create complete config
-    config = Config(
-        database=database_config,
-        model=model_config
-    )
+    # Create context from original tweet if provided
+    tweet_context = ""
+    if original_tweet:
+        tweet_context = f"\nTwitter Context: {original_tweet['text']}\nEngagement: {original_tweet['metrics']['like_count']} likes, {original_tweet['metrics']['retweet_count']} retweets"
     
-    # Create runtime context for question generation
-    context = RuntimeContext(
-        mode=RuntimeMode.INSIGHT,
-        tone=ToneStyle.FRIENDLY
-    )
+    # Enhanced database-aware question examples for NBA
+    database_focused_questions = [
+        "What's LeBron's clutch shooting % (final 5 min, score within 5) in 2024?",
+        "How did Jokic's triple-double rate change from 2023 to 2024?", 
+        "What's the Warriors' record when Curry scores 30+ vs when he doesn't?",
+        "How many games did Kawhi Leonard miss due to load management in 2024?",
+        "What's Tatum's shooting % on contested vs open shots last season?",
+        "How did the Nuggets perform in back-to-back games in 2024?",
+        "What's Giannis' free throw % improvement from 2023 to 2024?",
+        "How many 50+ point games did players have in 2024 vs 2023?",
+        "What's the Lakers' win rate when LeBron plays vs sits out?",
+        "How did rookie Victor Wembanyama's blocks compare to other rookie centers?"
+    ]
     
-    print("   🚀 Creating MCP tools for database exploration...")
+    # Create enhanced prompt with database-specific focus
+    question_prompt = f"""
+    You are an NBA analytics expert with access to a comprehensive historical NBA database. Generate ONE compelling analytics question that showcases unique database insights.
+
+    CONTEXT:
+    - Today's Date: {current_date} (NBA Offseason - focus on 2024 season and earlier)
+    - Database Strengths: Player stats, team records, game situations, historical comparisons, advanced metrics
+    {tweet_context}
+
+    QUESTION REQUIREMENTS:
+    - Must leverage our NBA database's unique capabilities (detailed game logs, situational stats, historical comparisons)
+    - Focus on specific players, teams, or interesting statistical patterns that require database analysis
+    - Keep under 100 characters for Twitter engagement
+    - Ask about measurable stats: scoring, shooting %, rebounds, assists, team records, etc.
+    - Reference specific time periods: "2024 season", "last season", "career", "vs 2023", etc.
+    - Should generate discussion and showcase insights only a comprehensive database can provide
+
+    EXAMPLES OF DATABASE-LEVERAGED QUESTIONS:
+    - "What's LeBron's clutch shooting % (final 5 min, score within 5) in 2024?"
+    - "How did Jokic's triple-double rate change from 2023 to 2024?"
+    - "What's the Warriors' record when Curry scores 30+ vs when he doesn't?"
+
+    AVOID:
+    - Generic questions available on ESPN/NBA.com
+    - Questions about current 2025 season (we're in offseason)
+    - Questions that don't require database analysis
+
+    {"Generate a question related to the Twitter context above that showcases our database capabilities." if original_tweet else "Generate a compelling NBA analytics question that showcases our unique database insights."}
+
+    Return ONLY the question, no explanation or quotes.
+    """
     
     try:
-        async with create_mcp_tools_async(config, league="nba") as mcp_tools:
-            print("   ✅ MCP tools connected for question generation!")
-            
-            # Create agent components
-            model_instance = await create_agno_model(config)
-            storage = await create_agno_storage(config)
-            memory = await create_agno_memory(config) if context.should_enable_memory() else None
-            
-            # Create tools list with MCP tools (EXCLUDING upload, validate, query as requested)
-            tools = [ReasoningTools(add_instructions=True), mcp_tools]
-            
-            print(f"   🔧 Tools loaded for question generation: {len(tools)} tool groups")
-            
-            # Create question generation agent
-            agent = Agent(
-                name="BlitzAgent Question Generator",
-                agent_id="blitz_question_gen",
-                tools=tools,
-                instructions="""
-                You are an expert NBA analytics question generator with access to a comprehensive NBA database.
-                Your goal is to generate ONE compelling, specific NBA analytics question that leverages our unique database capabilities.
-                
-                PROCESS:
-                1. First, explore what tables and data we have available using get_database_documentation and search_tables
-                2. Use inspect to understand key table structures and available columns
-                3. Use sample to see what actual data looks like
-                4. Based on the Twitter context (if provided) and database exploration, generate a targeted question
-                
-                QUESTION REQUIREMENTS:
-                - Must be answerable with our NBA database (focus on 2024 season and earlier)
-                - Should leverage unique insights only our database can provide
-                - Be specific to players, teams, or interesting statistical patterns
-                - Keep under 100 characters for Twitter
-                - Focus on standard box score stats, not granular play-by-play data
-                - Be engaging and likely to generate discussion
-                
-                AVOID:
-                - Generic questions available elsewhere
-                - Questions about current 2025 season (we're in offseason)
-                - Super granular play-by-play questions
-                - Questions that don't leverage our database advantages
-                
-                Return ONLY the final question, no explanations or additional text.
-                """,
-                model=model_instance,
-                storage=storage,
-                memory=memory,
-                enable_user_memories=False,
-                enable_session_summaries=False,
-                add_history_to_messages=False,
-                add_datetime_to_instructions=True,
-                markdown=False,
-            )
-            
-            print("   ✅ Question generation agent created!")
-            
-            # Create context from original tweet if provided
-            tweet_context = ""
-            if original_tweet:
-                tweet_context = f"\nTwitter Context: {original_tweet['text']}\nEngagement: {original_tweet['metrics']['like_count']} likes, {original_tweet['metrics']['retweet_count']} retweets\n"
-            
-            # Question generation prompt
-            question_prompt = f"""
-            Generate ONE compelling NBA analytics question that leverages our unique database capabilities.
-            
-            Current Date: {current_date} (NBA Offseason - focus on 2024 season and earlier data)
-            
-            {tweet_context}
-            
-            First explore our database to understand what unique insights we can provide, then generate a targeted question that:
-            1. Can ONLY be answered with our specific NBA database
-            2. Is relevant to current NBA discussions{' and the Twitter context above' if original_tweet else ''}
-            3. Will generate engagement and discussion
-            4. Under 100 characters for Twitter
-            
-            Return ONLY the final question.
-            """
-            
-            print("   🎯 Agent exploring database and generating question...")
-            response = await agent.arun(question_prompt)
-            
-            # Extract question from response
-            if hasattr(response, 'content'):
-                question = response.content.strip()
-            else:
-                question = str(response).strip()
-            
-            # Clean up the question
-            question = question.replace('"', '').replace("'", "").strip()
-            
-            # Remove any extra explanations - just get the question
-            lines = question.split('\n')
-            for line in lines:
-                line = line.strip()
-                if line and '?' in line and len(line) <= 150:  # Find the actual question
-                    question = line
-                    break
-            
-            print(f"   ✅ Generated targeted question: {question}")
-            return question
-            
+        print("   🔧 Calling Azure OpenAI for intelligent question generation...")
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are an expert NBA analytics question generator specializing in database-driven insights. Focus on questions that require comprehensive historical data analysis and showcase unique database capabilities."},
+                {"role": "user", "content": question_prompt}
+            ],
+            temperature=0.8,  # Slightly higher for more creative questions
+            max_tokens=150
+        )
+        
+        question = response.choices[0].message.content.strip()
+        question = question.replace('"', '').replace("'", "").strip()
+        
+        # Clean up any extra text, keep just the question
+        lines = question.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and '?' in line and len(line) <= 120:  # Find the actual question
+                question = line
+                break
+        
+        print(f"   ✅ Generated database-focused question: {question}")
+        return question
+        
     except Exception as e:
-        print(f"   ❌ Agent question generation failed: {e}")
-        # Fallback to a database-specific question
-        fallback_questions = [
-            "What was LeBron's scoring average in 2024 vs 2023?",
-            "How many triple-doubles did Luka have last season?", 
-            "What was the Warriors' home vs away record in 2024?",
-            "What was Jayson Tatum's shooting percentage last season?",
-            "How many assists did Chris Paul average last season?"
-        ]
-        fallback_question = random.choice(fallback_questions)
-        print(f"   🔄 Using fallback question: {fallback_question}")
+        print(f"   ❌ Azure OpenAI question generation failed: {e}")
+        # Fallback to database-focused questions
+        fallback_question = random.choice(database_focused_questions)
+        print(f"   🔄 Using database-focused fallback: {fallback_question}")
         return fallback_question
 
 async def post_question(question, reply_to_id=None):
@@ -638,8 +563,8 @@ async def run_production_workflow():
             print(f"📋 Found content: {original_tweet['text'][:80]}...")
             print(f"📊 Engagement: {original_tweet['metrics']['like_count']} likes")
             
-            # Step 2: Generate contextual question with database exploration agent
-            print("\nSTEP 2: Generate Question (Agent with Database Exploration)")
+            # Step 2: Generate contextual question with intelligent context analysis
+            print("\nSTEP 2: Generate Question (Intelligent Context Analysis)")
             question = await generate_smart_question(original_tweet)
             
             # Step 3: Post as reply
@@ -648,8 +573,8 @@ async def run_production_workflow():
         else:
             print("❌ No NBA content found, creating standalone question")
             
-            # Step 2: Generate standalone question with database exploration agent
-            print("\nSTEP 2: Generate Standalone Question (Agent with Database Exploration)")
+            # Step 2: Generate standalone question with intelligent context analysis
+            print("\nSTEP 2: Generate Standalone Question (Intelligent Context Analysis)")
             question = await generate_smart_question()
             
             # Step 3: Post standalone
@@ -678,8 +603,8 @@ async def run_production_workflow():
         print("✅ Used smart NBA content discovery")
         print("✅ Used EXACT comprehensive sports analytics prompt from blitzagent_agno")
         print("✅ Proper MCP tool hierarchy: Historical DB → Web Scraping → Betting Data")
-        print("✅ Agent-based question generation with database exploration")
-        print("✅ Question posted leveraging unique database insights")
+        print("✅ Intelligent question generation with database-focused prompting")
+        print("✅ Question posted showcasing unique database capabilities")
         print("✅ Analytics response with full workflow validation")
         print(f"✅ Current date context: {current_date}")
         print(f"✅ Question Tweet ID: {question_tweet_id}")
@@ -709,7 +634,7 @@ async def main():
     print("🏆 PRODUCTION WORKFLOW COMPLETE!")
     print("NBA analytics thread posted to Twitter with EXACT agno rules!")
     print("✅ All MCP tool hierarchy rules copied from blitzagent_agno")
-    print("✅ Agent-based question generation with database exploration")
+    print("✅ Intelligent question generation with database-focused prompting")
     print("✅ Twitter-optimized response formatting")
     print("Ready for 6x daily deployment! 🚀")
 
