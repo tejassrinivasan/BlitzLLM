@@ -115,6 +115,15 @@ def get_postgres_url(league: str = None):
     if all([host, port, database, user, password]):
         # URL encode the password to handle special characters
         encoded_password = quote_plus(password)
-        ssl_param = "?sslmode=require" if ssl == "true" else ""
+        # Handle SSL mode properly - use the actual value instead of hardcoding "require"
+        if ssl and ssl.lower() not in ["false", "disable", "0", ""]:
+            # If SSL mode is specified, use it directly
+            if ssl.lower() in ["require", "prefer", "allow", "disable"]:
+                ssl_param = f"?sslmode={ssl.lower()}"
+            else:
+                # For legacy "true" values, default to "prefer" for better compatibility
+                ssl_param = "?sslmode=prefer"
+        else:
+            ssl_param = ""
         return f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}{ssl_param}"
     return None
