@@ -438,7 +438,7 @@ async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIt
         "POSTGRES_NBA_DATABASE": "nba",  # NBA database name
         "POSTGRES_NBA_USER": config.database.user,
         "POSTGRES_NBA_PASSWORD": config.database.password,
-        "POSTGRES_NBA_SSL": "true",
+        "POSTGRES_NBA_SSL": config.database.ssl_mode,  # Use actual ssl_mode from config
     })
     
     # MLB configuration  
@@ -448,7 +448,7 @@ async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIt
         "POSTGRES_MLB_DATABASE": "mlb",  # MLB database name
         "POSTGRES_MLB_USER": config.database.user,
         "POSTGRES_MLB_PASSWORD": config.database.password,
-        "POSTGRES_MLB_SSL": "true",
+        "POSTGRES_MLB_SSL": config.database.ssl_mode,  # Use actual ssl_mode from config
     })
     
     logger.info(f"Configured async MCP tools for multi-league support (primary: {league})")
@@ -461,7 +461,7 @@ async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIt
         "POSTGRES_DATABASE": primary_database,  # Set to match the primary league
         "POSTGRES_USER": config.database.user,
         "POSTGRES_PASSWORD": config.database.password,
-        "POSTGRES_SSL": "true",
+        "POSTGRES_SSL": config.database.ssl_mode,  # Use actual ssl_mode from config
     })
     
     # Initialize the MCP server with uvx command and proper timeouts
