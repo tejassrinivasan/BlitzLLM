@@ -25,6 +25,10 @@ jobs:
     
     - name: Install dependencies
       run: |
+        # Install uv (which provides uvx)
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
+        # Install Python dependencies
         cd agents
         pip install -r nba_workflow_requirements.txt
     
@@ -41,5 +45,6 @@ jobs:
         POSTGRES_SSL: ${{ secrets.POSTGRES_SSL }}
       run: |
         cd agents
+        source $HOME/.cargo/env
         export PYTHONPATH="$PYTHONPATH:../blitz/src"
         python production_ready_nba.py 
