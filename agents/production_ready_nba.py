@@ -316,10 +316,10 @@ async def generate_smart_question(original_tweet=None):
     if original_tweet:
         tweet_context = f"\nContext from NBA Tweet: {original_tweet['text']}\nEngagement: {original_tweet['metrics']['like_count']} likes, {original_tweet['metrics']['retweet_count']} retweets"
     
-    # Create direct Azure OpenAI client
+    # Create direct Azure OpenAI client using environment variables
     client = AzureOpenAI(
-        api_key="3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
-        azure_endpoint="https://blitzgpt.openai.azure.com",
+        api_key=os.getenv("AZURE_OPENAI_API_KEY", "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR"),
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://blitzgpt.openai.azure.com"),
         api_version="2025-03-01-preview"
     )
     
@@ -424,22 +424,22 @@ async def generate_mcp_analytics_response(question):
     print("   🔧 Using EXACT working playground pattern...")
     print("   📋 Creating agent INSIDE MCP context (like playground)")
     
-    # Create database config for NBA
+    # Create database config for NBA using environment variables
     database_config = DatabaseConfig(
-        host="blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com",
-        port=5432,
-        database="nba",
-        user="postgres",
-        password="_V8fn.eo62B(gZD|OcQcu~0|aP8[",
-        ssl_mode="require"
+        host=os.getenv("POSTGRES_HOST", "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com"),
+        port=int(os.getenv("POSTGRES_PORT", "5432")),
+        database=os.getenv("POSTGRES_DATABASE", "nba"),
+        user=os.getenv("POSTGRES_USER", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD", "_V8fn.eo62B(gZD|OcQcu~0|aP8["),
+        ssl_mode="require" if os.getenv("POSTGRES_SSL", "true").lower() == "true" else "disable"
     )
     
-    # Create model config
+    # Create model config using environment variables
     model_config = ModelConfig(
         provider="azure_openai",
         name="gpt-4o",
-        api_key="3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR",
-        azure_endpoint="https://blitzgpt.openai.azure.com",
+        api_key=os.getenv("AZURE_OPENAI_API_KEY", "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR"),
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://blitzgpt.openai.azure.com"),
         azure_deployment="gpt-4o",
         azure_api_version="2025-03-01-preview"
     )
@@ -457,72 +457,80 @@ async def generate_mcp_analytics_response(question):
     )
     
     print("   🚀 Creating MCP tools async context...")
+    print(f"   🔗 Database: {database_config.user}@{database_config.host}:{database_config.port}/{database_config.database}")
+    print(f"   🔗 Azure OpenAI: {model_config.azure_endpoint}")
     
     # Use the exact working playground pattern - agent created INSIDE MCP context
-    async with create_mcp_tools_async(config, league="nba") as mcp_tools:
-        print("   ✅ MCP tools connected successfully!")
-        
-        # Create agent components (exact same as playground)
-        model_instance = await create_agno_model(config)
-        storage = await create_agno_storage(config)
-        memory = await create_agno_memory(config) if context.should_enable_memory() else None
-        
-        # Create tools list with MCP tools properly included (exact same as playground)
-        tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
-        
-        print(f"   🔧 Tools loaded: {len(tools)} tool groups")
-        
-        # Create agent (exact same pattern as playground)
-        agent = Agent(
-            name="BlitzAgent NBA",
-            agent_id="blitz_nba",
-            tools=tools,
-            instructions=get_agent_instructions("production", context),
-            model=model_instance,
-            storage=storage,
-            memory=memory,
-            enable_user_memories=context.should_enable_memory(),
-            enable_session_summaries=context.should_enable_memory(),
-            add_history_to_messages=True,
-            num_history_responses=5 if context.should_enable_memory() else 1,
-            add_datetime_to_instructions=True,
-            markdown=True,
-        )
-        
-        print("   ✅ Agent created successfully with MCP tools!")
-        print("   🎯 Executing NBA analytics...")
-        
-        # Twitter-optimized analytics prompt with proper formatting
-        twitter_prompt = f"""
-        Answer this NBA question with factual data from the historical database: {question}
+    try:
+        async with create_mcp_tools_async(config, league="nba") as mcp_tools:
+            print("   ✅ MCP tools connected successfully!")
+            
+            # Create agent components (exact same as playground)
+            model_instance = await create_agno_model(config)
+            storage = await create_agno_storage(config)
+            memory = await create_agno_memory(config) if context.should_enable_memory() else None
+            
+            # Create tools list with MCP tools properly included (exact same as playground)
+            tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
+            
+            print(f"   🔧 Tools loaded: {len(tools)} tool groups")
+            
+            # Create agent (exact same pattern as playground)
+            agent = Agent(
+                name="BlitzAgent NBA",
+                agent_id="blitz_nba",
+                tools=tools,
+                instructions=get_agent_instructions("production", context),
+                model=model_instance,
+                storage=storage,
+                memory=memory,
+                enable_user_memories=context.should_enable_memory(),
+                enable_session_summaries=context.should_enable_memory(),
+                add_history_to_messages=True,
+                num_history_responses=5 if context.should_enable_memory() else 1,
+                add_datetime_to_instructions=True,
+                markdown=True,
+            )
+            
+            print("   ✅ Agent created successfully with MCP tools!")
+            print("   🎯 Executing NBA analytics...")
+            
+            # Twitter-optimized analytics prompt with proper formatting
+            twitter_prompt = f"""
+            Answer this NBA question with factual data from the historical database: {question}
 
-        TWITTER RESPONSE REQUIREMENTS:
-        - Provide a clean, engaging Twitter response (no markdown formatting)
-        - NO ### headers, NO ** bold text, NO bullet points
-        - NO conversational elements like "Let me know how you'd like to proceed" 
-        - NO chat-like language - this is a tweet, not a conversation
-        - Focus on specific numbers, stats, and factual insights
-        - Keep it informative but concise for Twitter audience
-        - If data is missing for recent periods, simply state what data IS available
-        - Format as a standalone informative tweet that provides value
-        """
-        
-        response = await agent.arun(twitter_prompt)
-        
-        print("   ✅ Agent completed!")
-        print(f"   🎯 Response type: {type(response)}")
-        
-        # Extract content from response
-        if hasattr(response, 'content'):
-            response_text = response.content
-            print(f"   📝 Content length: {len(response_text)} characters")
-        else:
-            response_text = str(response)
-            print(f"   📝 String length: {len(response_text)} characters")
-        
-        print(f"   📄 Response preview: {response_text[:100]}{'...' if len(response_text) > 100 else ''}")
-        
-        return response_text
+            TWITTER RESPONSE REQUIREMENTS:
+            - Provide a clean, engaging Twitter response (no markdown formatting)
+            - NO ### headers, NO ** bold text, NO bullet points
+            - NO conversational elements like "Let me know how you'd like to proceed" 
+            - NO chat-like language - this is a tweet, not a conversation
+            - Focus on specific numbers, stats, and factual insights
+            - Keep it informative but concise for Twitter audience
+            - If data is missing for recent periods, simply state what data IS available
+            - Format as a standalone informative tweet that provides value
+            """
+            
+            response = await agent.arun(twitter_prompt)
+            
+            print("   ✅ Agent completed!")
+            print(f"   🎯 Response type: {type(response)}")
+            
+            # Extract content from response
+            if hasattr(response, 'content'):
+                response_text = response.content
+                print(f"   📝 Content length: {len(response_text)} characters")
+            else:
+                response_text = str(response)
+                print(f"   📝 String length: {len(response_text)} characters")
+            
+            print(f"   📄 Response preview: {response_text[:100]}{'...' if len(response_text) > 100 else ''}")
+            
+            return response_text
+    
+    except Exception as e:
+        print(f"   ❌ MCP connection failed: {e}")
+        print(f"   ❌ Error type: {type(e)}")
+        raise
 
 async def post_analytics_response(response_text, question_tweet_id):
     """Post analytics response from @BlitzAIBot."""
