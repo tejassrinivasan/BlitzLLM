@@ -452,6 +452,9 @@ async def generate_smart_question(original_tweet=None):
                     - Questions about dunks, highlights, or individual plays
                     - Questions about specific moments
                     - Questions that don't leverage our unique analytics
+                    - Questions about contract types, two-way contracts, G-League assignments, or contract comparisons
+                    - Questions about rookie contracts, veteran minimums, or any contract-related performance
+                    - NEVER ask about "two-way players", "two way contracts", "G-League", or contract status
                     
                     Return ONLY the final question, no explanations or additional text.
 
@@ -620,15 +623,18 @@ async def generate_smart_question(original_tweet=None):
                 
                 {tweet_context}
                 
+                CRITICAL: DO NOT ask questions about two-way contracts, G-League, or contract types.
+                If the tweet mentions "two-way contract" or contract status, ask about regular player performance instead.
+                
                 Additional formatting requirements for this question:
                 - Use ALL LOWERCASE and casual language like a normal person asking
                 - NO formal punctuation - sound natural and conversational
                 - Make it relevant to current NBA discussions{' and the Twitter context above' if original_tweet else ''}
                 
                 Examples of the casual style wanted:
-                - "how many threes did curry make last season"
-                - "what was lebrons shooting percentage in losses"  
-                - "who had more rebounds giannis or embiid in 2024"
+                - "how many threes did curry make last season in the 3rd quarter at home"
+                - "team turnover rates comparison: 0 days rest vs 2+ days rest analysis in regular season"  
+                - "who had more rebounds giannis or embiid in 2024 against the warriors"
                 """
                 
                 print("   🎯 Agent exploring database and generating question...")
@@ -803,7 +809,6 @@ async def generate_mcp_analytics_response(question):
             - Simply answer the question with relevant stats and context
             - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
             - If you don't have specific data, just say "I don't have that info" - no technical explanations
-            - End with relevant hashtags (#NBA #PlayerName)
             """
             
             response = await agent.arun(twitter_prompt)
