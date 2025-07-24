@@ -1,0 +1,6 @@
+agno>=2.0.0
+openai>=1.0.0
+tweepy>=4.14.0
+aiohttp>=3.8.0
+pydantic>=2.0.0
+httpx>=0.25.0 
