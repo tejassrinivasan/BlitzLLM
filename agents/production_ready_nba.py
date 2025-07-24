@@ -326,8 +326,8 @@ async def generate_smart_question(original_tweet=None):
     
     # Create runtime context for question generation
     context = RuntimeContext(
-        mode=RuntimeMode.CREATIVE,
-        tone=ToneStyle.ENGAGING
+        mode=RuntimeMode.INSIGHT,
+        tone=ToneStyle.FRIENDLY
     )
     
     print("   🚀 Creating MCP tools for database exploration...")
