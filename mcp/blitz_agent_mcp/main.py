@@ -98,8 +98,20 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
     @asynccontextmanager
     async def app_lifespan(mcp_server: FastMCP) -> AsyncIterator[AppContext]:
         """Manage application lifecycle with type-safe context"""
-        # Test connections when the server starts
-        await test_connections(cleaned_urls, quiet=quiet)
+        # Test connections when the server starts (optional for CI environments)
+        skip_connection_test = os.getenv("SKIP_MCP_CONNECTION_TEST", "false").lower() == "true"
+        if not skip_connection_test:
+            try:
+                await test_connections(cleaned_urls, quiet=quiet)
+            except Exception as e:
+                if not quiet:
+                    logger.warning(f"Connection test failed, but continuing: {e}")
+                # In CI environments, continue anyway
+                if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+                    if not quiet:
+                        logger.info("CI environment detected, skipping strict connection test")
+                else:
+                    raise  # Re-raise in non-CI environments
         
         if api_key:
             headers = {API_KEY_HEADER: api_key}

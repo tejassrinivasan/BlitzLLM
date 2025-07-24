@@ -405,7 +405,7 @@ def create_mcp_tools(config: Config, league: str = "mlb") -> MCPTools:
         # Use reasonable timeout for MCP tools initialization
         mcp_tools = MCPTools(
             server_params=server_params,
-            timeout_seconds=60  # Increased timeout for GitHub Actions environment
+            timeout_seconds=90  # Increased timeout for GitHub Actions environment
         )
         logger.info(f"MCP tools created successfully with uvx command")
         return mcp_tools
@@ -475,7 +475,7 @@ async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIt
     # Use MCPTools directly as an async context manager
     async with MCPTools(
         server_params=server_params,
-        timeout_seconds=60  # Increased timeout for GitHub Actions environment
+        timeout_seconds=90  # Increased timeout for GitHub Actions environment
     ) as mcp_tools:
         logger.info(f"MCP tools connected successfully with uvx command")
         yield mcp_tools

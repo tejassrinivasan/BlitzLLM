@@ -345,7 +345,7 @@ async def generate_smart_question(original_tweet=None):
     try:
         # Add timeout to MCP connection attempt
         import asyncio
-        async with asyncio.timeout(60):  # Give it 60 seconds to match agent factory timeout
+        async with asyncio.timeout(90):  # Give it 90 seconds to match agent factory timeout
             async with create_mcp_tools_async(config, league="nba") as mcp_tools:
                 print("   ✅ MCP tools connected for question generation!")
                 
