@@ -590,10 +590,10 @@ async def generate_mcp_analytics_response(question):
             - NO ### headers, NO ** bold text, NO bullet points
             - NO conversational elements like "Let me know how you'd like to proceed" 
             - NO overly analytical language or academic tone
-            - Keep it short and punchy - MAX 200 characters including hashtags
+            - Keep it engaging but informative - can be up to 280 characters (blue check benefits!)
             - Use emojis and casual basketball language 🏀
-            - Focus on 1-2 key surprising stats, not comprehensive analysis
-            - Make it sound like a sports fan sharing a cool fact, not a research paper
+            - Focus on 2-3 key surprising stats with some context
+            - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
             - End with relevant hashtags (#NBA #PlayerName)
             """
             
