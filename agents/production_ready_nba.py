@@ -448,11 +448,12 @@ async def generate_smart_question(original_tweet=None):
                     AVOID:
                     - Generic questions available elsewhere
                     - Questions about current 2025 season (we're in offseason)
-                    - Super granular play-by-play questions
-                    - Questions about dunks, highlights, or individual plays
+                    - Super granular play-by-play questions (except standard box score stats)
+                    - Questions about dunks, highlights, or individual specific plays
                     - Questions about specific moments
-                    - NEVER ask about dunks, blocks, steals, or any specific plays/actions
+                    - NEVER ask about dunks or other specific play types (dunks are not standard box score stats)
                     - NO questions about "who had the most dunks" or similar specific play counting
+                    - Blocks and steals are fine (standard box score stats like points/rebounds/assists)
                     - Questions that don't leverage our unique analytics
                     - Questions about contract types, two-way contracts, G-League assignments, or contract comparisons
                     - Questions about rookie contracts, veteran minimums, or any contract-related performance
@@ -626,7 +627,7 @@ async def generate_smart_question(original_tweet=None):
                 {tweet_context}
                 
                 CRITICAL: DO NOT ask questions about two-way contracts, G-League, or contract types.
-                CRITICAL: DO NOT ask about dunks, blocks, steals, or specific plays/actions.
+                CRITICAL: DO NOT ask about dunks or specific play types (blocks/steals are fine - they're standard stats).
                 If the tweet mentions contracts, focus on the TEAM or POSITION mentioned instead.
                 
                 Examples of how to handle contract tweets:
