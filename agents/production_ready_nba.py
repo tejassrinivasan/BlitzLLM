@@ -450,17 +450,7 @@ async def generate_smart_question(original_tweet=None):
     except Exception as e:
         print(f"   ❌ Agent question generation failed: {e}")
         print(f"   ❌ Error type: {type(e)}")
-        # Fallback to a database-specific question
-        fallback_questions = [
-            "What was LeBron's scoring average in 2024 vs 2023?",
-            "How many triple-doubles did Luka have last season?", 
-            "What was the Warriors' home vs away record in 2024?",
-            "What was Jayson Tatum's shooting percentage last season?",
-            "How many assists did Chris Paul average last season?"
-        ]
-        fallback_question = random.choice(fallback_questions)
-        print(f"   🔄 Using fallback question: {fallback_question}")
-        return fallback_question
+        raise  # No fallback - MCP tools must work or fail
 
 async def post_question(question, reply_to_id=None):
     """Post question to Twitter (as reply or standalone)."""

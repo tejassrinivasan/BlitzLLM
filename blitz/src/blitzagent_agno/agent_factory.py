@@ -390,14 +390,14 @@ def create_mcp_tools(config: Config, league: str = "mlb") -> MCPTools:
         "POSTGRES_DATABASE": primary_database,  # Set to match the primary league
         "POSTGRES_USER": config.database.user,
         "POSTGRES_PASSWORD": config.database.password,
-        "POSTGRES_SSL": "true",
+        "POSTGRES_SSL": config.database.ssl_mode,  # Use actual ssl_mode from config
     })
     
     # Initialize the MCP server with uvx command and proper timeouts
     server_params = StdioServerParameters(
         command=mcp_command,
         args=mcp_args,
-        read_timeout_seconds=30,  # Sufficient time for startup
+        read_timeout_seconds=60,  # Increased timeout for GitHub Actions environment
         env=mcp_env  # Pass environment variables
     )
     
@@ -405,7 +405,7 @@ def create_mcp_tools(config: Config, league: str = "mlb") -> MCPTools:
         # Use reasonable timeout for MCP tools initialization
         mcp_tools = MCPTools(
             server_params=server_params,
-            timeout_seconds=30  # Sufficient time for initialization
+            timeout_seconds=60  # Increased timeout for GitHub Actions environment
         )
         logger.info(f"MCP tools created successfully with uvx command")
         return mcp_tools
@@ -468,7 +468,7 @@ async def create_mcp_tools_async(config: Config, league: str = "mlb") -> AsyncIt
     server_params = StdioServerParameters(
         command=mcp_command,
         args=mcp_args,
-        read_timeout_seconds=30,  # Sufficient time for startup
+        read_timeout_seconds=60,  # Increased timeout for GitHub Actions environment
         env=mcp_env  # Pass environment variables
     )
     

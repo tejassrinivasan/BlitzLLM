@@ -477,13 +477,13 @@ class BlitzAgent:
                         "POSTGRES_DATABASE": "nba",  # Default to NBA database
                         "POSTGRES_USER": self.config.database.user,
                         "POSTGRES_PASSWORD": self.config.database.password,
-                        "POSTGRES_SSL": "true",
+                        "POSTGRES_SSL": self.config.database.ssl_mode,  # Use actual ssl_mode from config
                     })
                     
                     server_params = StdioServerParameters(
                         command=self._mcp_command,
                         args=self._mcp_args,
-                        read_timeout_seconds=30,
+                        read_timeout_seconds=60,  # Increased timeout for GitHub Actions environment
                         env=mcp_env  # Pass environment variables
                     )
                     
