@@ -539,7 +539,7 @@ async def generate_mcp_analytics_response(question):
     # Create runtime context for NBA analytics
     context = RuntimeContext(
         mode=RuntimeMode.INSIGHT,
-        tone=ToneStyle.ANALYTICAL
+        tone=ToneStyle.FRIENDLY
     )
     
     print("   🚀 Creating MCP tools async context...")
@@ -586,14 +586,15 @@ async def generate_mcp_analytics_response(question):
             Answer this NBA question with factual data from the historical database: {question}
 
             TWITTER RESPONSE REQUIREMENTS:
-            - Provide a clean, engaging Twitter response (no markdown formatting)
+            - Provide a casual, engaging Twitter response (no markdown formatting)
             - NO ### headers, NO ** bold text, NO bullet points
             - NO conversational elements like "Let me know how you'd like to proceed" 
-            - NO chat-like language - this is a tweet, not a conversation
-            - Focus on specific numbers, stats, and factual insights
-            - Keep it informative but concise for Twitter audience
-            - If data is missing for recent periods, simply state what data IS available
-            - Format as a standalone informative tweet that provides value
+            - NO overly analytical language or academic tone
+            - Keep it short and punchy - MAX 200 characters including hashtags
+            - Use emojis and casual basketball language 🏀
+            - Focus on 1-2 key surprising stats, not comprehensive analysis
+            - Make it sound like a sports fan sharing a cool fact, not a research paper
+            - End with relevant hashtags (#NBA #PlayerName)
             """
             
             response = await agent.arun(twitter_prompt)
