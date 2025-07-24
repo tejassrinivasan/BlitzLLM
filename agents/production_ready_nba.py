@@ -105,7 +105,8 @@ async def has_tejsri_replied_to_tweet(tweet_id):
         # Get recent tweets from tejsri01 (last 48 hours to be safe)
         from datetime import datetime, timedelta, timezone
         forty_eight_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=48))
-        start_time_iso = forty_eight_hours_ago.isoformat()
+        # Format for Twitter API: yyyy-MM-dd'T'HH:mm:ss[.SSS]Z
+        start_time_iso = forty_eight_hours_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
         
         # Get tejsri01's recent tweets to check for replies (using BlitzAnalytics client with paid access)
         recent_tweets = blitzanalytics_client.get_users_tweets(
@@ -158,7 +159,8 @@ async def search_smart_nba_content(return_all=False):
         
         # Calculate 24 hours ago in proper RFC3339 format for Twitter API
         twenty_four_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=24))
-        start_time_iso = twenty_four_hours_ago.isoformat()
+        # Format for Twitter API: yyyy-MM-dd'T'HH:mm:ss[.SSS]Z
+        start_time_iso = twenty_four_hours_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
         
         print(f"   📅 Searching for tweets newer than: {start_time_iso}")
         
