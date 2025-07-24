@@ -525,7 +525,51 @@ async def generate_mcp_analytics_response(question):
     except Exception as e:
         print(f"   ❌ MCP connection failed: {e}")
         print(f"   ❌ Error type: {type(e)}")
-        raise
+        print("   🔄 Falling back to direct Azure OpenAI analytics...")
+        
+        # Fallback: Use direct Azure OpenAI for analytics
+        client = AzureOpenAI(
+            api_key=os.getenv("AZURE_OPENAI_API_KEY", "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR"),
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://blitzgpt.openai.azure.com"),
+            api_version="2025-03-01-preview"
+        )
+        
+        fallback_prompt = f"""
+        Provide a comprehensive NBA analytics response to this question: {question}
+        
+        Focus on:
+        - Specific statistical insights and data points
+        - Historical context and comparisons
+        - Player performance analysis
+        - Team impact and context
+        
+        Format for Twitter: Clean, engaging response without markdown formatting. 
+        Provide factual insights that would interest NBA fans.
+        
+        Note: If specific data isn't available, focus on general trends and context around the topic.
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are an expert NBA analyst providing comprehensive insights. Focus on statistical analysis and historical context."},
+                    {"role": "user", "content": fallback_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=280  # Twitter-friendly length
+            )
+            
+            fallback_response = response.choices[0].message.content.strip()
+            print(f"   ✅ Fallback analytics generated: {fallback_response[:100]}...")
+            return fallback_response
+            
+        except Exception as fallback_error:
+            print(f"   ❌ Fallback also failed: {fallback_error}")
+            # Final fallback to static response
+            static_response = f"Great question about {question.split()[2] if len(question.split()) > 2 else 'NBA analytics'}! This type of detailed statistical analysis requires comprehensive game-by-game data. Player performance tracking and situational statistics like isolation plays provide valuable insights into individual skill development and team strategy effectiveness."
+            print(f"   🔄 Using static analytics response")
+            return static_response
 
 async def post_analytics_response(response_text, question_tweet_id):
     """Post analytics response from @BlitzAIBot."""
