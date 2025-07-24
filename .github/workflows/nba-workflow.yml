@@ -27,8 +27,6 @@ jobs:
       run: |
         cd agents
         pip install -r nba_workflow_requirements.txt
-        # Also install uvx for MCP tools
-        pip install uvx
     
     - name: Run NBA Production Workflow
       env:
