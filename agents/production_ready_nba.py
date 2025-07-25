@@ -448,6 +448,7 @@ async def generate_smart_question(original_tweet=None):
                     AVOID:
                     - Generic questions available elsewhere
                     - Questions about current 2025 season (we're in offseason)
+                    - DON'T focus only on last season - vary time periods (2020-2024, career stats, multi-season comparisons)
                     - Super granular play-by-play questions (except standard box score stats)
                     - Questions about dunks, highlights, or individual specific plays
                     - Questions about specific moments
@@ -819,6 +820,7 @@ async def generate_mcp_analytics_response(question):
             - Keep it casual and informative - MAX 250 characters including hashtags
             - NO emojis - just clean, casual basketball language
             - Simply answer the question with relevant stats and context
+            - Include a brief example whenever possible to illustrate the point
             - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
             - If you don't have specific data, just say "I don't have that info" - no technical explanations
             - NO hashtags - just clean text response
