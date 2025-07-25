@@ -463,141 +463,42 @@ async def generate_smart_question(original_tweet=None):
                     
                     Return ONLY the final question, no explanations or additional text.
 
-                    Here are examples of good questions:
-                    Percent of the time Stephen Curry hits at least 6 threes in the season opener
-                    What is Stephen Curry's career high in minutes played?
-                    What is Stephen Curry's career low in minutes played?
-                    What is the most offensive rebounds Stephen Curry recorded in a game during the 2023 season?
-                    How many minutes does Stephen Curry average on the 1st night of a b2b?
+                    Here are examples of good MULTI-CONDITIONAL questions:
                     Given Stephen Curry had 30+ points, what percent of the time did Draymond Green have 8 assists?
-                    Given Stephen Curry had 30+ points, what is the average number of assists Draymond Green got?
-                    How often in the 2024 season do at least 3 players on the Warriors score 15 points?
                     In what percent of games does Luka Doncic get 30+ points, and another player on his team also score 20+?
                     In what percent of games does Stephen Curry get 10+ points in the first quarter, and Draymond Green under 5+ points in the first quarter?
                     When Curry plays 40+ minutes, how often do the Warriors win?
-                    Is Stephen Curry likely to score the most points on a given day?
-                    How do teams perform in the final game of a long road trip (5+ games) this season
-                    What is the average point differential in the first game back from a road stand?
-                    How many times has a team had a 7+ game home stand in the last 10 years?
-                    What is the average length of a home stand for each team this season?
-                    What is the Warriors win percentage in home stands of 5+ games the past 5 seasons?
-                    Do players play more minutes on their birthday?
-                    Rank Lakers players by average PRA (points + rebounds + assists) and show LeBron's ranking
-                    LeBron James average assists comparison between Mondays and Tuesdays
-                    Most 3-point attempts by players with less than 25 minutes played
                     Compare LeBron James' PRA performance in Lakers wins vs losses to see performance differences
-                    Show Lakers players' individual component rankings for points, rebounds, and assists separately, plus overall PRA ranking
                     Compare LeBron James and Anthony Davis PRA averages in games they both played together for the Lakers
-                    Rank Lakers players by average PRA in recent seasons (2022+) to see current performance hierarchy
-                    LeBron James shooting efficiency against Clippers vs Celtics
                     Frequency of 10+ three-point attempts in games with less than 30 minutes played
                     Kyrie Irving steal performance coming off a win vs coming off a loss
                     Calculate frequency of Damian Lillard games with 20+ points OR 5+ three-pointers made
-                    Calculate frequency of Stephen Curry playoff games with 20+ points OR 5+ three-pointers made
                     Calculate frequency of Stephen Curry games with 25+ points OR 6+ three-pointers made
                     LeBron James home vs away performance against Clippers and Celtics
-                    LeBron James average points against Warriors vs Wizards
-                    Stephen Curry starter status distribution
-                    LeBron James' scoring average over the last 10 games
-                    Stephen Curry's scoring average over the last 10 games
                     Stephen Curry's assists comparison - first night vs second night of back-to-back games
-                    How does Stephen Curry's assist performance differ between the first and second night of back-to-back games? Provide 20 examples.
-                    Kyrie Irving combined defensive performance (steals + blocks) coming off losses
                     Kyrie Irving likelihood of 3+ steals coming off a loss
                     Calculate Warriors win rate when Stephen Curry gets 20+ points and 5+ three-pointers made
-                    Highest 3-point attempts by bench players in a game?
                     How does Anthony Edwards perform in steals after different lengths of losing streaks?
-                    Which big man has hit the most 3s in the 2000s?
-                    In what percentage of his games did Stephen Curry lead in scoring?
-                    Has Stephen Curry ever recorded a triple double?
-                    Has Stephen Curry ever recorded a quadruple double?
-                    Has Stephen Curry ever recorded a quintuple double?
-                    Has Stephen Curry ever recorded a 5x5?
-                    Who is the most recent player to record a triple double?
-                    Who had the first triple double?
-                    Who was the first player to record a five by five?
                     In games where Stephen Curry scores 40+, how many assists does he average? How does this compare to games where he scores less than 40?
                     Who averages the most rebounds per game in games where they played fewer than 25 minutes?
-                    Which player had the highest percentage of their points from free throws in March 2022?
-                    Which player had the highest percentage of their points from free throws in March 2022 (min 25 points scored)?
-                    Which player averaged the most blocks during 4+ game road stands in the 2024 season?
-                    Which player averaged the most blocks during 4+ game road stands this season (min 5 games)?
-                    Which player averaged the most blocks during a single 4+ game road stand this season?
-                    Has any team gone undefeated in a 5+ game road stand?
-                    Find the player with the highest free throw percentage in March 2022 (min 20 attempts)
-                    Find the player with the highest percentage of points from free throws in the entire 2022 season (min 200 points)
-                    Find the player with the highest percentage of points from free throws in the entire 2020 season
                     Find the player with the highest percentage of points from free throws in March 2021 wins only (min 25 points)
                     Compare the average fouls in a Scott Foster refereed game versus an average NBA game?
                     What is Chris Paul's record in games where Scott Foster is reffing?
-                    Chris Paul playoff record when Scott Foster officiates
-                    player with best record when Scott Foster officiates
-                    player with best record when Scott Foster officiates (min 10 games)
-                    Stephen curry most consecutive games with 30+ points
                     Who had the most wins in games where they are at a rest disadvantage in 2021
-                    What team has the most wins in games where they had 2+ more rest days than their opponent between 2020-2025 (show all teams)
                     What team has the most wins in games where they had 2+ more rest days than their opponent between 2020-2025
-                    Find players with longest consecutive perfect free throw shooting streaks (min 3 attempts per game)
-                    Find players with longest consecutive perfect free throw shooting streaks
-                    Find Giannis Antetokounmpo's longest consecutive game streaks with double-doubles
-                    Find Chris Paul's longest consecutive game streaks with 10+ assists
-                    Find Russell Westbrook's longest consecutive triple-double streaks
-                    Find Golden State Warriors longest winning streaks (5+ games)
-                    Find Luka Doncic's highest 10-game rolling average scoring periods
-                    Find Stephen Curry's longest consecutive game streaks with 5+ three-pointers made
                     Team turnover rates comparison: 0 days rest vs 2+ days rest analysis in regular season
-                    Find Luka Dončić's highest 10-game rolling average scoring periods
                     Klay Thompson scoring breakdown when Stephen Curry scores 40+ points in same game
                     Warriors win rate when Curry scores under 20 points vs 20+ points in 2024 season
                     Lakers bench scoring correlation when LeBron James and Anthony Davis both score 25+ points in 2024
-                    mean, median, std, middle 50% Stephen Curry rebounds broken down by season, by win/loss
-                    mean, median, std, middle 50% Stephen Curry rebound rate broken down by season, by win/loss
-                    Team win rate correlation with age gap between oldest and youngest teammates in 2024
-                    Lebron James assists correlation with PRA in a game
-                    Lebron James assists correlation with PRA in a game (show outliers)
                     Is 3PA for Stephen Curry correlated with his team winning
-                    Find frequency where all 5 starters on a team score under 5 points in the 4th quarter (group by season type)
                     When the underdog wins the first quarter, how likely are they to win the game?
                     When the underdog has a moneyline of +400 or worse and wins the first quarter, how likely are they to win the game?
-                    When the underdog has a moneyline of +300 or worse and wins the first quarter by at least 5 points, how likely are they to win the game?
-                    When the underdog has a moneyline of at least +300 and wins the first half by at least 5 points, how likely are they to win the game?
                     When underdogs win the game, what percentage of the time does the over hit?
                     When favorites win the game by at least 10 points, what percentage of the time does the over hit?
-                    In games where the spread was X (e.g. ±5.5), how often did the favorite cover the spread?
-                    What are the most common point differentials?
-                    When a team wins by 20+, how often did the over, under or push hit?
-                    Do certain spreads have higher variance in outcomes?
-                    Who was favored the most in the 2023 season?
                     Compare Stephen Curry's 3pm when favored versus when not for 2024 season
-                    Compare Stephen Curry's 3pm when favored versus when not for in the 2024 calendar year
-                    Compare Stephen Curry's average points scored by quarter when starting with Lebron James'
                     In games that enter the 4th quarter within 5 points, how many points does Stephen Curry average?
-                    Team with greatest Total Distance Traveled in 2024 Regular Season
                     Heavy underdogs (+400) vs regular underdogs win rates when leading after 3 quarters
-                    Longest single trip distance for any team in 2024 regular season
-                    Longest single trip distance for any team in 2024 regular season (with 10 examples)
-                    ROI of betting over Anthony Edwards points across in his career
-                    ROI of betting under James Harden points across his last 10 games
-                    ROI of betting over James Harden points across his last 10 games
-                    ROI of betting over James Harden Total 3-Pointers Made in his last 20 games
-                    ROI of betting under James Harden Total 3-Pointers Made in his last 20 games
-                    How much would I have profited betting the under for James Harden Total Rebounds in his last 15 games
-                    Profitability of betting over James Harden Total Assists in his L25 games
-                    ROI of betting James Harden not to record a double double across his career
-                    ROI of betting James Harden to record a double double across his career
-                    ROI of betting James Harden Not To Record a Triple Double in his last 40 games
-                    ROI of betting over James Harden PRA (Total Points, Rebounds, & Assists) across last 30 games
-                    ROI of betting over James Harden points + assists across last 30 games
-                    ROI of betting under James Harden points + rebounds across last 82 games
-                    ROI of betting under James Harden assists + rebounds across last 82 games
-                    ROI of betting under James Harden steals across last 82 games
-                    ROI of betting over James Harden steals across last 82 games
-                    ROI of betting over James Harden blocks across last 10 games
-                    ROI of betting over James Harden turnovers across last 10 games
-                    ROI of betting under James Harden STOCKS (steals + blocks)  across last 10 games
                     How often does Brandin Podziemski go over his points line when Stephen Curry is not in the game?
-                    ROI of betting Chris Paul over points when Scott Foster officiates
-                    ROI of betting Chris Paul under points when Scott Foster officiates
                     Compare the ROI of betting over versus under on Chris Paul points when Scott Foster referees
                     In games where Draymond Green went over his assists line, how often did Curry go over his points line
                     In games where Stephen Curry went over his points line, how often did Klay Thompson go under his points line
