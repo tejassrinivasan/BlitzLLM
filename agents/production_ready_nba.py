@@ -448,6 +448,7 @@ async def generate_smart_question(original_tweet=None):
                     AVOID:
                     - Generic questions available elsewhere
                     - Questions about current 2025 season (we're in offseason)
+                    - Questions about games during offseason months (July/August/September) - NO GAMES HAPPEN THEN
                     - DON'T focus only on last season - vary time periods (2020-2024, career stats, multi-season comparisons)
                     - Super granular play-by-play questions (except standard box score stats)
                     - Questions about dunks, highlights, or individual specific plays
@@ -624,6 +625,12 @@ async def generate_smart_question(original_tweet=None):
                 # Question generation prompt
                 question_prompt = f"""
                 Current Date: {current_date} (NBA Offseason)
+                
+                SEASONAL AWARENESS: Since it's currently NBA offseason (July/August/September), DO NOT ask about:
+                - Games happening during current offseason months
+                - "Games on birthdays" when birthdays fall during offseason
+                - Any game-specific performance during offseason periods
+                Focus on historical data from past completed seasons instead.
                 
                 {tweet_context}
                 
