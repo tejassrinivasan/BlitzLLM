@@ -240,21 +240,45 @@ class SportsAnalysisAgent:
         mcp_env.pop("DATABASE_URL", None)
         mcp_env.pop("POSTGRES_DATABASE", None)  # Don't hardcode database name
         
-        self.mcp_server = MCPServerStdio(
-            command="uvx",
-            args=["--from", Config.MCP_REPO_URL, Config.MCP_PACKAGE, "--quiet"],
-            env=mcp_env  # Pass environment with correct credentials and no hardcoded database
-        )
+        try:
+            # Try to initialize MCP server with better error handling
+            logger.info(f"Initializing MCP server with repo: {Config.MCP_REPO_URL}")
+            self.mcp_server = MCPServerStdio(
+                command="uvx",
+                args=["--from", Config.MCP_REPO_URL, Config.MCP_PACKAGE, "--quiet"],
+                env=mcp_env  # Pass environment with correct credentials and no hardcoded database
+            )
+            logger.info("MCP server initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize MCP server: {str(e)}")
+            logger.error(f"MCP repo URL: {Config.MCP_REPO_URL}")
+            logger.error(f"MCP package: {Config.MCP_PACKAGE}")
+            # For now, set to None and we'll handle this in the agent creation
+            self.mcp_server = None
         
         # Create the Pydantic AI agent with structured workflow and thinking enabled
-        self.agent = Agent(
-            model=self.model,
-            model_settings=self.model_settings,  # Enable anthropic thinking
-            deps_type=str,  # Dependencies will be the league
-            toolsets=[self.mcp_server],
-            retries=3,  # Allow retries for reliability
-            end_strategy='early'  # End as soon as possible
-        )
+        if self.mcp_server:
+            self.agent = Agent(
+                model=self.model,
+                model_settings=self.model_settings,  # Enable anthropic thinking
+                deps_type=str,  # Dependencies will be the league
+                toolsets=[self.mcp_server],
+                retries=3,  # Allow retries for reliability
+                end_strategy='early'  # End as soon as possible
+            )
+            logger.info("Agent created with MCP tools")
+        else:
+            # Create agent without MCP tools as fallback
+            self.agent = Agent(
+                model=self.model,
+                model_settings=self.model_settings,  # Enable anthropic thinking
+                deps_type=str,  # Dependencies will be the league
+                retries=3,  # Allow retries for reliability
+                end_strategy='early'  # End as soon as possible
+            )
+            logger.warning("Agent created WITHOUT MCP tools - sports analysis will not work!")
+            
+        self.mcp_available = self.mcp_server is not None
         
         # Add dynamic system prompt
         @self.agent.system_prompt
@@ -272,6 +296,13 @@ class SportsAnalysisAgent:
     
     async def analyze(self, request: AnalysisRequest) -> AnalysisResponse:
         """Perform sports analysis using the agent with retry logic."""
+        # Check if MCP is available
+        if not self.mcp_available:
+            raise HTTPException(
+                status_code=503, 
+                detail="Sports analysis service unavailable: MCP server failed to initialize. Please contact support."
+            )
+        
         max_attempts = 3
         last_error = None
         
@@ -306,7 +337,10 @@ class SportsAnalysisAgent:
                 # If it's the last attempt, raise the error
                 if attempt == max_attempts - 1:
                     logger.error(f"Analysis failed after {max_attempts} attempts: {str(e)}")
-                    raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+                    if not self.mcp_available:
+                        raise HTTPException(status_code=503, detail="Sports analysis service unavailable: MCP server connection failed")
+                    else:
+                        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
                 
                 # Wait a bit before retrying
                 import asyncio
@@ -715,10 +749,12 @@ async def production_analyze(
 async def production_health(client_info: Dict = Depends(verify_api_key)):
     """Production health check endpoint."""
     return {
-        "status": "healthy",
+        "status": "healthy" if sports_agent.mcp_available else "degraded",
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
         "anthropic_thinking": "enabled",
+        "mcp_server": "available" if sports_agent.mcp_available else "unavailable",
+        "sports_analysis": "available" if sports_agent.mcp_available else "unavailable",
         "client_id": client_info["client_id"],
         "client_name": client_info["name"]
     }
