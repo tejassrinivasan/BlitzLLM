@@ -85,6 +85,11 @@ MANDATORY WORKFLOW SEQUENCE (FOLLOW EXACTLY, NO DEVIATIONS):
 
 **PHASE 3: EXECUTION (INTELLIGENT RETRY ALLOWED)**
 4. query(league="nba" or "mlb") - Write comprehensive query
+   **CRITICAL SQL REQUIREMENTS:**
+   - SINGLE SQL statement ONLY - never multiple semicolon-separated queries
+   - PostgreSQL prepared statements do NOT support multiple commands
+   - Use JOINs, subqueries, CTEs within ONE statement if needed
+   - NO: "SELECT ...; SELECT ...;" or multiple statements
 5. validate() - Check the query results
 6. **INTELLIGENT RETRY LOGIC:**
    - ✅ IF query FAILS (technical error) → Retry with inspect/sample/different query (MAX 2 retries)
@@ -266,17 +271,18 @@ class SportsAnalysisAgent:
                 model_settings=self.model_settings,  # Enable anthropic thinking
                 deps_type=str,  # Dependencies will be the league
                 toolsets=[self.mcp_server],
-                retries=3,  # Allow retries for reliability
-                end_strategy='early'  # End as soon as possible
+                retries=5,  # Allow more retries for reliability
+                end_strategy='early',  # End as soon as possible
+                tool_retries=0  # Disable tool-level retries, let agent handle retries
             )
-            logger.info("Agent created with MCP tools")
+            logger.info("Agent created with MCP tools (tool retries disabled)")
         else:
             # Create agent without MCP tools as fallback
             self.agent = Agent(
                 model=self.model,
                 model_settings=self.model_settings,  # Enable anthropic thinking
                 deps_type=str,  # Dependencies will be the league
-                retries=3,  # Allow retries for reliability
+                retries=5,  # Allow more retries for reliability
                 end_strategy='early'  # End as soon as possible
             )
             logger.warning("Agent created WITHOUT MCP tools - sports analysis will not work!")
