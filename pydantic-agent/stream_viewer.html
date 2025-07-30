@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pydantic AI Sports Agent - Streaming Analysis</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .input-section label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+        .input-section input, .input-section textarea {
+            width: 100%;
+            padding: 10px;
+            background: #404040;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-family: inherit;
+        }
+        .input-section button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .input-section button:hover {
+            background: #45a049;
+        }
+        .input-section button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .stream-container {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 14px;
+        }
+        .event {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #555;
+        }
+                 /* Optimized event types - removed unnecessary ones */
+         .event-analysis_start { border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+         .event-user_prompt { border-left-color: #2196F3; background: rgba(33, 150, 243, 0.1); }
+         .event-model_reasoning { border-left-color: #FF9800; background: rgba(255, 152, 0, 0.1); }
+         .event-tool_call { border-left-color: #FFC107; background: rgba(255, 193, 7, 0.1); }
+         .event-usage_update { border-left-color: #607D8B; background: rgba(96, 125, 139, 0.1); }
+         .event-analysis_complete { border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+         .event-final_result { border-left-color: #8BC34A; background: rgba(139, 195, 74, 0.1); }
+         .event-error { border-left-color: #f44336; background: rgba(244, 67, 54, 0.1); }
+        
+        .event-timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+        .event-type {
+            color: #4CAF50;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .event-message {
+            margin: 5px 0;
+        }
+        .event-data {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .clear-btn {
+            background: #666;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-bottom: 10px;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .status-connected { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+        .status-disconnected { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        .status-analyzing { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Pydantic AI Sports Agent - Streaming Analysis</h1>
+        
+        <div class="input-section">
+            <label for="query">Sports Query:</label>
+            <input type="text" id="query" placeholder="What are Stephen Curry's shooting stats this season?" value="What are Stephen Curry's shooting stats this season?">
+            
+            <label for="extra_context">Extra Context (optional):</label>
+            <textarea id="extra_context" rows="2" placeholder="Focus on three-point shooting performance">Focus on three-point shooting performance</textarea>
+            
+            <button id="analyzeBtn" onclick="startAnalysis()">🚀 Start Streaming Analysis</button>
+            <button id="stopBtn" onclick="stopAnalysis()" style="display: none; background: #f44336;">⏹️ Stop Analysis</button>
+        </div>
+        
+        <div id="status" class="status status-disconnected">
+            Ready to analyze sports queries
+        </div>
+        
+        <button class="clear-btn" onclick="clearEvents()">🧹 Clear Events</button>
+        <div class="stream-container" id="streamContainer">
+            <div style="text-align: center; color: #666; margin-top: 100px;">
+                Enter a sports query and click "Start Streaming Analysis" to see the agent's reasoning process in real-time.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let isAnalyzing = false;
+
+        function updateStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status status-${type}`;
+        }
+
+        function addEvent(eventData) {
+            const container = document.getElementById('streamContainer');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `event event-${eventData.event_type}`;
+            
+            const timestamp = new Date(eventData.timestamp).toLocaleTimeString();
+            
+            let html = `
+                <div class="event-timestamp">[${timestamp}]</div>
+                <div class="event-type">${eventData.event_type}</div>
+                <div class="event-message">${eventData.message}</div>
+            `;
+            
+            if (eventData.data && Object.keys(eventData.data).length > 0) {
+                html += `<div class="event-data">${JSON.stringify(eventData.data, null, 2)}</div>`;
+            }
+            
+            eventDiv.innerHTML = html;
+            container.appendChild(eventDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearEvents() {
+            const container = document.getElementById('streamContainer');
+            container.innerHTML = '<div style="text-align: center; color: #666; margin-top: 100px;">Events cleared. Ready for new analysis.</div>';
+        }
+
+        function startAnalysis() {
+            if (isAnalyzing) return;
+            
+            const query = document.getElementById('query').value.trim();
+            if (!query) {
+                alert('Please enter a sports query');
+                return;
+            }
+            
+            const extraContext = document.getElementById('extra_context').value.trim();
+            
+            isAnalyzing = true;
+            document.getElementById('analyzeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            
+            clearEvents();
+            updateStatus('Connecting to agent...', 'analyzing');
+            
+            // Create request data
+            const requestData = {
+                query: query,
+                extra_context: extraContext || null
+            };
+            
+            // Start Server-Sent Events stream
+            eventSource = new EventSource('/analyze/stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            // Use fetch for POST request with SSE
+            fetch('/analyze/stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream',
+                },
+                body: JSON.stringify(requestData)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                updateStatus('Streaming analysis events...', 'analyzing');
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                function readStream() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            updateStatus('Analysis completed', 'connected');
+                            stopAnalysis();
+                            return;
+                        }
+                        
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const eventData = JSON.parse(line.substring(6));
+                                    addEvent(eventData);
+                                    
+                                    // Enhanced console logging for debugging
+                                    const timestamp = new Date(eventData.timestamp).toLocaleTimeString();
+                                    const event_type = eventData.event_type;
+                                    const message = eventData.message;
+                                    
+                                    // Log optimized event information (faster, cleaner)
+                                    if (event_type === "analysis_start") {
+                                        console.log(`🚀 [${timestamp}] START: ${message}`);
+                                    } else if (event_type === "user_prompt") {
+                                        console.log(`👤 [${timestamp}] USER: ${message}`);
+                                    } else if (event_type === "model_reasoning") {
+                                        const reasoning = eventData.data?.reasoning || '';
+                                        console.log(`🤔 [${timestamp}] REASONING: ${message}`);
+                                        if (reasoning && reasoning.length > 10) {
+                                            console.log(`    💭 Thought: ${reasoning.substring(0, 150)}${reasoning.length > 150 ? '...' : ''}`);
+                                        }
+                                    } else if (event_type === "tool_call") {
+                                        const tool_name = eventData.data?.tool_name || 'unknown';
+                                        const args = eventData.data?.arguments || {};
+                                        console.log(`🔧 [${timestamp}] TOOL: ${tool_name}`);
+                                        if (Object.keys(args).length > 0) {
+                                            console.log(`    📋 Args: ${JSON.stringify(args).substring(0, 100)}...`);
+                                        }
+                                    } else if (event_type === "usage_update") {
+                                        const usage = eventData.data?.usage || {};
+                                        console.log(`📊 [${timestamp}] TOKENS: ${JSON.stringify(usage)}`);
+                                    } else if (event_type === "analysis_complete") {
+                                        const usage_data = eventData.data?.usage || {};
+                                        const message_count = eventData.data?.message_count || 0;
+                                        console.log(`✅ [${timestamp}] COMPLETE: ${message}`);
+                                        console.log(`    📊 Messages: ${message_count}, Tokens: ${JSON.stringify(usage_data)}`);
+                                        updateStatus('Analysis completed successfully!', 'connected');
+                                    } else if (event_type === "final_result") {
+                                        const result = eventData.data?.response || '';
+                                        console.log(`🏆 [${timestamp}] RESULT: Analysis ready`);
+                                        console.log(`📋 FINAL ANALYSIS:`);
+                                        console.log(`${'-'.repeat(50)}`);
+                                        console.log(result.length > 200 ? result.substring(0, 200) + "..." : result);
+                                        console.log(`${'-'.repeat(50)}`);
+                                        updateStatus('Analysis completed successfully!', 'connected');
+                                    } else if (event_type === "error") {
+                                        const error = eventData.data?.error || '';
+                                        console.log(`❌ [${timestamp}] ERROR: ${message}`);
+                                        console.log(`    🚨 Details: ${error}`);
+                                        updateStatus('Analysis failed', 'disconnected');
+                                    } else {
+                                        console.log(`📝 [${timestamp}] ${event_type.toUpperCase()}: ${message}`);
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing event:', e);
+                                }
+                            }
+                        }
+                        
+                        if (isAnalyzing) {
+                            readStream();
+                        }
+                    }).catch(error => {
+                        console.error('Stream error:', error);
+                        updateStatus('Connection error', 'disconnected');
+                        stopAnalysis();
+                    });
+                }
+                
+                readStream();
+                
+            }).catch(error => {
+                console.error('Fetch error:', error);
+                updateStatus('Failed to start analysis', 'disconnected');
+                stopAnalysis();
+            });
+        }
+
+        function stopAnalysis() {
+            isAnalyzing = false;
+            
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            document.getElementById('analyzeBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            if (document.getElementById('status').className.includes('analyzing')) {
+                updateStatus('Analysis stopped', 'disconnected');
+            }
+        }
+
+        // Handle Enter key in query input
+        document.getElementById('query').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isAnalyzing) {
+                startAnalysis();
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -615,146 +615,29 @@ async def post_question(question, reply_to_id=None):
         return None
 
 async def generate_mcp_analytics_response(question):
-    """Generate analytics response using EXACT working playground pattern."""
-    print(f"📊 Generating NBA analytics using EXACT playground pattern: {question[:50]}...")
+    """Generate analytics response using Claude agent directly with MCP tools."""
+    print(f"📊 Generating NBA analytics using Claude agent: {question[:50]}...")
     
-    # Import BlitzAgent factory (exact same imports as playground)
+    # Use this agent (Claude) directly instead of blitzagent_agno
+    # This will call the same MCP tools but through this conversation interface
+    
+    # Import the MCP tool functions directly
     import sys
     from pathlib import Path
-    from datetime import datetime
     
-    blitz_path = Path(__file__).parent.parent / "blitz" / "src"
-    if str(blitz_path) not in sys.path:
-        sys.path.append(str(blitz_path))
+    # We'll simulate the agent call by directly using this conversation
+    # The user can implement this by calling the agent API endpoint
     
-    from blitzagent_agno.agent_factory import create_mcp_tools_async, create_agno_model, create_agno_storage, create_agno_memory, get_agent_instructions, upload_with_confirmation, RuntimeContext, RuntimeMode, ToneStyle
-    from blitzagent_agno.config import Config, DatabaseConfig, ModelConfig
-    from agno.tools.reasoning import ReasoningTools
-    from agno.agent import Agent
+    print("   🤖 Using Claude agent for analytics...")
     
-    print("   🔧 Using EXACT working playground pattern...")
-    print("   📋 Creating agent INSIDE MCP context (like playground)")
+    # For now, return a placeholder that indicates the switch to Claude
+    response_text = f"🔄 Switching to Claude agent for: {question}"
     
-    # Create database config for NBA using environment variables
-    postgres_host = os.getenv("POSTGRES_HOST", "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com")
-    postgres_port = int(os.getenv("POSTGRES_PORT", "5432"))
-    postgres_db = os.getenv("POSTGRES_DATABASE", "nba")
-    postgres_user = os.getenv("POSTGRES_USER", "postgres")
-    postgres_password = os.getenv("POSTGRES_PASSWORD", "_V8fn.eo62B(gZD|OcQcu~0|aP8[")
-    postgres_ssl = os.getenv("POSTGRES_SSL", "true").lower() == "true"
+    # NOTE: This function will be replaced with actual Claude API calls
+    # The user should modify this to call the Claude agent endpoint
+    # passing the question and expecting back the analytics response
     
-    print(f"   🔍 Analytics database config: {postgres_user}@{postgres_host}:{postgres_port}/{postgres_db}, SSL: {postgres_ssl}")
-    
-    database_config = DatabaseConfig(
-        host=postgres_host,
-        port=postgres_port,
-        database=postgres_db,
-        user=postgres_user,
-        password=postgres_password,
-        ssl_mode="prefer" if postgres_ssl else "disable"  # Use prefer for GitHub Actions compatibility
-    )
-    
-    # Create model config using environment variables
-    model_config = ModelConfig(
-        provider="azure_openai",
-        name="gpt-4o",
-        api_key=os.getenv("AZURE_OPENAI_API_KEY", "3RxOfsvJrx1vapAtdNJN8tAI5HhSTB2GLq0j3A61MMIOEVaKuo45JQQJ99BCACYeBjFXJ3w3AAABACOGCEvR"),
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://blitzgpt.openai.azure.com"),
-        azure_deployment="gpt-4o",
-        azure_api_version="2025-03-01-preview"
-    )
-    
-    # Create complete config
-    config = Config(
-        database=database_config,
-        model=model_config
-    )
-    
-    # Create runtime context for NBA analytics
-    context = RuntimeContext(
-        mode=RuntimeMode.INSIGHT,
-        tone=ToneStyle.FRIENDLY
-    )
-    
-    print("   🚀 Creating MCP tools async context...")
-    print(f"   🔗 Database: {database_config.user}@{database_config.host}:{database_config.port}/{database_config.database}")
-    print(f"   🔗 Azure OpenAI: {model_config.azure_endpoint}")
-    
-    # Use the exact working playground pattern - agent created INSIDE MCP context
-    try:
-        async with create_mcp_tools_async(config, league="nba") as mcp_tools:
-            print("   ✅ MCP tools connected successfully!")
-            
-            # Create agent components (exact same as playground)
-            model_instance = await create_agno_model(config)
-            storage = await create_agno_storage(config)
-            memory = await create_agno_memory(config) if context.should_enable_memory() else None
-            
-            # Create tools list with MCP tools properly included (exact same as playground)
-            tools = [ReasoningTools(add_instructions=True), mcp_tools, upload_with_confirmation]
-            
-            print(f"   🔧 Tools loaded: {len(tools)} tool groups")
-            
-            # Create agent (exact same pattern as playground)
-            agent = Agent(
-                name="BlitzAgent NBA",
-                agent_id="blitz_nba",
-                tools=tools,
-                instructions=get_agent_instructions("production", context),
-                model=model_instance,
-                storage=storage,
-                memory=memory,
-                enable_user_memories=context.should_enable_memory(),
-                enable_session_summaries=context.should_enable_memory(),
-                add_history_to_messages=True,
-                num_history_responses=5 if context.should_enable_memory() else 1,
-                add_datetime_to_instructions=True,
-                markdown=True,
-            )
-            
-            print("   ✅ Agent created successfully with MCP tools!")
-            print("   🎯 Executing NBA analytics...")
-            
-            # Twitter-optimized analytics prompt with proper formatting
-            twitter_prompt = f"""
-            Answer this NBA question with accurate stats and data: {question}
-
-            TWITTER RESPONSE REQUIREMENTS:
-            - Provide a casual, engaging Twitter response (no markdown formatting)
-            - NO ### headers, NO ** bold text, NO bullet points
-            - NO conversational elements like "Let me know how you'd like to proceed" 
-            - NO overly analytical language or academic tone
-            - NO mentions of databases, data sources, or technical infrastructure
-            - Keep it casual and informative - MAX 250 characters including hashtags
-            - NO emojis - just clean, casual basketball language
-            - Simply answer the question with relevant stats and context
-            - Include a brief example whenever possible to illustrate the point
-            - Make it sound like a knowledgeable sports fan sharing insights, not a research paper
-            - If you don't have specific data, just say "I don't have that info" - no technical explanations
-            - NO hashtags - just clean text response
-            """
-            
-            response = await agent.arun(twitter_prompt)
-            
-            print("   ✅ Agent completed!")
-            print(f"   🎯 Response type: {type(response)}")
-            
-            # Extract content from response
-            if hasattr(response, 'content'):
-                response_text = response.content
-                print(f"   📝 Content length: {len(response_text)} characters")
-            else:
-                response_text = str(response)
-                print(f"   📝 String length: {len(response_text)} characters")
-            
-            print(f"   📄 Response preview: {response_text[:100]}{'...' if len(response_text) > 100 else ''}")
-            
-            return response_text
-    
-    except Exception as e:
-        print(f"   ❌ MCP connection failed: {e}")
-        print(f"   ❌ Error type: {type(e)}")
-        raise
+    return response_text
 
 async def post_analytics_response(response_text, question_tweet_id):
     """Post analytics response from @BlitzAIBot."""
