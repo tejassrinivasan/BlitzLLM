@@ -241,18 +241,21 @@ class SportsAnalysisAgent:
         mcp_env.pop("POSTGRES_DATABASE", None)  # Don't hardcode database name
         
         try:
-            # Try to initialize MCP server with better error handling
-            logger.info(f"Initializing MCP server with repo: {Config.MCP_REPO_URL}")
+            # MCP package is now installed directly in container - run it directly
+            logger.info("Initializing MCP server from installed package (no downloads needed)")
+            
+            # Run the installed blitz-agent-mcp directly instead of using uvx
             self.mcp_server = MCPServerStdio(
-                command="uvx",
-                args=["--from", Config.MCP_REPO_URL, Config.MCP_PACKAGE, "--quiet"],
+                command=Config.MCP_COMMAND,  # Use installed package directly
+                args=["--quiet"],  # Just quiet flag, no --from needed
                 env=mcp_env  # Pass environment with correct credentials and no hardcoded database
             )
-            logger.info("MCP server initialized successfully")
+            logger.info("MCP server initialized successfully from installed package")
         except Exception as e:
             logger.error(f"Failed to initialize MCP server: {str(e)}")
-            logger.error(f"MCP repo URL: {Config.MCP_REPO_URL}")
-            logger.error(f"MCP package: {Config.MCP_PACKAGE}")
+            logger.error(f"Command: {Config.MCP_COMMAND} --quiet")
+            logger.error(f"Environment variables: {list(mcp_env.keys())}")
+            logger.error(f"Full traceback: {str(e)}")
             # For now, set to None and we'll handle this in the agent creation
             self.mcp_server = None
         
@@ -331,12 +334,16 @@ class SportsAnalysisAgent:
                 )
                 
             except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
                 last_error = e
                 logger.warning(f"Analysis attempt {attempt + 1} failed: {str(e)}")
+                logger.warning(f"Full error traceback: {error_details}")
                 
                 # If it's the last attempt, raise the error
                 if attempt == max_attempts - 1:
                     logger.error(f"Analysis failed after {max_attempts} attempts: {str(e)}")
+                    logger.error(f"Final error traceback: {error_details}")
                     if not self.mcp_available:
                         raise HTTPException(status_code=503, detail="Sports analysis service unavailable: MCP server connection failed")
                     else:

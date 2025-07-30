@@ -24,9 +24,8 @@ class Config:
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()  # Ensure uppercase for MCP compatibility
     
-    # MCP Configuration
-    MCP_REPO_URL: str = "git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp"
-    MCP_PACKAGE: str = "blitz-agent-mcp"
+    # MCP Configuration (package installed directly in container)
+    MCP_COMMAND: str = "blitz-agent-mcp"  # Installed package command
     
     @classmethod
     def validate(cls) -> None:
