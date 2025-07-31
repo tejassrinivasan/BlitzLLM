@@ -1,0 +1,15 @@
+pydantic-ai>=0.0.14
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+tweepy>=4.14.0
+anthropic>=0.40.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+asyncio>=3.4.3
+schedule>=1.2.0
+httpx>=0.25.0
+aiohttp>=3.8.0
+tenacity>=8.2.3
+structlog>=23.2.0
+rich>=13.7.0
+nest-asyncio>=1.5.0 
