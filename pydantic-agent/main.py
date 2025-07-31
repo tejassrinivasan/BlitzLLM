@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class AnalysisRequest(BaseModel):
     query: str = Field(..., description="The sports analysis question or request")
     extra_context: Optional[str] = Field(None, description="Additional context to include in the prompt")
+    image: Optional[str] = Field(None, description="Base64 encoded image URL to provide as visual context")
 
 class AnalysisResponse(BaseModel):
     response: str = Field(..., description="The AI agent's analysis response")
@@ -206,7 +207,7 @@ When a user asks for **prop or bet recommendations**, you MUST always perform BO
 - Results are incomplete but accurate for available data
 - You want "more comprehensive" or "additional" analysis
 
-{extra_context}
+{user_provided_context}
 """
 
 class SportsAnalysisAgent:
@@ -269,19 +270,18 @@ class SportsAnalysisAgent:
             self.agent = Agent(
                 model=self.model,
                 model_settings=self.model_settings,  # Enable anthropic thinking
-                deps_type=str,  # Dependencies will be the league
+                deps_type=Dict,  # Dependencies will contain extra_context and image
                 toolsets=[self.mcp_server],
                 retries=5,  # Allow more retries for reliability
-                end_strategy='early',  # End as soon as possible
-                tool_retries=0  # Disable tool-level retries, let agent handle retries
+                end_strategy='early'  # End as soon as possible
             )
-            logger.info("Agent created with MCP tools (tool retries disabled)")
+            logger.info("Agent created with MCP tools")
         else:
             # Create agent without MCP tools as fallback
             self.agent = Agent(
                 model=self.model,
                 model_settings=self.model_settings,  # Enable anthropic thinking
-                deps_type=str,  # Dependencies will be the league
+                deps_type=Dict,  # Dependencies will contain extra_context and image
                 retries=5,  # Allow more retries for reliability
                 end_strategy='early'  # End as soon as possible
             )
@@ -296,11 +296,24 @@ class SportsAnalysisAgent:
         
     def _get_system_prompt(self, ctx) -> str:
         """Generate the system prompt with current context."""
-        extra_context = ctx.deps if ctx.deps else ""
+        deps = ctx.deps if ctx.deps else {}
+        extra_context = deps.get('extra_context', '')
+        image = deps.get('image', '')
+        
+        # Build user provided context section
+        user_context_parts = []
+        
+        if extra_context:
+            user_context_parts.append(f"### This is extra context the user has provided:\n{extra_context}")
+        
+        if image:
+            user_context_parts.append(f"### Here is the base64 image url the user is providing as context:\n{image}")
+        
+        user_provided_context = "\n\n".join(user_context_parts) if user_context_parts else ""
         
         return SYSTEM_PROMPT_TEMPLATE.format(
             current_date=datetime.now().strftime("%Y-%m-%d"),
-            extra_context=f"\n\n### Additional Context:\n{extra_context}" if extra_context else ""
+            user_provided_context=f"\n\n{user_provided_context}" if user_provided_context else ""
         )
     
     async def analyze(self, request: AnalysisRequest) -> AnalysisResponse:
@@ -317,8 +330,11 @@ class SportsAnalysisAgent:
         
         for attempt in range(max_attempts):
             try:
-                # Set up dependencies (just extra context - agent will determine league automatically)
-                deps = request.extra_context or ""
+                # Set up dependencies (extra context and image - agent will determine league automatically)
+                deps = {
+                    'extra_context': request.extra_context or '',
+                    'image': request.image or ''
+                }
                 
                 # Run the agent - it will analyze the query to determine NBA/MLB automatically
                 result = await self.agent.run(
@@ -366,12 +382,15 @@ class SportsAnalysisAgent:
             yield StreamEvent(
                 event_type="analysis_start",
                 message=f"Starting analysis of query: '{request.query}'",
-                data={"query": request.query, "extra_context": request.extra_context},
+                data={"query": request.query, "extra_context": request.extra_context, "image": request.image},
                 timestamp=datetime.now().isoformat()
             )
             
             # Set up dependencies
-            deps = request.extra_context or ""
+            deps = {
+                'extra_context': request.extra_context or '',
+                'image': request.image or ''
+            }
             
             # Use agent.iter() to capture real execution events
             async with self.agent.iter(request.query, deps=deps) as agent_run:
@@ -510,108 +529,7 @@ class SportsAnalysisAgent:
 # Global agent instance
 sports_agent = SportsAnalysisAgent()
 
-# FastAPI app setup
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan management."""
-    logger.info("Starting Pydantic AI Sports Agent")
-    yield
-    logger.info("Shutting down Pydantic AI Sports Agent")
-
-app = FastAPI(
-    title="Pydantic AI Sports Agent",
-    description="AI-powered sports analysis agent using Claude 4 Sonnet (May 2025) and MCP tools for superior reasoning and analysis",
-    version="1.0.0",
-    lifespan=lifespan
-)
-
-async def event_stream(request: AnalysisRequest) -> AsyncGenerator[str, None]:
-    """Convert analysis events to Server-Sent Events format."""
-    async for event in sports_agent.stream_analyze(request):
-        # Format as SSE
-        event_data = json.dumps(event.model_dump())
-        yield f"data: {event_data}\n\n"
-
-@app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_sports_query(request: AnalysisRequest) -> AnalysisResponse:
-    """
-    Analyze a sports query using AI and return insights.
-    The agent automatically determines whether the query is about NBA or MLB.
-    
-    - **query**: The sports question or analysis request
-    - **extra_context**: Optional additional context to include in the analysis
-    """
-    return await sports_agent.analyze(request)
-
-@app.post("/analyze/stream")
-@app.options("/analyze/stream")  # Handle preflight requests
-async def stream_sports_analysis(request: AnalysisRequest = None) -> StreamingResponse:
-    """
-    Stream the analysis process in real-time using Server-Sent Events.
-    Shows league detection, reasoning, tool calls, and database queries as they happen.
-    
-    - **query**: The sports question or analysis request
-    - **extra_context**: Optional additional context to include in the analysis
-    
-    Returns a stream of events showing the agent's reasoning process.
-    """
-    # Handle OPTIONS preflight request
-    if request is None:
-        from fastapi.responses import Response
-        return Response(
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-            }
-        )
-    
-    return StreamingResponse(
-        event_stream(request),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
-
-@app.get("/analyze/stream")
-async def analyze_stream_get():
-    """Handle GET requests to streaming endpoint - provide usage info."""
-    return {
-        "error": "This endpoint requires POST method",
-        "message": "Use POST /analyze/stream with JSON body containing 'query' and optional 'extra_context'",
-        "example": {
-            "query": "Stephen Curry shooting stats this season",
-            "extra_context": "Focus on three-point shooting"
-        }
-    }
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
-@app.get("/stream")
-async def stream_viewer():
-    """Serve the streaming analysis web interface."""
-    from fastapi.responses import HTMLResponse
-    import os
-    
-    html_path = os.path.join(os.path.dirname(__file__), "stream_viewer.html")
-    try:
-        with open(html_path, 'r') as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(
-            content="<h1>Stream Viewer Not Found</h1><p>stream_viewer.html file not found</p>",
-            status_code=404
-        )
-
-# Multi-client API key management
+# Authentication setup
 import json
 from typing import Dict, Optional
 from datetime import datetime
@@ -626,9 +544,6 @@ class ClientAuth:
     
     def load_clients(self):
         """Load client API keys from environment or file."""
-        if not Config.PRODUCTION_MODE:
-            return
-        
         # Try to load from JSON string first
         if Config.API_KEYS_JSON:
             try:
@@ -676,21 +591,13 @@ class ClientAuth:
                     "metadata": client_data.get("metadata", {})
                 }
         return None
-    
-    def get_client_by_key(self, api_key: str) -> Optional[str]:
-        """Get client ID by API key."""
-        client = self.authenticate(api_key)
-        return client["client_id"] if client else None
 
 # Initialize client authentication
 client_auth = ClientAuth()
 security = HTTPBearer()
 
 async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify API key for production endpoints and return client info."""
-    if not Config.PRODUCTION_MODE:
-        return {"client_id": "development", "name": "Development Mode"}
-    
+    """Verify API key and return client info."""
     if not credentials:
         raise HTTPException(
             status_code=401,
@@ -712,99 +619,75 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(sec
     logger.info(f"Authenticated client: {client_info['name']} ({client_info['client_id']})")
     return client_info
 
-# Production endpoint - Simple streaming with only final results
-@app.post("/api/v1/analyze")
-async def production_analyze(
+# FastAPI app setup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan management."""
+    logger.info("Starting Pydantic AI Sports Agent")
+    yield
+    logger.info("Shutting down Pydantic AI Sports Agent")
+
+app = FastAPI(
+    title="Pydantic AI Sports Agent",
+    description="AI-powered sports analysis agent using Claude 4 Sonnet (May 2025) and MCP tools for superior reasoning and analysis",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+async def event_stream(request: AnalysisRequest) -> AsyncGenerator[str, None]:
+    """Convert analysis events to Server-Sent Events format."""
+    async for event in sports_agent.stream_analyze(request):
+        # Format as SSE
+        event_data = json.dumps(event.model_dump())
+        yield f"data: {event_data}\n\n"
+
+@app.post("/analyze", response_model=AnalysisResponse)
+async def analyze_sports_query(
+    request: AnalysisRequest,
+    client_info: Dict = Depends(verify_api_key)
+) -> AnalysisResponse:
+    """
+    Analyze a sports query using AI and return insights.
+    The agent automatically determines whether the query is about NBA or MLB.
+    
+    Requires API key authentication via Bearer token.
+    
+    - **query**: The sports question or analysis request
+    - **extra_context**: Optional additional context to include in the analysis
+    - **image**: Optional base64 encoded image URL to provide as visual context
+    """
+    logger.info(f"Analysis request from {client_info['name']} ({client_info['client_id']}): {request.query[:100]}...")
+    return await sports_agent.analyze(request)
+
+@app.post("/analyze/stream")
+async def stream_sports_analysis(
     request: AnalysisRequest,
     client_info: Dict = Depends(verify_api_key)
 ) -> StreamingResponse:
     """
-    Production API endpoint for sports analysis.
-    Requires API key authentication and streams only the final answer.
+    Stream the analysis process in real-time using Server-Sent Events.
+    Shows league detection, reasoning, tool calls, and database queries as they happen.
     
-    Headers: Authorization: Bearer YOUR_API_KEY
+    Requires API key authentication via Bearer token.
+    
+    - **query**: The sports question or analysis request
+    - **extra_context**: Optional additional context to include in the analysis
+    - **image**: Optional base64 encoded image URL to provide as visual context
+    
+    Returns a stream of events showing the agent's reasoning process.
     """
-    async def production_stream():
-        try:
-            # Log the request with client info
-            logger.info(f"Analysis request from {client_info['name']} ({client_info['client_id']}): {request.query[:100]}...")
-            
-            # Get the full analysis result
-            result = await sports_agent.analyze(request)
-            
-            # Stream only the final answer as a simple text stream
-            lines = result.response.split('\n')
-            for i, line in enumerate(lines):
-                if line.strip():
-                    yield f"data: {json.dumps({'content': line, 'done': i == len(lines) - 1})}\n\n"
-                    await asyncio.sleep(0.1)  # Small delay for smooth streaming
-            
-            # Final completion marker
-            yield f"data: {json.dumps({'content': '', 'done': True, 'client_id': client_info['client_id']})}\n\n"
-            
-            logger.info(f"Analysis completed for {client_info['name']}")
-            
-        except Exception as e:
-            logger.error(f"Production API error for {client_info['name']}: {str(e)}")
-            yield f"data: {json.dumps({'error': str(e), 'done': True, 'client_id': client_info['client_id']})}\n\n"
+    logger.info(f"Streaming analysis request from {client_info['name']} ({client_info['client_id']}): {request.query[:100]}...")
     
     return StreamingResponse(
-        production_stream(),
+        event_stream(request),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
         }
     )
-
-@app.get("/api/v1/health")
-async def production_health(client_info: Dict = Depends(verify_api_key)):
-    """Production health check endpoint."""
-    return {
-        "status": "healthy" if sports_agent.mcp_available else "degraded",
-        "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0",
-        "anthropic_thinking": "enabled",
-        "mcp_server": "available" if sports_agent.mcp_available else "unavailable",
-        "sports_analysis": "available" if sports_agent.mcp_available else "unavailable",
-        "client_id": client_info["client_id"],
-        "client_name": client_info["name"]
-    }
-
-@app.get("/api/v1/clients")
-async def list_clients(client_info: Dict = Depends(verify_api_key)):
-    """List all clients (admin endpoint)."""
-    # Only allow certain clients to view all clients
-    if client_info["client_id"] not in ["admin", "default"]:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    clients_info = []
-    for client_id, client_data in client_auth.clients.items():
-        clients_info.append({
-            "client_id": client_id,
-            "name": client_data.get("name", client_id),
-            "enabled": client_data.get("enabled", True),
-            "rate_limit": client_data.get("rate_limit", 100),
-            "created_at": client_data.get("created_at", "unknown"),
-            "api_key_hash": hashlib.sha256(client_data["api_key"].encode()).hexdigest()[:8]
-        })
-    
-    return {
-        "total_clients": len(clients_info),
-        "clients": clients_info
-    }
-
-@app.get("/api/v1/whoami")
-async def whoami(client_info: Dict = Depends(verify_api_key)):
-    """Get current client information."""
-    return {
-        "client_id": client_info["client_id"],
-        "name": client_info["name"],
-        "rate_limit": client_info["rate_limit"],
-        "metadata": client_info.get("metadata", {}),
-        "authenticated_at": datetime.now().isoformat()
-    }
 
 if __name__ == "__main__":
     import uvicorn
