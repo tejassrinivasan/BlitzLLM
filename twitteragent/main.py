@@ -59,7 +59,15 @@ async def lifespan(app: FastAPI):
     # Initialize agent (already done in twitter_agent.py)
     logger.info("NBA Twitter Agent initialized")
     
+    # Start background worker
+    await start_background_worker()
+    
     yield
+    
+    # Shutdown background worker
+    if scheduler.is_running:
+        logger.info("Stopping background worker...")
+        scheduler.stop_scheduler()
     
     logger.info("Shutting down Twitter NBA Agent API")
 
@@ -237,13 +245,16 @@ async def start_background_worker():
     """Start the background worker if not running."""
     if not scheduler.is_running:
         logger.info("Starting background worker...")
-        asyncio.create_task(asyncio.to_thread(scheduler.start_scheduler))
+        # Run scheduler in a separate thread to avoid event loop conflicts
+        import threading
+        worker_thread = threading.Thread(target=scheduler.start_scheduler, daemon=True)
+        worker_thread.start()
 
 if __name__ == "__main__":
     import uvicorn
     
-    # Start background worker
-    asyncio.create_task(start_background_worker())
+    # Note: Don't start background worker here, let it be started via FastAPI lifecycle
+    # The lifespan function will handle worker startup
     
     # Start FastAPI server
     uvicorn.run(

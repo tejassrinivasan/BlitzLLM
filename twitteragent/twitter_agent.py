@@ -127,32 +127,43 @@ class TwitterNBAAgent:
         
         # Initialize MCP server
         import os
-        mcp_env = os.environ.copy()
-        mcp_env["LOG_LEVEL"] = "INFO"
-        mcp_env["SKIP_MCP_CONNECTION_TEST"] = "true"
+        mcp_env = os.environ.copy()  # Inherit all environment variables
+        mcp_env["LOG_LEVEL"] = "INFO"  # FastMCP expects uppercase log level
+        mcp_env["FASTMCP_LOG_LEVEL"] = "INFO"  # Alternative env var name
+        mcp_env["MCP_LOG_LEVEL"] = "INFO"  # Another possible env var name
+        mcp_env["SKIP_MCP_CONNECTION_TEST"] = "true"  # Skip database connection test during startup
         
-        # Set correct database credentials for NBA
+        # Set correct database credentials explicitly (from config.json)
         correct_password = "_V8fn.eo62B(gZD|OcQcu~0|aP8["
         mcp_env["POSTGRES_PASSWORD"] = correct_password
+        mcp_env["POSTGRES_MLB_PASSWORD"] = correct_password  # Also set MLB password
         mcp_env["POSTGRES_NBA_PASSWORD"] = correct_password
         mcp_env["POSTGRES_USER"] = "postgres"
         mcp_env["POSTGRES_HOST"] = "blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com"
         mcp_env["POSTGRES_PORT"] = "5432"
         mcp_env["POSTGRES_SSL"] = "true"
         
-        # Clear conflicting variables
+        # Clear any conflicting variables that might hardcode to MLB
         mcp_env.pop("DATABASE_URL", None)
-        mcp_env.pop("POSTGRES_DATABASE", None)
+        mcp_env.pop("POSTGRES_DATABASE", None)  # Don't hardcode database name
         
         try:
+            # MCP package is now installed directly in container - run it directly
+            logger.info("Initializing MCP server from installed package (no downloads needed)")
+            
+            # Run the installed blitz-agent-mcp directly - no args needed since --quiet doesn't exist
             self.mcp_server = MCPServerStdio(
-                command=Config.MCP_COMMAND,
-                args=["--quiet"],
-                env=mcp_env
+                command=Config.MCP_COMMAND,  # Use installed package directly
+                args=[],  # No args - blitz-agent-mcp doesn't support --quiet
+                env=mcp_env  # Pass environment with correct credentials and no hardcoded database
             )
-            logger.info("MCP server initialized successfully")
+            logger.info("MCP server initialized successfully from installed package")
         except Exception as e:
             logger.error(f"Failed to initialize MCP server: {str(e)}")
+            logger.error(f"Command: {Config.MCP_COMMAND}")
+            logger.error(f"Environment variables: {list(mcp_env.keys())}")
+            logger.error(f"Full traceback: {str(e)}")
+            # For now, set to None and we'll handle this in the agent creation
             self.mcp_server = None
         
         # Create the Pydantic AI agent
@@ -310,7 +321,7 @@ class TwitterNBAAgent:
                             author = best_tweet['author']
                             
                             content = TwitterContent(
-                                id=tweet_data.id,
+                                id=str(tweet_data.id),  # Convert to string
                                 text=tweet_data.text,
                                 author_username=author.username if author else "unknown",
                                 metrics=dict(tweet_data.public_metrics),

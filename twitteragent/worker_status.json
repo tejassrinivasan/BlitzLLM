@@ -1,0 +1,58 @@
+{
+  "status": "running",
+  "message": "Execution completed successfully",
+  "last_updated": "2025-07-31T10:07:53.421001",
+  "worker_uptime": "unknown",
+  "next_scheduled_run": "unknown",
+  "total_executions": 3,
+  "last_execution": {
+    "execution_id": "exec_1753981666",
+    "start_time": "2025-07-31T10:07:46.503593",
+    "test_mode": true,
+    "success": true,
+    "error": null,
+    "workflow_result": {
+      "timestamp": "2025-07-31T10:07:46.503621",
+      "success": true,
+      "steps": {
+        "content_search": {
+          "success": true,
+          "content_found": {
+            "id": "1950966456184721517",
+            "text": "@CookedByLJ8 @Beluba it\u2019s still in the game you just have to do it through nba quick play",
+            "author_username": "A41KnightJr",
+            "metrics": {
+              "retweet_count": 0,
+              "reply_count": 1,
+              "like_count": 0,
+              "quote_count": 0,
+              "bookmark_count": 0,
+              "impression_count": 2
+            },
+            "created_at": "2025-07-31T17:07:05+00:00"
+          }
+        },
+        "question_generation": {
+          "success": true,
+          "question": "@BlitzAIBot What's Giannis's scoring efficiency in the paint vs. previous seasons?"
+        },
+        "question_posting": {
+          "success": true,
+          "tweet_id": "test_question_tweet_id",
+          "reply_to": "1950966456184721517"
+        },
+        "analytics_generation": {
+          "success": true,
+          "response": "\ud83c\udfc0 I'm having trouble accessing the NBA database right now. Please try again later! #NBA #Basketball"
+        },
+        "analytics_posting": {
+          "success": true,
+          "tweet_id": "test_analytics_tweet_id"
+        }
+      },
+      "test_mode": true
+    },
+    "duration_seconds": 6.917008,
+    "end_time": "2025-07-31T10:07:53.420601"
+  }
+}

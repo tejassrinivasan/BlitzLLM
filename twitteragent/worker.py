@@ -199,9 +199,54 @@ class NBAWorkerScheduler:
         """Wrapper to run async workflow in sync context."""
         try:
             logger.info("🔔 Scheduled execution triggered")
-            asyncio.run(self.execute_workflow(test_mode=False))
+            
+            # Handle event loop detection properly
+            try:
+                # Try to get the current event loop
+                asyncio.get_running_loop()
+                # We're in an event loop, need to run in a new thread with new loop
+                self._run_in_new_thread()
+            except RuntimeError:
+                # No running event loop, safe to use asyncio.run()
+                asyncio.run(self.execute_workflow(test_mode=False))
+                
         except Exception as e:
             logger.error(f"Error in scheduled workflow: {e}")
+    
+    def _run_in_new_thread(self):
+        """Run workflow in a new thread with its own event loop."""
+        import threading
+        import queue
+        
+        result_queue = queue.Queue()
+        
+        def thread_worker():
+            try:
+                # Create a new event loop for this thread
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Run the workflow
+                result = loop.run_until_complete(self.execute_workflow(test_mode=False))
+                result_queue.put(('success', result))
+                
+            except Exception as e:
+                result_queue.put(('error', e))
+            finally:
+                loop.close()
+        
+        # Start thread and wait for completion
+        thread = threading.Thread(target=thread_worker)
+        thread.start()
+        thread.join()
+        
+        # Get result
+        try:
+            status, result = result_queue.get_nowait()
+            if status == 'error':
+                raise result
+        except queue.Empty:
+            logger.error("Thread completed but no result received")
     
     async def run_test_workflow(self):
         """Run a test workflow execution."""

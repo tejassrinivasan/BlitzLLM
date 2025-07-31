@@ -253,7 +253,7 @@ class SportsAnalysisAgent:
             # Run the installed blitz-agent-mcp directly instead of using uvx
             self.mcp_server = MCPServerStdio(
                 command=Config.MCP_COMMAND,  # Use installed package directly
-                args=["--quiet"],  # Just quiet flag, no --from needed
+                args=[],  # No args - blitz-agent-mcp doesn't support --quiet
                 env=mcp_env  # Pass environment with correct credentials and no hardcoded database
             )
             logger.info("MCP server initialized successfully from installed package")
