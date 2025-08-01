@@ -15,10 +15,6 @@ from ..models.connection import Connection
 from ..utils import serialize_response
 
 
-async def _get_context_field(field: str, ctx: Context) -> Any:
-    """Get the context of the current request."""
-    return getattr(getattr(getattr(ctx, "request_context", None), "lifespan_context", None), field, None)
-
 
 def setup_tools(mcp: FastMCP):
     """Set up all MCP tools with proper decorators"""
@@ -57,8 +53,7 @@ def setup_tools(mcp: FastMCP):
                 else:
                     logger.debug("Using configured PostgreSQL connection (default)")
             
-            url_map = await _get_context_field("url_map", ctx)
-            db = await table_obj.connection.connect(url_map=url_map)
+            db = await table_obj.connection.connect()
             return serialize_response(await db.inspect_table(table_obj.table_name))
         except Exception as e:
             raise ConnectionError(f"Failed to inspect {table_obj.connection.url if 'table_obj' in locals() else 'unknown'} table {table_obj.table_name if 'table_obj' in locals() else table}: {str(e)}")
@@ -97,8 +92,7 @@ def setup_tools(mcp: FastMCP):
                 else:
                     logger.debug("Using configured PostgreSQL connection (default)")
             
-            url_map = await _get_context_field("url_map", ctx)
-            db = await table_obj.connection.connect(url_map=url_map)
+            db = await table_obj.connection.connect()
             return serialize_response(await db.sample_table(table_obj.table_name, limit))
         except Exception as e:
             raise ConnectionError(f"Failed to sample {table_obj.connection.url if 'table_obj' in locals() else 'unknown'} table {table_obj.table_name if 'table_obj' in locals() else table}: {str(e)}")
@@ -134,8 +128,7 @@ def setup_tools(mcp: FastMCP):
             else:
                 logger.debug("Using configured PostgreSQL connection (default)")
             
-            url_map = await _get_context_field("url_map", ctx)
-            db = await connection.connect(url_map=url_map)
+            db = await connection.connect()
             return serialize_response(await db.execute_query(sql))
         except Exception as e:
             raise ConnectionError(f"Failed to execute query: {str(e)}")

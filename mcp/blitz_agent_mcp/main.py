@@ -60,64 +60,25 @@ def configure_logging(quiet: bool = False):
         logging.basicConfig(level=logging.INFO)
 
 
-async def test_connections(urls: tuple[str, ...], quiet: bool = False) -> None:
-    """Test all connections in parallel"""
-    if not urls:
-        return
-
-    async def _test_connection(url: str) -> None:
-        """Test database connection"""
-        connection = Connection(url=url)
-        result = await connection.test_connection()
-        if not result.connected:
-            raise RuntimeError(f"Failed to connect to {url}: {result.message}")
-        if not quiet:
-            logger.info(f"Connection successful to {url}")
-
-    await asyncio.gather(*(_test_connection(url) for url in urls))
+# Database connections are now handled lazily by individual tools
+# No longer needed during startup
 
 
 def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.0.0.1", port: int = 8000, quiet: bool = False) -> FastMCP:
-    # If no URLs provided, try to use the PostgreSQL URL from config
-    if not urls:
-        postgres_url = get_postgres_url()
-        if postgres_url:
-            urls = (postgres_url,)
-            if not quiet:
-                logger.info(f"Using PostgreSQL URL from configuration: {postgres_url}")
-        else:
-            if not quiet:
-                logger.warning("No database URLs provided and PostgreSQL configuration incomplete")
+    # Note: Database connections are now handled lazily by individual tools based on league parameter
+    # No need to test database connections during startup
     
-    cleaned_urls = [url.lstrip("'").rstrip("'") for url in urls]
-
-    # Build URL map for use in the app context
-    url_map = {str(url_obj): url_obj for url_obj in map(make_url, cleaned_urls)}
-
     @asynccontextmanager
     async def app_lifespan(mcp_server: FastMCP) -> AsyncIterator[AppContext]:
         """Manage application lifecycle with type-safe context"""
-        # Test connections when the server starts (optional for CI environments)
-        skip_connection_test = os.getenv("SKIP_MCP_CONNECTION_TEST", "false").lower() == "true"
-        if not skip_connection_test:
-            try:
-                await test_connections(cleaned_urls, quiet=quiet)
-            except Exception as e:
-                if not quiet:
-                    logger.warning(f"Connection test failed, but continuing: {e}")
-                # In CI environments, continue anyway
-                if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
-                    if not quiet:
-                        logger.info("CI environment detected, skipping strict connection test")
-                else:
-                    raise  # Re-raise in non-CI environments
+        # No database connection testing during startup - connections are handled by tools
         
         if api_key:
             headers = {API_KEY_HEADER: api_key}
             async with httpx.AsyncClient(headers=headers, base_url=BACKEND_URL) as http_client:
-                yield AppContext(http_session=http_client, url_map=url_map)
+                yield AppContext(http_session=http_client, url_map={})
         else:
-            yield AppContext(url_map=url_map)
+            yield AppContext(url_map={})
 
     # Use stateless HTTP for production deployment
     mcp = FastMCP("Blitz Agent MCP Server", lifespan=app_lifespan, host=host, port=port, stateless_http=True)
