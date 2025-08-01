@@ -23,7 +23,7 @@ def setup_tools(mcp: FastMCP):
     async def inspect(
         ctx: Context,
         table: str = Field(..., description="The database table name to inspect (e.g., 'pitchingstatsgame', 'battingstatsgame')."),
-        league: str = Field(default=None, description="League to inspect (e.g., 'mlb', 'nba'). If not specified, uses default database."),
+        league: str = Field(None, description="League to inspect (e.g., 'mlb', 'nba'). If not specified, uses default database."),
     ) -> Dict[str, Any]:
         """
         Inspect the structure of a database table.
@@ -62,8 +62,8 @@ def setup_tools(mcp: FastMCP):
     async def sample(
         ctx: Context,
         table: str = Field(..., description="The database table name to sample (e.g., 'pitchingstatsgame', 'battingstatsgame')."),
-        limit: int = Field(default=MAX_DATA_ROWS, description="Number of rows to sample"),
-        league: str = Field(default=None, description="League to sample from (e.g., 'mlb', 'nba'). If not specified, uses default database."),
+        limit: int = Field(MAX_DATA_ROWS, description="Number of rows to sample"),
+        league: str = Field(None, description="League to sample from (e.g., 'mlb', 'nba'). If not specified, uses default database."),
     ) -> Dict[str, Any]:
         """
         Sample data from a database table.
@@ -101,7 +101,7 @@ def setup_tools(mcp: FastMCP):
     async def query(
         ctx: Context,
         sql: str = Field(..., description="The SQL query to execute"),
-        league: str = Field(default=None, description="League to query (e.g., 'mlb', 'nba'). If not specified, uses default database."),
+        league: str = Field(None, description="League to query (e.g., 'mlb', 'nba'). If not specified, uses default database."),
     ) -> Dict[str, Any]:
         """
         Execute a SQL query against the database.
@@ -137,8 +137,8 @@ def setup_tools(mcp: FastMCP):
     async def search_tables(
         ctx: Context,
         query: str = Field(..., description="Search term or pattern to find relevant tables"),
-        league: str = Field(default=None, description="League to search in (e.g., 'mlb', 'nba'). If not specified, searches default database."),
-        max_results: int = Field(default=10, description="Maximum number of results to return")
+        league: str = Field(None, description="League to search in (e.g., 'mlb', 'nba'). If not specified, searches default database."),
+        max_results: int = Field(10, description="Maximum number of results to return")
     ) -> Dict[str, Any]:
         """
         Search for database tables by name or description.
@@ -150,12 +150,35 @@ def setup_tools(mcp: FastMCP):
         4. Specify the league parameter to search in the appropriate database (mlb, nba, etc.)
         """
         from . import search_tables as search_tables_module
-        return await search_tables_module.search_tables(ctx, query, league, max_results)
+        from ..models.connection import Connection
+        
+        try:
+            # Handle database connection based on league
+            connection = None
+            if league:
+                postgres_url = get_postgres_url(league)
+                if postgres_url:
+                    connection = Connection(url=postgres_url)
+            
+            # Call the original search_tables function with correct parameters
+            # Original function expects: pattern, mode, limit, connection, league
+            from .search_tables import SearchMode
+            result = await search_tables_module.search_tables(
+                ctx=ctx,
+                pattern=query,
+                mode=SearchMode.BM25,
+                limit=max_results,
+                connection=connection,
+                league=league
+            )
+            return result
+        except Exception as e:
+            return {"error": f"Table search failed: {str(e)}", "query": query, "league": league}
 
     @mcp.tool()
     async def test(
         ctx: Context,
-        league: str = Field(default=None, description="League to test connection for (e.g., 'mlb', 'nba'). If not specified, tests default database."),
+        league: str = Field(None, description="League to test connection for (e.g., 'mlb', 'nba'). If not specified, tests default database."),
     ) -> Dict[str, Any]:
         """
         Test the database connection.
@@ -180,7 +203,13 @@ def setup_tools(mcp: FastMCP):
                 logger.debug("Testing configured PostgreSQL connection (default)")
             
             result = await connection.test_connection()
-            return serialize_response(result)
+            # Convert ConnectionResult to dictionary
+            return {
+                "connected": result.connected,
+                "message": result.message,
+                "league": league,
+                "success": result.connected
+            }
         except Exception as e:
             raise ConnectionError(f"Connection test failed: {str(e)}")
 
@@ -191,29 +220,31 @@ def setup_tools(mcp: FastMCP):
     async def recall_similar_db_queries(
         ctx: Context,
         query_text: str = Field(..., description="Natural language description of what you want to query"),
-        league: str = Field(default="mlb", description="League to search for similar queries (mlb, nba, etc.)"),
-        limit: int = Field(default=5, description="Maximum number of similar queries to return")
-    ) -> List[Dict[str, Any]]:
+        league: str = Field("mlb", description="League to search for similar queries (mlb, nba, etc.)"),
+        limit: int = Field(5, description="Maximum number of similar queries to return")
+    ) -> Dict[str, Any]:
         """
         Find similar database queries based on natural language description.
         """
-        return await recall.recall_similar_db_queries(ctx, query_text, league, limit)
+        result = await recall.recall_similar_db_queries(ctx, query_text, league, limit)
+        return {"queries": result} if isinstance(result, list) else result
 
     @mcp.tool()
     async def get_database_documentation(
         ctx: Context,
-        league: str = Field(default="mlb", description="League to get documentation for (mlb, nba, etc.)")
-    ) -> str:
+        league: str = Field("mlb", description="League to get documentation for (mlb, nba, etc.)")
+    ) -> Dict[str, Any]:
         """
         Get comprehensive database documentation for the specified league.
         """
-        return await db_docs.get_database_documentation(ctx, league)
+        result = await db_docs.get_database_documentation(ctx, league)
+        return {"documentation": result} if isinstance(result, str) else result
 
     @mcp.tool()
     async def validate(
         ctx: Context,
         sql: str = Field(..., description="SQL query to validate"),
-        league: str = Field(default="mlb", description="League to validate against (mlb, nba, etc.)")
+        league: str = Field("mlb", description="League to validate against (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Validate a SQL query without executing it.
@@ -225,7 +256,7 @@ def setup_tools(mcp: FastMCP):
         ctx: Context,
         query_text: str = Field(..., description="Natural language description of the query"),
         sql_query: str = Field(..., description="The SQL query"),
-        league: str = Field(default="mlb", description="League this query is for (mlb, nba, etc.)")
+        league: str = Field("mlb", description="League this query is for (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Upload and store a query for future similarity matching.
@@ -236,8 +267,8 @@ def setup_tools(mcp: FastMCP):
     async def generate_graph(
         ctx: Context,
         data_source: str = Field(..., description="SQL query or table name to generate graph from"),
-        graph_type: str = Field(default="auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
-        league: str = Field(default="mlb", description="League to query (mlb, nba, etc.)")
+        graph_type: str = Field("auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
+        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Generate a graph/chart from query results or table data.
@@ -250,7 +281,7 @@ def setup_tools(mcp: FastMCP):
         data_source: str = Field(..., description="SQL query to get data for regression"),
         target_column: str = Field(..., description="Name of the target/dependent variable column"),
         feature_columns: List[str] = Field(..., description="List of feature/independent variable column names"),
-        league: str = Field(default="mlb", description="League to query (mlb, nba, etc.)")
+        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Run linear regression analysis on query results.
@@ -261,7 +292,7 @@ def setup_tools(mcp: FastMCP):
     async def get_betting_events_by_date(
         ctx: Context,
         date: str = Field(..., description="Date in YYYY-MM-DD format"),
-        sport: str = Field(default="basketball", description="Sport to get events for")
+        sport: str = Field("basketball", description="Sport to get events for")
     ) -> Dict[str, Any]:
         """
         Get betting events for a specific date and sport.
