@@ -22,7 +22,6 @@ from sqlalchemy.engine.url import make_url
 
 from .config import API_KEY_HEADER, BACKEND_URL, get_postgres_url
 from .models.connection import Connection
-from .tools import inspect, recall_similar_db_queries, query, sample, search_tables, test, webscrape, validate, upload, get_database_documentation, generate_graph, run_linear_regression, get_betting_events_by_date, get_betting_markets_for_event
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -123,23 +122,9 @@ def get_mcp(urls: tuple[str, ...], api_key: str | None = None, host: str = "127.
     # Use stateless HTTP for production deployment
     mcp = FastMCP("Blitz Agent MCP Server", lifespan=app_lifespan, host=host, port=port, stateless_http=True)
 
-    # Add tools
-    mcp.add_tool(inspect)
-    mcp.add_tool(sample)
-    mcp.add_tool(query)
-    mcp.add_tool(search_tables)
-    mcp.add_tool(test)
-    mcp.add_tool(recall_similar_db_queries)
-    mcp.add_tool(get_database_documentation)
-   #mcp.add_tool(get_api_docs)
-    #mcp.add_tool(call_api_endpoint)
-    mcp.add_tool(upload)
-    mcp.add_tool(validate)
-    #mcp.add_tool(webscrape)
-    mcp.add_tool(generate_graph)
-    mcp.add_tool(run_linear_regression)
-    mcp.add_tool(get_betting_events_by_date)
-    mcp.add_tool(get_betting_markets_for_event)
+    # Import tools here so they register themselves with the mcp instance
+    from .tools import tools_setup
+    tools_setup.setup_tools(mcp)
 
     return mcp
 
