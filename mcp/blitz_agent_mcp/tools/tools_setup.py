@@ -222,7 +222,7 @@ def setup_tools(mcp: FastMCP):
     async def recall_similar_db_queries(
         ctx: Context,
         query_text: str = Field(..., description="Natural language description of what you want to query"),
-        league: str = Field("mlb", description="League to search for similar queries (mlb, nba, etc.)")
+        league: str = Field("nba", description="League to search for similar queries (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Find similar database queries based on natural language description.

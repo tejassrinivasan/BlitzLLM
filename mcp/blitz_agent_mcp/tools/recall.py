@@ -97,7 +97,7 @@ Return document IDs for questions that are similar or would help answer the user
 async def recall_similar_db_queries(
     ctx: Context,
     query_description: str = Field(..., description="Description of what the query does"),
-    league: str = Field(default="mlb", description="League to search within"),
+    league: str = Field(default="nba", description="League to search within"),
 ) -> dict[str, Any]:
     """
     Retrieve most relevant historical queries using Azure AI Search hybrid search and GPT-4o-mini reranking.
