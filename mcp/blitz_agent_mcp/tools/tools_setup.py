@@ -129,7 +129,7 @@ def setup_tools(mcp: FastMCP):
                 logger.debug("Using configured PostgreSQL connection (default)")
             
             db = await connection.connect()
-            return serialize_response(await db.execute_query(sql))
+            return serialize_response(await db.query(sql))
         except Exception as e:
             raise ConnectionError(f"Failed to execute query: {str(e)}")
 
@@ -214,20 +214,42 @@ def setup_tools(mcp: FastMCP):
             raise ConnectionError(f"Connection test failed: {str(e)}")
 
     # Import and set up other tools
-    from . import recall, db_docs, validate, upload, graph, linear_regression, betting
+    from . import recall, db_docs, validate, upload
+    # Temporarily comment out heavy dependencies for debugging
+    # from . import graph, linear_regression, betting
 
     @mcp.tool()
     async def recall_similar_db_queries(
         ctx: Context,
         query_text: str = Field(..., description="Natural language description of what you want to query"),
-        league: str = Field("mlb", description="League to search for similar queries (mlb, nba, etc.)"),
-        limit: int = Field(5, description="Maximum number of similar queries to return")
+        league: str = Field("mlb", description="League to search for similar queries (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Find similar database queries based on natural language description.
         """
-        result = await recall.recall_similar_db_queries(ctx, query_text, league, limit)
-        return {"queries": result} if isinstance(result, list) else result
+        print("=== CHANGES APPLIED SUCCESSFULLY ===")
+        print("This is the updated recall_similar_db_queries function!")
+        logger = logging.getLogger("blitz-agent-mcp")
+        logger.info("=== RECALL_SIMILAR_DB_QUERIES DEBUG ===")
+        logger.info(f"Tool called with arguments:")
+        logger.info(f"  - ctx type: {type(ctx)}")
+        logger.info(f"  - query_text: '{query_text}' (type: {type(query_text)})")
+        logger.info(f"  - league: '{league}' (type: {type(league)})")
+        logger.info(f"  - Total arguments received: 3")
+        
+        try:
+            logger.info("Calling recall.recall_similar_db_queries with named parameters...")
+            result = await recall.recall_similar_db_queries(ctx, query_description=query_text, league=league)
+            logger.info(f"Function call successful, result type: {type(result)}")
+            logger.info(f"Result keys (if dict): {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            return {"queries": result} if isinstance(result, list) else result
+        except Exception as e:
+            logger.error(f"ERROR in recall_similar_db_queries: {e}")
+            logger.error(f"Exception type: {type(e)}")
+            logger.error(f"Exception args: {e.args}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            raise
 
     @mcp.tool()
     async def get_database_documentation(
@@ -263,48 +285,49 @@ def setup_tools(mcp: FastMCP):
         """
         return await upload.upload(ctx, query_text, sql_query, league)
 
-    @mcp.tool()
-    async def generate_graph(
-        ctx: Context,
-        data_source: str = Field(..., description="SQL query or table name to generate graph from"),
-        graph_type: str = Field("auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
-        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
-    ) -> Dict[str, Any]:
-        """
-        Generate a graph/chart from query results or table data.
-        """
-        return await graph.generate_graph(ctx, data_source, graph_type, league)
+    # Temporarily commented out for debugging
+    # @mcp.tool()
+    # async def generate_graph(
+    #     ctx: Context,
+    #     data_source: str = Field(..., description="SQL query or table name to generate graph from"),
+    #     graph_type: str = Field("auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
+    #     league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Generate a graph/chart from query results or table data.
+    #     """
+    #     return await graph.generate_graph(ctx, data_source, graph_type, league)
 
-    @mcp.tool()
-    async def run_linear_regression(
-        ctx: Context,
-        data_source: str = Field(..., description="SQL query to get data for regression"),
-        target_column: str = Field(..., description="Name of the target/dependent variable column"),
-        feature_columns: List[str] = Field(..., description="List of feature/independent variable column names"),
-        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
-    ) -> Dict[str, Any]:
-        """
-        Run linear regression analysis on query results.
-        """
-        return await linear_regression.run_linear_regression(ctx, data_source, target_column, feature_columns, league)
+    # @mcp.tool()
+    # async def run_linear_regression(
+    #     ctx: Context,
+    #     data_source: str = Field(..., description="SQL query to get data for regression"),
+    #     target_column: str = Field(..., description="Name of the target/dependent variable column"),
+    #     feature_columns: List[str] = Field(..., description="List of feature/independent variable column names"),
+    #     league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Run linear regression analysis on query results.
+    #     """
+    #     return await linear_regression.run_linear_regression(ctx, data_source, target_column, feature_columns, league)
 
-    @mcp.tool()
-    async def get_betting_events_by_date(
-        ctx: Context,
-        date: str = Field(..., description="Date in YYYY-MM-DD format"),
-        sport: str = Field("basketball", description="Sport to get events for")
-    ) -> Dict[str, Any]:
-        """
-        Get betting events for a specific date and sport.
-        """
-        return await betting.get_betting_events_by_date(ctx, date, sport)
+    # @mcp.tool()
+    # async def get_betting_events_by_date(
+    #     ctx: Context,
+    #     date: str = Field(..., description="Date in YYYY-MM-DD format"),
+    #     sport: str = Field("basketball", description="Sport to get events for")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Get betting events for a specific date and sport.
+    #     """
+    #     return await betting.get_betting_events_by_date(ctx, date, sport)
 
-    @mcp.tool()
-    async def get_betting_markets_for_event(
-        ctx: Context,
-        event_id: str = Field(..., description="Event ID to get markets for")
-    ) -> Dict[str, Any]:
-        """
-        Get betting markets for a specific event.
-        """
-        return await betting.get_betting_markets_for_event(ctx, event_id) 
+    # @mcp.tool()
+    # async def get_betting_markets_for_event(
+    #     ctx: Context,
+    #     event_id: str = Field(..., description="Event ID to get markets for")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Get betting markets for a specific event.
+    #     """
+    #     return await betting.get_betting_markets_for_event(ctx, event_id) 
