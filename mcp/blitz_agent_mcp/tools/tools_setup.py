@@ -214,9 +214,52 @@ def setup_tools(mcp: FastMCP):
             raise ConnectionError(f"Connection test failed: {str(e)}")
 
     # Import and set up other tools
-    from . import recall, db_docs, validate, upload
+    from . import recall, db_docs, validate, upload, modify
     # Temporarily comment out heavy dependencies for debugging
     # from . import graph, linear_regression, betting
+
+    @mcp.tool()
+    async def modify_question(
+        ctx: Context,
+        original_question: str = Field(..., description="The original user question to modify"),
+        assumptions: List[str] = Field(default=[], description="List of assumptions to apply to the question"),
+        modification_type: str = Field("clarify", description="Type of modification: 'clarify', 'expand', 'simplify', 'assume'"),
+        context: str = Field("", description="Additional context for the modification")
+    ) -> Dict[str, Any]:
+        """
+        Modify a user's question with various assumptions and clarifications.
+        
+        This tool helps transform vague or incomplete questions into more specific,
+        actionable queries by applying assumptions and clarifications.
+        
+        Modification Types:
+        - 'clarify': Make the question more specific and focused
+        - 'expand': Make the question more comprehensive
+        - 'simplify': Make the question more focused and simple
+        - 'assume': Apply specific assumptions to the question
+        
+        Common Assumptions:
+        - 'recent': Focus on recent data (last 2-3 years)
+        - 'top_performers': Focus on top performers only
+        - 'trends': Look for trends over time
+        - 'comparison': Include comparative analysis
+        - 'detailed': Request detailed breakdown
+        - 'current_season': Assume current season data
+        - 'healthy_players': Assume healthy/active players only
+        """
+        return await modify.modify_question(ctx, original_question, assumptions, modification_type, context)
+
+    @mcp.tool()
+    async def get_modification_presets(
+        ctx: Context
+    ) -> Dict[str, Any]:
+        """
+        Get available modification presets that can be used as assumptions.
+        
+        This tool returns a list of predefined assumptions you can use
+        with the modify_question tool to transform user questions.
+        """
+        return await modify.get_modification_presets()
 
     @mcp.tool()
     async def recall_similar_db_queries(
