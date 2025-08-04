@@ -224,7 +224,10 @@ def setup_tools(mcp: FastMCP):
         original_question: str = Field(..., description="The original user question to modify"),
         assumptions: List[str] = Field(default=[], description="List of assumptions to apply to the question"),
         modification_type: str = Field("clarify", description="Type of modification: 'clarify', 'expand', 'simplify', 'assume'"),
-        context: str = Field("", description="Additional context for the modification")
+        context: str = Field("", description="Additional context for the modification"),
+        limit_results: Optional[int] = Field(None, description="Limit the number of results to return"),
+        include_examples: bool = Field(True, description="Whether to include examples in the response"),
+        clarify_terms: bool = Field(True, description="Whether to clarify user-specific terms")
     ) -> Dict[str, Any]:
         """
         Modify a user's question with various assumptions and clarifications.
@@ -246,8 +249,14 @@ def setup_tools(mcp: FastMCP):
         - 'detailed': Request detailed breakdown
         - 'current_season': Assume current season data
         - 'healthy_players': Assume healthy/active players only
+        - 'limit': Limit results to manageable number
+        
+        New Features:
+        - limit_results: Specify a number to limit results
+        - include_examples: Set to false to exclude examples (default: true)
+        - clarify_terms: Set to false to skip term clarification (default: true)
         """
-        return await modify.modify_question(ctx, original_question, assumptions, modification_type, context)
+        return await modify.modify_question(ctx, original_question, assumptions, modification_type, context, limit_results, include_examples, clarify_terms)
 
     @mcp.tool()
     async def get_modification_presets(
@@ -260,6 +269,33 @@ def setup_tools(mcp: FastMCP):
         with the modify_question tool to transform user questions.
         """
         return await modify.get_modification_presets()
+
+    @mcp.tool()
+    async def add_user_term(
+        ctx: Context,
+        term: str = Field(..., description="The user term to add"),
+        clarification: str = Field(..., description="The clarification/definition for this term")
+    ) -> Dict[str, Any]:
+        """
+        Add a new user term and its clarification to the dictionary.
+        
+        This allows you to dynamically add new terms that users might use
+        and their corresponding clarifications. For example, you could add
+        "super-star" with clarification "players in the top 10% of performance metrics".
+        """
+        return await modify.add_user_term(ctx, term, clarification)
+
+    @mcp.tool()
+    async def get_user_terms(
+        ctx: Context
+    ) -> Dict[str, Any]:
+        """
+        Get all currently defined user terms and their clarifications.
+        
+        This tool shows you all the terms that will be automatically
+        clarified when found in user questions.
+        """
+        return await modify.get_user_terms()
 
     @mcp.tool()
     async def recall_similar_db_queries(
