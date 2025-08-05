@@ -103,6 +103,7 @@ async def recall_similar_db_queries(
     Retrieve most relevant historical queries using Azure AI Search hybrid search and GPT-4o-mini reranking.
 
     ALWAYS RECALL PREVIOUS QUERIES BEFORE WRITING QUERIES TO PREVENT ERRORS/SAVING TIME. NEVER SKIP THIS STEP.
+    DB QUERIES ARE GOLD STANDARD. LEARN FROM THEM, THEIR STRUCTURE, HOW THEY ARE WRITTEN, AND HOW THEY ARE ANSWERED.
 
     Instructions:
     1. Uses hybrid search on Azure AI Search index to find similar queries that have been answered in the past and are most relevant to the user's current question
@@ -110,12 +111,6 @@ async def recall_similar_db_queries(
     3. Returns the most relevant historical queries for recall_similar_db_queries
     """
     logger = logging.getLogger(__name__)
-    logger.info("=== RECALL FUNCTION DEBUG ===")
-    logger.info(f"recall_similar_db_queries function called with:")
-    logger.info(f"  - ctx type: {type(ctx)}")
-    logger.info(f"  - query_description: '{query_description}' (type: {type(query_description)})")
-    logger.info(f"  - league: '{league}' (type: {type(league)})")
-    logger.info(f"  - Total arguments received: 3")
     
     if not query_description:
         raise ValueError("query_description is required")

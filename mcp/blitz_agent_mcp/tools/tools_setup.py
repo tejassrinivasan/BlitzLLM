@@ -305,29 +305,22 @@ def setup_tools(mcp: FastMCP):
     ) -> Dict[str, Any]:
         """
         Find similar database queries based on natural language description.
-        """
-        print("=== CHANGES APPLIED SUCCESSFULLY ===")
-        print("This is the updated recall_similar_db_queries function!")
-        logger = logging.getLogger("blitz-agent-mcp")
-        logger.info("=== RECALL_SIMILAR_DB_QUERIES DEBUG ===")
-        logger.info(f"Tool called with arguments:")
-        logger.info(f"  - ctx type: {type(ctx)}")
-        logger.info(f"  - query_text: '{query_text}' (type: {type(query_text)})")
-        logger.info(f"  - league: '{league}' (type: {type(league)})")
-        logger.info(f"  - Total arguments received: 3")
         
+        This tool searches through a collection of gold standard queries that have been 
+        previously executed and stored. These queries represent high-quality examples of 
+        how to structure database queries for various sports analytics questions. By 
+        examining these examples, you can learn from their approach and adapt their 
+        patterns to your own queries.
+        
+        The returned queries are ranked by similarity to your input description and 
+        can serve as templates or inspiration for building your own database queries.
+        """
         try:
-            logger.info("Calling recall.recall_similar_db_queries with named parameters...")
             result = await recall.recall_similar_db_queries(ctx, query_description=query_text, league=league)
-            logger.info(f"Function call successful, result type: {type(result)}")
-            logger.info(f"Result keys (if dict): {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             return {"queries": result} if isinstance(result, list) else result
         except Exception as e:
-            logger.error(f"ERROR in recall_similar_db_queries: {e}")
-            logger.error(f"Exception type: {type(e)}")
-            logger.error(f"Exception args: {e.args}")
-            import traceback
-            logger.error(f"Full traceback: {traceback.format_exc()}")
+            logger = logging.getLogger("blitz-agent-mcp")
+            logger.error(f"Error in recall_similar_db_queries: {e}")
             raise
 
     @mcp.tool()
