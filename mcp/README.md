@@ -360,6 +360,23 @@ Add to your Claude Desktop MCP configuration:
 }
 ```
 
+### Cursor MCP Integrations 
+Run what's in GIT:
+{
+  "mcpServers": {
+    "blitz-mcp": {
+      "command": "uvx",
+      "args": ["--from", "git+file:///Users/devonsinha/workspace/BlitzLLM#subdirectory=mcp", "blitz-agent-mcp", "--transport", "stdio", "--quiet"],
+      "cwd": "/Users/devonsinha/workspace/BlitzLLM/mcp"
+    }
+  }
+}
+
+
+
+### Local Debug 
+run 'uv run mcp dev inspector_main.py' from the mcp dir
+
 ## Tools Reference
 
 ### Database Tools
