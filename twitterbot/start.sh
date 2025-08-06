@@ -1,8 +1,6 @@
 #!/bin/bash
-"""
-Startup script for Twitter Mention Listener Bot
-Handles dependency installation and service startup.
-"""
+# Startup script for Twitter Mention Listener Bot
+# Handles dependency installation and service startup.
 
 set -e  # Exit on any error
 
@@ -10,10 +8,15 @@ echo "🤖 Starting Twitter Mention Listener Bot"
 echo "========================================"
 
 # Check Python version
-python_version=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
+python_version=$(python3 --version 2>&1 | awk '{print $2}')
 echo "Python version: $python_version"
 
-if [[ $(echo "$python_version >= 3.8" | bc -l) -eq 0 ]]; then
+# Extract major and minor version numbers
+major=$(echo $python_version | cut -d. -f1)
+minor=$(echo $python_version | cut -d. -f2)
+
+# Check if Python version is 3.8 or higher
+if [ "$major" -lt 3 ] || ([ "$major" -eq 3 ] && [ "$minor" -lt 8 ]); then
     echo "❌ Error: Python 3.8+ required, found $python_version"
     exit 1
 fi
