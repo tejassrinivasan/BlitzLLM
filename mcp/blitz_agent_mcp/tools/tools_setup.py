@@ -129,7 +129,7 @@ def setup_tools(mcp: FastMCP):
                 logger.debug("Using configured PostgreSQL connection (default)")
             
             db = await connection.connect()
-            return serialize_response(await db.execute_query(sql))
+            return serialize_response(await db.query(sql))
         except Exception as e:
             raise ConnectionError(f"Failed to execute query: {str(e)}")
 
@@ -214,20 +214,114 @@ def setup_tools(mcp: FastMCP):
             raise ConnectionError(f"Connection test failed: {str(e)}")
 
     # Import and set up other tools
-    from . import recall, db_docs, validate, upload, graph, linear_regression, betting
+    from . import recall, db_docs, validate, upload, modify
+    # Temporarily comment out heavy dependencies for debugging
+    # from . import graph, linear_regression, betting
+
+    @mcp.tool()
+    async def modify_question(
+        ctx: Context,
+        original_question: str = Field(..., description="The original user question to modify"),
+        assumptions: List[str] = Field(default=[], description="List of assumptions to apply to the question"),
+        modification_type: str = Field("clarify", description="Type of modification: 'clarify', 'expand', 'simplify', 'assume'"),
+        context: str = Field("", description="Additional context for the modification"),
+        limit_results: Optional[int] = Field(None, description="Limit the number of results to return"),
+        include_examples: bool = Field(True, description="Whether to include examples in the response"),
+        clarify_terms: bool = Field(True, description="Whether to clarify user-specific terms")
+    ) -> Dict[str, Any]:
+        """
+        Modify a user's question with various assumptions and clarifications.
+        
+        This tool helps transform vague or incomplete questions into more specific,
+        actionable queries by applying assumptions and clarifications.
+        
+        Modification Types:
+        - 'clarify': Make the question more specific and focused
+        - 'expand': Make the question more comprehensive
+        - 'simplify': Make the question more focused and simple
+        - 'assume': Apply specific assumptions to the question
+        
+        Common Assumptions:
+        - 'recent': Focus on recent data (last 2-3 years)
+        - 'top_performers': Focus on top performers only
+        - 'trends': Look for trends over time
+        - 'comparison': Include comparative analysis
+        - 'detailed': Request detailed breakdown
+        - 'current_season': Assume current season data
+        - 'healthy_players': Assume healthy/active players only
+        - 'limit': Limit results to manageable number
+        
+        New Features:
+        - limit_results: Specify a number to limit results
+        - include_examples: Set to false to exclude examples (default: true)
+        - clarify_terms: Set to false to skip term clarification (default: true)
+        """
+        return await modify.modify_question(ctx, original_question, assumptions, modification_type, context, limit_results, include_examples, clarify_terms)
+
+    @mcp.tool()
+    async def get_modification_presets(
+        ctx: Context
+    ) -> Dict[str, Any]:
+        """
+        Get available modification presets that can be used as assumptions.
+        
+        This tool returns a list of predefined assumptions you can use
+        with the modify_question tool to transform user questions.
+        """
+        return await modify.get_modification_presets()
+
+    @mcp.tool()
+    async def add_user_term(
+        ctx: Context,
+        term: str = Field(..., description="The user term to add"),
+        clarification: str = Field(..., description="The clarification/definition for this term")
+    ) -> Dict[str, Any]:
+        """
+        Add a new user term and its clarification to the dictionary.
+        
+        This allows you to dynamically add new terms that users might use
+        and their corresponding clarifications. For example, you could add
+        "super-star" with clarification "players in the top 10% of performance metrics".
+        """
+        return await modify.add_user_term(ctx, term, clarification)
+
+    @mcp.tool()
+    async def get_user_terms(
+        ctx: Context
+    ) -> Dict[str, Any]:
+        """
+        Get all currently defined user terms and their clarifications.
+        
+        This tool shows you all the terms that will be automatically
+        clarified when found in user questions.
+        """
+        return await modify.get_user_terms()
 
     @mcp.tool()
     async def recall_similar_db_queries(
         ctx: Context,
         query_text: str = Field(..., description="Natural language description of what you want to query"),
-        league: str = Field("mlb", description="League to search for similar queries (mlb, nba, etc.)"),
-        limit: int = Field(5, description="Maximum number of similar queries to return")
+        league: str = Field("nba", description="League to search for similar queries (mlb, nba, etc.)")
     ) -> Dict[str, Any]:
         """
         Find similar database queries based on natural language description.
+        
+        This tool searches through a collection of gold standard queries that have been 
+        previously executed and stored. These queries represent high-quality examples of 
+        how to structure database queries for various sports analytics questions. By 
+        examining these examples, you can learn from their approach and adapt their 
+        patterns to your own queries.
+        
+        The returned queries are ranked by similarity to your input description and 
+        can serve as templates or inspiration for building your own database queries.
         """
-        result = await recall.recall_similar_db_queries(ctx, query_text, league, limit)
-        return {"queries": result} if isinstance(result, list) else result
+        try:
+            result = await recall.recall_similar_db_queries(ctx, query_description=query_text, league=league)
+            return {"queries": result} if isinstance(result, list) else result
+        except Exception as e:
+            logger = logging.getLogger("blitz-agent-mcp")
+            logger.error(f"Error in recall_similar_db_queries: {e}")
+            raise
 
     @mcp.tool()
     async def get_database_documentation(
@@ -263,48 +357,49 @@ def setup_tools(mcp: FastMCP):
         """
         return await upload.upload(ctx, query_text, sql_query, league)
 
-    @mcp.tool()
-    async def generate_graph(
-        ctx: Context,
-        data_source: str = Field(..., description="SQL query or table name to generate graph from"),
-        graph_type: str = Field("auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
-        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
-    ) -> Dict[str, Any]:
-        """
-        Generate a graph/chart from query results or table data.
-        """
-        return await graph.generate_graph(ctx, data_source, graph_type, league)
+    # Temporarily commented out for debugging
+    # @mcp.tool()
+    # async def generate_graph(
+    #     ctx: Context,
+    #     data_source: str = Field(..., description="SQL query or table name to generate graph from"),
+    #     graph_type: str = Field("auto", description="Type of graph to generate (auto, bar, line, scatter, etc.)"),
+    #     league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Generate a graph/chart from query results or table data.
+    #     """
+    #     return await graph.generate_graph(ctx, data_source, graph_type, league)
 
-    @mcp.tool()
-    async def run_linear_regression(
-        ctx: Context,
-        data_source: str = Field(..., description="SQL query to get data for regression"),
-        target_column: str = Field(..., description="Name of the target/dependent variable column"),
-        feature_columns: List[str] = Field(..., description="List of feature/independent variable column names"),
-        league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
-    ) -> Dict[str, Any]:
-        """
-        Run linear regression analysis on query results.
-        """
-        return await linear_regression.run_linear_regression(ctx, data_source, target_column, feature_columns, league)
+    # @mcp.tool()
+    # async def run_linear_regression(
+    #     ctx: Context,
+    #     data_source: str = Field(..., description="SQL query to get data for regression"),
+    #     target_column: str = Field(..., description="Name of the target/dependent variable column"),
+    #     feature_columns: List[str] = Field(..., description="List of feature/independent variable column names"),
+    #     league: str = Field("mlb", description="League to query (mlb, nba, etc.)")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Run linear regression analysis on query results.
+    #     """
+    #     return await linear_regression.run_linear_regression(ctx, data_source, target_column, feature_columns, league)
 
-    @mcp.tool()
-    async def get_betting_events_by_date(
-        ctx: Context,
-        date: str = Field(..., description="Date in YYYY-MM-DD format"),
-        sport: str = Field("basketball", description="Sport to get events for")
-    ) -> Dict[str, Any]:
-        """
-        Get betting events for a specific date and sport.
-        """
-        return await betting.get_betting_events_by_date(ctx, date, sport)
+    # @mcp.tool()
+    # async def get_betting_events_by_date(
+    #     ctx: Context,
+    #     date: str = Field(..., description="Date in YYYY-MM-DD format"),
+    #     sport: str = Field("basketball", description="Sport to get events for")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Get betting events for a specific date and sport.
+    #     """
+    #     return await betting.get_betting_events_by_date(ctx, date, sport)
 
-    @mcp.tool()
-    async def get_betting_markets_for_event(
-        ctx: Context,
-        event_id: str = Field(..., description="Event ID to get markets for")
-    ) -> Dict[str, Any]:
-        """
-        Get betting markets for a specific event.
-        """
-        return await betting.get_betting_markets_for_event(ctx, event_id) 
+    # @mcp.tool()
+    # async def get_betting_markets_for_event(
+    #     ctx: Context,
+    #     event_id: str = Field(..., description="Event ID to get markets for")
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Get betting markets for a specific event.
+    #     """
+    #     return await betting.get_betting_markets_for_event(ctx, event_id) 
