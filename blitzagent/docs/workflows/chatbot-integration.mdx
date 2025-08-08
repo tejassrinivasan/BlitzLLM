@@ -1,0 +1,191 @@
+---
+title: "Chatbot Integration"
+description: "Build intelligent sports chatbots powered by Blitz agents"
+---
+
+# Chatbot Integration Workflows
+
+Build conversational interfaces that provide instant sports intelligence to your users. Blitz agents power natural language understanding for sports queries, enabling chatbots that can answer complex questions about players, teams, and games.
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card
+    title="🤖 Customer Support"
+    icon="headset"
+  >
+    Answer sports-related questions for fantasy platforms, sportsbooks, and media sites
+  </Card>
+  
+  <Card
+    title="📱 Fan Engagement"
+    icon="users"
+  >
+    Interactive chatbots for team websites and mobile apps
+  </Card>
+  
+  <Card
+    title="📊 Fantasy Assistant"
+    icon="chart-line"
+  >
+    Real-time player advice and lineup recommendations
+  </Card>
+  
+  <Card
+    title="🎯 Betting Assistant"
+    icon="target"
+  >
+    Analysis and insights for sports betting platforms
+  </Card>
+</CardGroup>
+
+## Implementation Example
+
+<CodeGroup>
+```python Discord Bot
+import discord
+from discord.ext import commands
+import asyncio
+
+class SportsBot(commands.Bot):
+    def __init__(self, blitz_api_key):
+        intents = discord.Intents.default()
+        intents.message_content = True
+        super().__init__(command_prefix='!', intents=intents)
+        
+        self.blitz_client = BlitzClient(blitz_api_key)
+    
+    @commands.command(name='analyze')
+    async def sports_analysis(self, ctx, *, query):
+        """Analyze sports queries with !analyze command"""
+        try:
+            # Show typing indicator
+            async with ctx.typing():
+                # Get analysis from Blitz
+                response = await self.blitz_client.analyze(
+                    query,
+                    "Provide concise but informative analysis for a chat environment"
+                )
+                
+                # Create Discord embed
+                embed = discord.Embed(
+                    title="🏀 Sports Analysis",
+                    description=response.response,
+                    color=0x1f8b4c
+                )
+                embed.set_footer(text="Powered by Blitz")
+                
+                await ctx.send(embed=embed)
+                
+        except Exception as e:
+            await ctx.send(f"❌ Sorry, I couldn't process that query: {str(e)}")
+    
+    @commands.command(name='player')
+    async def player_stats(self, ctx, *, player_name):
+        """Get player stats with !player command"""
+        query = f"What are {player_name}'s stats this season?"
+        context = "Include key performance metrics and recent form"
+        
+        try:
+            async with ctx.typing():
+                response = await self.blitz_client.analyze(query, context)
+                
+                embed = discord.Embed(
+                    title=f"📊 {player_name} Stats",
+                    description=response.response,
+                    color=0x3498db
+                )
+                
+                await ctx.send(embed=embed)
+                
+        except Exception as e:
+            await ctx.send(f"❌ Couldn't find stats for {player_name}")
+
+# Run the bot
+bot = SportsBot("your_blitz_api_key")
+bot.run("your_discord_token")
+```
+
+```javascript Slack Bot
+const { App } = require('@slack/bolt');
+const BlitzClient = require('./blitz-client');
+
+const app = new App({
+    token: process.env.SLACK_BOT_TOKEN,
+    signingSecret: process.env.SLACK_SIGNING_SECRET
+});
+
+const blitzClient = new BlitzClient(process.env.BLITZ_API_KEY);
+
+// Listen for sports-related mentions
+app.message(/sports|nba|mlb|basketball|baseball/i, async ({ message, say }) => {
+    try {
+        const response = await blitzClient.analyze(
+            message.text,
+            "Provide helpful sports information for a workplace chat"
+        );
+        
+        await say({
+            text: `🏀 ${response.response}`,
+            thread_ts: message.ts
+        });
+        
+    } catch (error) {
+        await say("Sorry, I couldn't process that sports query right now.");
+    }
+});
+
+// Slash command for direct queries
+app.command('/sports', async ({ command, ack, respond }) => {
+    await ack();
+    
+    try {
+        const response = await blitzClient.analyze(
+            command.text,
+            "Brief analysis suitable for Slack"
+        );
+        
+        await respond({
+            text: `📊 Sports Analysis`,
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `*Query:* ${command.text}\n\n${response.response}`
+                    }
+                }
+            ]
+        });
+        
+    } catch (error) {
+        await respond("❌ Error processing your sports query.");
+    }
+});
+
+(async () => {
+    await app.start(process.env.PORT || 3000);
+    console.log('⚡️ Sports bot is running!');
+})();
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Predictive Analytics"
+    icon="trending-up"
+    href="/workflows/predictive-analytics"
+  >
+    Build predictive models with Blitz data
+  </Card>
+  
+  <Card
+    title="Workflows Overview"
+    icon="workflow"
+    href="/workflows/overview"
+  >
+    Explore all available workflow types
+  </Card>
+</CardGroup>

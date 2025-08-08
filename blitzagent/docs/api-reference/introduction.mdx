@@ -19,7 +19,7 @@ Blitz provides a powerful REST API for sports analysis powered by Claude 4 Sonne
 All API requests are made to:
 
 ```
-https://api.blitz.com
+https://blitzagent.onrender.com
 ```
 
 ## Authentication
@@ -204,7 +204,7 @@ import httpx
 import asyncio
 
 class BlitzClient:
-    def __init__(self, api_key: str, base_url: str = "https://api.blitz.com"):
+    def __init__(self, api_key: str, base_url: str = "https://blitzagent.onrender.com"):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -228,7 +228,7 @@ result = await client.analyze("What are LeBron's stats this season?")
 
 ```javascript JavaScript/Node.js
 class BlitzClient {
-  constructor(apiKey, baseUrl = 'https://api.blitz.com') {
+  constructor(apiKey, baseUrl = 'https://blitzagent.onrender.com') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -259,7 +259,7 @@ const result = await client.analyze("What are LeBron's stats this season?");
 #!/bin/bash
 
 BLITZ_API_KEY="your_blitz_api_key"
-BASE_URL="https://api.blitz.com"
+BASE_URL="https://blitzagent.onrender.com"
 
 analyze_sports() {
   local query="$1"

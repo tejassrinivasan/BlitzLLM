@@ -95,7 +95,7 @@ The response is a **Server-Sent Events (SSE)** stream where each event contains:
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.blitz.com/analyze/stream" \
+curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
@@ -113,7 +113,7 @@ async def stream_analysis():
     async with httpx.AsyncClient() as client:
         async with client.stream(
             "POST", 
-            "https://api.blitz.com/analyze/stream",
+            "https://blitzagent.onrender.com/analyze/stream",
             headers={
                 "Authorization": "Bearer YOUR_BLITZ_API_KEY",
                 "Content-Type": "application/json"
@@ -141,7 +141,7 @@ await stream_analysis()
 
 ```javascript JavaScript with EventSource
 const streamAnalysis = () => {
-  fetch('https://api.blitz.com/analyze/stream', {
+  fetch('https://blitzagent.onrender.com/analyze/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ data: {"event_type": "analysis_complete", "message": "Analysis completed success
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.blitz.com/analyze/stream" \
+curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
@@ -401,7 +401,7 @@ import httpx
 from typing import AsyncGenerator, Dict, Any
 
 class StreamingAnalysisClient:
-    def __init__(self, api_key: str, base_url: str = "https://api.blitz.com"):
+    def __init__(self, api_key: str, base_url: str = "https://blitzagent.onrender.com"):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -511,7 +511,7 @@ Blitz includes a built-in stream viewer for testing the streaming endpoint inter
   <Step title="Open Stream Viewer">
     Navigate to the stream viewer in your browser:
     ```
-    https://api.blitz.com/stream_viewer.html
+    https://blitzagent.onrender.com/stream_viewer.html
     ```
     
     Or open the `stream_viewer.html` file directly from your Blitz installation directory.

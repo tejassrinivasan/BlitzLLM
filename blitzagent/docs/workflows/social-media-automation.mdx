@@ -1,0 +1,563 @@
+---
+title: "Social Media Automation"
+description: "Automate sports content creation and publishing with Blitz agents"
+---
+
+# Social Media Automation Workflows
+
+<img
+  src="/images/blitzbot.png"
+  alt="BlitzBot Social Media"
+  width="140"
+  style={{ float: "left", margin: "0 20px 20px 0" }}
+/>
+
+Leverage Blitz's sports intelligence to automatically generate and publish engaging content across social media platforms. Our natural-language sports query engine powers content that resonates with sports fans while saving you hours of manual work.
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card
+    title="📱 Automated Posting"
+    icon="calendar"
+  >
+    Generate and schedule daily sports content across multiple platforms
+  </Card>
+  
+  <Card
+    title="🏀 Game Day Content"
+    icon="basketball"
+  >
+    Create real-time content during games with live analysis and updates
+  </Card>
+  
+  <Card
+    title="📊 Weekly Roundups"
+    icon="chart-bar"
+  >
+    Automatically compile weekly performance summaries and highlights
+  </Card>
+  
+  <Card
+    title="🔥 Trending Topics"
+    icon="trending-up"
+  >
+    Identify and capitalize on trending sports stories and conversations
+  </Card>
+</CardGroup>
+
+## Twitter Bot Workflow Example
+
+Here's a real-world example of how our Twitter bot uses Blitz to automatically generate and post sports content:
+
+### Architecture Overview
+
+<Steps>
+  <Step title="Content Planning">
+    The bot determines what type of content to create based on schedules, trending topics, or manual triggers
+  </Step>
+  
+  <Step title="Blitz Analysis">
+    Uses the `/analyze` endpoint to get comprehensive sports insights and data
+  </Step>
+  
+  <Step title="Content Generation">
+    Processes the Blitz response to create engaging, platform-optimized content
+  </Step>
+  
+  <Step title="Publishing">
+    Posts the content to Twitter with appropriate hashtags and formatting
+  </Step>
+</Steps>
+
+### Implementation Example
+
+<CodeGroup>
+```python Twitter Bot Implementation
+import asyncio
+import httpx
+from datetime import datetime
+import tweepy
+
+class SportsTwitterBot:
+    def __init__(self, blitz_api_key, twitter_credentials):
+        self.blitz_client = BlitzClient(blitz_api_key)
+        self.twitter_api = tweepy.Client(**twitter_credentials)
+        
+    async def daily_content_workflow(self):
+        """Generate and post daily sports content"""
+        
+        # 1. Determine content topics for today
+        content_topics = [
+            "NBA games tonight and key matchups to watch",
+            "Top MLB pitching performances this week",
+            "Fantasy basketball sleeper picks for today"
+        ]
+        
+        for topic in content_topics:
+            try:
+                # 2. Get analysis from Blitz
+                analysis = await self.get_sports_analysis(topic)
+                
+                # 3. Generate tweet content
+                tweet_content = self.create_tweet_content(analysis, topic)
+                
+                # 4. Post to Twitter
+                await self.post_tweet(tweet_content)
+                
+                # Wait between posts to avoid rate limits
+                await asyncio.sleep(300)  # 5 minutes
+                
+            except Exception as e:
+                print(f"Error processing topic '{topic}': {e}")
+    
+    async def get_sports_analysis(self, topic):
+        """Get analysis from Blitz API"""
+        query = f"Provide insights on: {topic}"
+        context = "Keep response concise and engaging for social media. Include specific stats and names."
+        
+        response = await self.blitz_client.analyze(query, context)
+        return response.response
+    
+    def create_tweet_content(self, analysis, topic):
+        """Convert Blitz analysis into Twitter-optimized content"""
+        
+        # Extract key insights from analysis
+        insights = self.extract_key_insights(analysis)
+        
+        # Create engaging tweet format
+        if "NBA" in topic:
+            hashtags = "#NBA #Basketball #Hoops"
+        elif "MLB" in topic:
+            hashtags = "#MLB #Baseball"
+        else:
+            hashtags = "#Sports #Analytics"
+        
+        # Format for Twitter's character limit
+        tweet = f"🏀 {insights[:200]}... {hashtags}"
+        
+        return tweet
+    
+    def extract_key_insights(self, analysis):
+        """Extract the most engaging parts of the analysis"""
+        # Simple extraction logic - in production, this would be more sophisticated
+        sentences = analysis.split('.')[:3]  # First 3 sentences
+        return '. '.join(sentences)
+    
+    async def post_tweet(self, content):
+        """Post content to Twitter"""
+        try:
+            response = self.twitter_api.create_tweet(text=content)
+            print(f"✅ Tweet posted successfully: {response.data['id']}")
+        except Exception as e:
+            print(f"❌ Error posting tweet: {e}")
+
+# Usage example
+async def main():
+    bot = SportsTwitterBot(
+        blitz_api_key="your_blitz_api_key",
+        twitter_credentials={
+            "bearer_token": "your_bearer_token",
+            "consumer_key": "your_consumer_key",
+            "consumer_secret": "your_consumer_secret",
+            "access_token": "your_access_token",
+            "access_token_secret": "your_access_token_secret"
+        }
+    )
+    
+    # Run daily content workflow
+    await bot.daily_content_workflow()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+```javascript Node.js Social Bot
+const { TwitterApi } = require('twitter-api-v2');
+const BlitzClient = require('./blitz-client');
+
+class SocialMediaBot {
+    constructor(blitzApiKey, twitterCredentials) {
+        this.blitzClient = new BlitzClient(blitzApiKey);
+        this.twitterClient = new TwitterApi(twitterCredentials);
+    }
+    
+    async generateDailyContent() {
+        const contentTypes = [
+            {
+                query: "Most impressive NBA performances last night",
+                hashtags: "#NBA #Basketball #Sports",
+                platform: "twitter"
+            },
+            {
+                query: "MLB pitching matchups to watch today",
+                hashtags: "#MLB #Baseball #Pitching",
+                platform: "twitter"
+            },
+            {
+                query: "Fantasy football waiver wire pickups this week",
+                hashtags: "#FantasyFootball #NFL #Fantasy",
+                platform: "twitter"
+            }
+        ];
+        
+        for (const content of contentTypes) {
+            try {
+                // Get analysis from Blitz
+                const analysis = await this.blitzClient.analyze(
+                    content.query,
+                    "Keep response engaging and concise for social media. Include specific stats."
+                );
+                
+                // Create social media post
+                const post = this.formatForPlatform(analysis.response, content, 'twitter');
+                
+                // Publish to platform
+                await this.publishToTwitter(post);
+                
+                // Wait between posts
+                await this.sleep(180000); // 3 minutes
+                
+            } catch (error) {
+                console.error(`Error creating content: ${error.message}`);
+            }
+        }
+    }
+    
+    formatForPlatform(analysis, contentConfig, platform) {
+        if (platform === 'twitter') {
+            // Extract key points and format for Twitter
+            const keyPoints = this.extractKeyPoints(analysis);
+            const tweetText = `🔥 ${keyPoints.substring(0, 200)}... ${contentConfig.hashtags}`;
+            return tweetText;
+        }
+        
+        // Add other platform formatting as needed
+        return analysis;
+    }
+    
+    extractKeyPoints(analysis) {
+        // Extract the most engaging information
+        const sentences = analysis.split('.').slice(0, 2);
+        return sentences.join('.').trim();
+    }
+    
+    async publishToTwitter(content) {
+        try {
+            const tweet = await this.twitterClient.v2.tweet(content);
+            console.log(`✅ Tweet published: ${tweet.data.id}`);
+            return tweet;
+        } catch (error) {
+            console.error(`❌ Twitter publish error: ${error.message}`);
+        }
+    }
+    
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// Scheduled workflow example
+async function runScheduledWorkflow() {
+    const bot = new SocialMediaBot(
+        process.env.BLITZ_API_KEY,
+        {
+            appKey: process.env.TWITTER_API_KEY,
+            appSecret: process.env.TWITTER_API_SECRET,
+            accessToken: process.env.TWITTER_ACCESS_TOKEN,
+            accessSecret: process.env.TWITTER_ACCESS_SECRET,
+        }
+    );
+    
+    // Run daily at 9 AM
+    await bot.generateDailyContent();
+}
+
+module.exports = { SocialMediaBot, runScheduledWorkflow };
+```
+</CodeGroup>
+
+## Content Types & Examples
+
+### 📊 **Statistical Highlights**
+
+<CodeGroup>
+```text Example Query
+"Most efficient NBA scorers this season with at least 20 PPG"
+```
+
+```text Example Output
+🏀 Luka Dončić leads efficient scorers with 31.2 PPG on 59.8% TS. Jayson Tatum follows at 28.4 PPG with 58.2% TS. Both players combining elite volume with remarkable efficiency! #NBA #Basketball #Stats
+```
+</CodeGroup>
+
+### 🎯 **Game Previews**
+
+<CodeGroup>
+```text Example Query
+"Lakers vs Warriors tonight - key matchups and what to watch for"
+```
+
+```text Example Output
+🔥 Lakers vs Warriors TONIGHT! Key battle: LeBron's playmaking vs Draymond's defense. Warriors averaging 119.2 PPG at home, but Lakers have won 3 of last 4 meetings. Don't miss this classic rivalry! #Lakers #Warriors #NBA
+```
+</CodeGroup>
+
+### 📈 **Weekly Roundups**
+
+<CodeGroup>
+```text Example Query
+"Best MLB pitching performances this week across all teams"
+```
+
+```text Example Output
+⚾ WEEK'S BEST ARMS: Gerrit Cole dominates with 12 Ks, 0 ER vs Boston. Shane Bieber continues Cy Young push with 2.1 ERA over 3 starts. Spencer Strider hits 200 Ks fastest in MLB history! #MLB #Pitching #CyYoung
+```
+</CodeGroup>
+
+## Advanced Features
+
+### Real-Time Game Content
+
+<AccordionGroup>
+  <Accordion icon="zap" title="Live Game Updates">
+    **Trigger**: Game events (touchdowns, home runs, clutch shots)
+    
+    **Process**:
+    1. Monitor game feeds for key events
+    2. Query Blitz for context and analysis
+    3. Generate immediate social content
+    4. Post with relevant hashtags and mentions
+    
+    **Example**: "🚨 CLUTCH! Curry hits his 7th three of the night! That's the most 3s in a playoff game since his own record in 2016. Warriors now up 15 with 4:32 left! #Warriors #StephCurry #Playoffs"
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Performance Tracking">
+    **Automated Monitoring**:
+    - Track engagement rates by content type
+    - Monitor which sports topics perform best
+    - A/B test different content formats
+    - Adjust posting frequency based on performance
+    
+    **Analytics Integration**:
+    ```python
+    # Track performance metrics
+    analytics = {
+        'engagement_rate': calculate_engagement(tweet_id),
+        'reach': get_tweet_reach(tweet_id),
+        'content_type': classify_content(tweet_text),
+        'sports_topic': extract_sport(tweet_text)
+    }
+    
+    # Optimize future content based on performance
+    top_performing_topics = analyze_performance_trends(analytics)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Multi-Platform Distribution
+
+<CardGroup cols={2}>
+  <Card
+    title="Platform Optimization"
+    icon="settings"
+  >
+    **Twitter**: 280 chars, hashtags, mentions
+    **Instagram**: Visual focus, longer captions
+    **LinkedIn**: Professional tone, industry insights
+    **TikTok**: Video content with trending audio
+  </Card>
+  
+  <Card
+    title="Content Adaptation"
+    icon="refresh"
+  >
+    **Same Analysis, Multiple Formats**:
+    - Twitter: Quick stats and reactions
+    - Instagram: Detailed infographics
+    - Blog: Long-form analysis
+    - Newsletter: Weekly summaries
+  </Card>
+</CardGroup>
+
+## Deployment Options
+
+### 1. **Scheduled Execution**
+
+<CodeGroup>
+```yaml GitHub Actions
+name: Daily Sports Content
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM
+    
+jobs:
+  generate-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run content generation
+        env:
+          BLITZ_API_KEY: ${{ secrets.BLITZ_API_KEY }}
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        run: python generate_daily_content.py
+```
+
+```python Cron Job
+# crontab entry for daily execution
+# 0 9 * * * /usr/bin/python3 /path/to/your/social_bot.py
+
+import schedule
+import time
+
+def job():
+    # Your social media workflow
+    asyncio.run(social_bot.daily_content_workflow())
+
+schedule.every().day.at("09:00").do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+```
+</CodeGroup>
+
+### 2. **Event-Driven Triggers**
+
+<CodeGroup>
+```python Webhook Handler
+from flask import Flask, request
+import asyncio
+
+app = Flask(__name__)
+
+@app.route('/webhook/game-event', methods=['POST'])
+def handle_game_event():
+    event_data = request.json
+    
+    # Process game event
+    asyncio.run(create_game_event_content(event_data))
+    
+    return {'status': 'success'}
+
+async def create_game_event_content(event):
+    if event['type'] == 'clutch_shot':
+        query = f"Analysis of {event['player']} clutch performance this season"
+        analysis = await blitz_client.analyze(query)
+        await post_to_social_media(analysis.response, event)
+```
+</CodeGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion icon="check" title="Content Quality">
+    **Engaging Content Guidelines**:
+    - Use specific stats and player names
+    - Include emotional context (excitement, surprise)
+    - Add relevant emojis for visual appeal
+    - Keep language conversational and accessible
+    
+    **Optimization Tips**:
+    - Test different content formats
+    - Monitor trending hashtags
+    - Engage with your audience's responses
+    - Stay current with breaking news
+  </Accordion>
+  
+  <Accordion icon="clock" title="Timing & Frequency">
+    **Optimal Posting Times**:
+    - NBA content: 7-9 PM ET (during games)
+    - MLB content: 1-3 PM ET and 7-9 PM ET
+    - Fantasy content: Tuesday-Thursday mornings
+    - Weekend roundups: Sunday evenings
+    
+    **Frequency Guidelines**:
+    - 3-5 posts per day maximum
+    - Space posts 2-3 hours apart
+    - Increase frequency during playoff seasons
+    - Reduce during off-seasons
+  </Accordion>
+  
+  <Accordion icon="shield" title="Compliance & Safety">
+    **Content Guidelines**:
+    - Respect platform terms of service
+    - Avoid spam-like behavior
+    - Include proper attribution for stats
+    - Monitor for accuracy and fact-check
+    
+    **API Rate Limits**:
+    - Respect Twitter API limits (300 posts/15 min)
+    - Implement exponential backoff
+    - Monitor your usage quotas
+    - Cache content when possible
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring & Analytics
+
+Track the success of your social media automation:
+
+<CardGroup cols={2}>
+  <Card
+    title="📊 Key Metrics"
+    icon="chart-bar"
+  >
+    - Engagement rate per post
+    - Follower growth rate
+    - Click-through rates
+    - Content performance by sport/topic
+  </Card>
+  
+  <Card
+    title="🔧 Optimization"
+    icon="settings"
+  >
+    - A/B testing different formats
+    - Timing optimization
+    - Content type performance
+    - Hashtag effectiveness
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Chatbot Integration"
+    icon="message-circle"
+    href="/workflows/chatbot-integration"
+  >
+    Learn to build interactive sports chatbots
+  </Card>
+  
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Technical details for integrating Blitz APIs
+  </Card>
+  
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Set up secure API access for your workflows
+  </Card>
+  
+  <Card
+    title="Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    More implementation examples and use cases
+  </Card>
+</CardGroup>

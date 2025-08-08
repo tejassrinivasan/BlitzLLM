@@ -6,12 +6,12 @@
     "version": "1.0.0",
     "contact": {
       "name": "Blitz Support",
-      "email": "support@blitz.com"
+      "email": "tejas@blitzanalytics.co"
     }
   },
   "servers": [
     {
-      "url": "https://api.blitz.com",
+      "url": "https://blitzagent.onrender.com",
       "description": "Production API server"
     }
   ],

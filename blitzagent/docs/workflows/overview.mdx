@@ -1,0 +1,256 @@
+---
+title: "Workflows Overview"
+description: "Automated sports workflows powered by Blitz agents"
+---
+
+# Automated Sports Workflows
+
+<img
+  src="/images/blitzbot.png"
+  alt="BlitzBot Workflows"
+  width="150"
+  style={{ float: "right", margin: "0 0 20px 20px" }}
+/>
+
+Blitz enables you to build sophisticated automated workflows that combine our sports intelligence agents with your business logic. Our AI agent layer provides the foundation for automating high-value tasks in the sports industry.
+
+## What Are Blitz Workflows?
+
+Workflows are automated processes that leverage one or more Blitz agents to accomplish complex tasks. They can range from simple content generation to complex multi-step analysis and decision-making processes.
+
+## Current Agent Capabilities
+
+### 🔍 **Search Agent** (Available Now)
+Our flagship natural-language sports query engine that powers the `/analyze` and `/analyze/stream` endpoints.
+
+**Capabilities:**
+- Answer complex sports questions with natural language
+- Access comprehensive historical NBA and MLB data
+- Provide real-time analysis and insights
+- Generate detailed statistical breakdowns
+- Compare players, teams, and performance metrics
+
+**Use Cases:**
+- Content generation for social media
+- Real-time game analysis
+- Player and team scouting reports
+- Fantasy sports insights
+- Betting analysis
+
+## Coming Soon: Additional Agents
+
+### 📊 **Analytics Agent**
+Specialized in predictive modeling and advanced statistical analysis.
+
+### 📝 **Content Agent** 
+Optimized for generating various types of sports content (articles, social posts, reports).
+
+### 🎯 **Scouting Agent**
+Focused on player evaluation and talent identification.
+
+### 📈 **Market Agent**
+Specialized in betting lines, odds analysis, and market movements.
+
+## Workflow Architecture
+
+<Steps>
+  <Step title="Data Input">
+    Your workflow receives triggers (scheduled events, user requests, external APIs)
+  </Step>
+  
+  <Step title="Agent Processing">
+    One or more Blitz agents process the request using our sports data engine
+  </Step>
+  
+  <Step title="Business Logic">
+    Your custom logic processes agent responses and makes decisions
+  </Step>
+  
+  <Step title="Action Execution">
+    Take actions based on the results (post content, send alerts, update databases)
+  </Step>
+</Steps>
+
+## Workflow Types
+
+<CardGroup cols={2}>
+  <Card
+    title="Social Media Automation"
+    icon="twitter"
+    href="/workflows/social-media-automation"
+  >
+    Automatically generate and publish sports content across social platforms
+  </Card>
+  
+  <Card
+    title="Chatbot Integration"
+    icon="message-circle"
+    href="/workflows/chatbot-integration"
+  >
+    Power customer-facing chatbots with real-time sports intelligence
+  </Card>
+  
+  <Card
+    title="Predictive Analytics"
+    icon="trending-up"
+    href="/workflows/predictive-analytics"
+  >
+    Build models that combine Blitz insights with your proprietary data
+  </Card>
+  
+  <Card
+    title="Custom Workflows"
+    icon="settings"
+    href="#custom-workflows"
+  >
+    Design workflows specific to your business needs and use cases
+  </Card>
+</CardGroup>
+
+## Integration Patterns
+
+### 1. **API-First Integration**
+Use our REST API endpoints directly in your existing systems.
+
+```python
+# Simple integration example
+async def daily_content_workflow():
+    # Get trending topics
+    trending = await blitz_client.analyze(
+        "What are the biggest NBA storylines today?",
+        "Focus on recent games and breaking news"
+    )
+    
+    # Generate social content
+    content = await generate_social_post(trending.response)
+    
+    # Publish to platforms
+    await publish_to_social_media(content)
+```
+
+### 2. **Event-Driven Workflows**
+Trigger workflows based on real-time events (games, trades, injuries).
+
+### 3. **Scheduled Workflows** 
+Run automated processes at regular intervals (daily reports, weekly analysis).
+
+### 4. **Real-time Workflows**
+Respond to user requests or live events with immediate analysis.
+
+## Custom Workflows
+
+Our platform is designed to integrate with your proprietary data and business logic. Common customization patterns include:
+
+### Data Integration
+- **Combine Blitz insights** with your internal data sources
+- **Custom data pipelines** that enhance our analysis with your metrics
+- **Proprietary model integration** using Blitz as a data layer
+
+### Business Logic
+- **Custom decision trees** based on analysis results
+- **Multi-agent coordination** for complex tasks
+- **Conditional workflows** that adapt based on results
+
+### Output Customization
+- **Brand-specific content generation**
+- **Custom formatting** for your platforms and audiences
+- **Multi-channel distribution** with platform-specific optimizations
+
+## Getting Started
+
+<AccordionGroup>
+  <Accordion icon="rocket" title="Quick Start">
+    1. **Get your Blitz API key** from the dashboard
+    2. **Choose a workflow type** that matches your use case
+    3. **Follow the specific workflow guide** for implementation details
+    4. **Test with sample data** before going live
+    5. **Deploy and monitor** your automated workflow
+  </Accordion>
+  
+  <Accordion icon="code" title="Development Process">
+    **Planning Phase:**
+    - Define your workflow objectives
+    - Identify data sources and outputs
+    - Map the decision logic flow
+    
+    **Implementation Phase:**
+    - Set up API integration
+    - Build business logic components
+    - Test individual workflow steps
+    
+    **Deployment Phase:**
+    - Configure scheduling/triggers
+    - Set up monitoring and alerts
+    - Deploy to production environment
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Monitoring & Optimization">
+    **Key Metrics:**
+    - Workflow execution success rate
+    - API response times and usage
+    - Output quality and engagement
+    
+    **Optimization Strategies:**
+    - Cache frequently requested data
+    - Optimize query phrasing for better results
+    - A/B test different content approaches
+  </Accordion>
+</AccordionGroup>
+
+## Support & Custom Development
+
+Need help building a custom workflow for your sports business?
+
+<CardGroup cols={2}>
+  <Card
+    title="Technical Support"
+    icon="envelope"
+    href="mailto:tejas@blitzanalytics.co"
+  >
+    Get help with API integration and workflow development
+  </Card>
+  
+  <Card
+    title="Custom Solutions"
+    icon="envelope"
+    href="mailto:devon@blitzanalytics.co"
+  >
+    Discuss custom agent development and enterprise solutions
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Social Media Automation"
+    icon="twitter"
+    href="/workflows/social-media-automation"
+  >
+    See how to automate sports content generation for social platforms
+  </Card>
+  
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Explore the technical details of our current Search Agent API
+  </Card>
+  
+  <Card
+    title="Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    Browse real-world examples and implementation patterns
+  </Card>
+  
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Set up secure access for your automated workflows
+  </Card>
+</CardGroup>

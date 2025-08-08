@@ -1,11 +1,15 @@
 ---
 title: "Blitz Documentation"
-description: "AI-powered sports analysis API for building intelligent agent workflows"
+description: "AI agent layer for sports - natural language sports query engine and automation workflows"
 ---
 
 # Welcome to Blitz
 
-Blitz is a sophisticated AI-powered sports analysis API that provides comprehensive NBA and MLB insights through simple API calls. Integrate Blitz into your agent workflows, applications, and automation systems to access advanced sports analytics powered by Claude 4 Sonnet.
+Blitz is an AI agent layer for sports, starting with the most accurate natural-language sports query engine, trained on highly processed and optimized historical data. We are already able to answer questions far beyond what is possible anywhere else, and our performance will only continue to improve over time. 
+
+This search layer is only the foundation. Our full value comes from delivering custom AI solutions that automate high-value workflows for sports businesses, whether that be chatbot interfaces, social media content generation, predictive models, insights, or scouting reports - all powered by our data engine. The platform is flexible and can integrate with businesses' proprietary data directly, enabling precise and customizable actions for any sports-related need.
+
+You can call endpoints that interact with our current search agent, but more agents will be coming that will automate tasks in the sports industry. A combination of these agents can then be utilized within custom workflows.
 
 <img
   src="/images/blitzbot.png"
@@ -111,7 +115,7 @@ Here are some examples of what you can ask Blitz:
 
 <CodeGroup>
 ```bash NBA Example
-curl -X POST "https://api.blitz.com/analyze" \
+curl -X POST "https://blitzagent.onrender.com/analyze" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
@@ -121,7 +125,7 @@ curl -X POST "https://api.blitz.com/analyze" \
 ```
 
 ```bash MLB Example
-curl -X POST "https://api.blitz.com/analyze" \
+curl -X POST "https://blitzagent.onrender.com/analyze" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
@@ -137,7 +141,7 @@ import asyncio
 async def analyze_sports():
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.blitz.com/analyze",
+            "https://blitzagent.onrender.com/analyze",
             headers={"Authorization": "Bearer YOUR_BLITZ_API_KEY"},
             json={
                 "query": "Which NBA teams have the best three-point defense?",

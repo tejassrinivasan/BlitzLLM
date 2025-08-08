@@ -31,6 +31,15 @@
             ]
           },
           {
+            "group": "Workflows",
+            "pages": [
+              "workflows/overview",
+              "workflows/social-media-automation",
+              "workflows/chatbot-integration",
+              "workflows/predictive-analytics"
+            ]
+          },
+          {
             "group": "Development",
             "pages": [
               "development",
@@ -63,13 +72,13 @@
     "global": {
       "anchors": [
         {
-          "anchor": "GitHub",
-          "href": "https://github.com/tejassrinivasan/BlitzLLM",
-          "icon": "github"
+          "anchor": "Support",
+          "href": "mailto:tejas@blitzanalytics.co",
+          "icon": "envelope"
         },
         {
-          "anchor": "Support",
-          "href": "mailto:support@blitzagent.com",
+          "anchor": "Contact Devon",
+          "href": "mailto:devon@blitzanalytics.co",
           "icon": "envelope"
         }
       ]
@@ -80,12 +89,12 @@
     "dark": "/logo/blitz.png"
   },
   "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "href": "https://github.com/tejassrinivasan/BlitzLLM"
-      }
-    ]
+            "links": [
+          {
+            "label": "Contact Support",
+            "href": "mailto:tejas@blitzanalytics.co"
+          }
+        ]
   },
   "openapi": "/api-reference/openapi.json",
   "contextual": {
