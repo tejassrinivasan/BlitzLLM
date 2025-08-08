@@ -1,33 +1,331 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Reference'
+description: 'Complete reference for BlitzAgent REST API endpoints'
 ---
 
+# BlitzAgent API Reference
+
+<img
+  src="/images/blitzbot.png"
+  alt="BlitzBot"
+  width="120"
+  style={{ float: "right", margin: "0 0 20px 20px" }}
+/>
+
+BlitzAgent provides a powerful REST API for sports analysis powered by Claude 4 Sonnet and the Blitz MCP server. This API enables you to perform complex sports analytics queries with natural language processing.
+
+## Base URL
+
+All API requests are made to:
+
+```
+http://localhost:8001
+```
+
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  The base URL may vary depending on your deployment configuration. Update the `HOST` and `PORT` environment variables to customize the server address.
 </Note>
-
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All API endpoints require authentication using Bearer tokens. Include your API key in the `Authorization` header:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+```bash
+Authorization: Bearer YOUR_API_KEY
 ```
+
+### Setting Up Authentication
+
+Configure authentication by setting one of these environment variables:
+
+<CodeGroup>
+```bash Single API Key
+export API_KEY="your_secure_api_key_here"
+```
+
+```bash Multiple Client Keys (JSON)
+export API_KEYS_JSON='{"client1": "key1", "client2": "key2"}'
+```
+
+```bash Multiple Client Keys (File)
+export API_KEYS_FILE="path/to/api_keys.json"
+```
+</CodeGroup>
+
+<Warning>
+  API keys are required for all requests. Requests without valid authentication will receive a `401 Unauthorized` response.
+</Warning>
+
+## Request Format
+
+All POST requests should include the `Content-Type: application/json` header and send data as JSON in the request body.
+
+### Standard Request Headers
+
+```bash
+Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Response Format
+
+All API responses follow a consistent JSON structure:
+
+<CodeGroup>
+```json Success Response
+{
+  "response": "Detailed analysis of your sports query...",
+  "usage": {
+    "requests": 1,
+    "request_tokens": 150,
+    "response_tokens": 800,
+    "total_tokens": 950
+  }
+}
+```
+
+```json Error Response
+{
+  "detail": "Error message describing what went wrong"
+}
+```
+</CodeGroup>
+
+## Rate Limiting
+
+BlitzAgent includes built-in rate limiting to ensure fair usage:
+
+- **Rate Limit**: 100 requests per minute per API key
+- **Burst Limit**: 10 concurrent requests per API key
+- **Token Limit**: 1M tokens per hour per API key
+
+Rate limit headers are included in all responses:
+
+```bash
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640995200
+```
+
+## Error Handling
+
+BlitzAgent uses standard HTTP status codes and provides detailed error messages:
+
+<AccordionGroup>
+  <Accordion icon="check" title="200 - Success">
+    Request completed successfully. Response contains the analysis result.
+  </Accordion>
+  
+  <Accordion icon="exclamation-triangle" title="400 - Bad Request">
+    Invalid request format or missing required parameters.
+    
+    ```json
+    {
+      "detail": "Field 'query' is required"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="lock" title="401 - Unauthorized">
+    Missing or invalid API key.
+    
+    ```json
+    {
+      "detail": "Invalid API key"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="ban" title="429 - Too Many Requests">
+    Rate limit exceeded. Wait before making more requests.
+    
+    ```json
+    {
+      "detail": "Rate limit exceeded. Try again in 60 seconds."
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="exclamation-circle" title="500 - Internal Server Error">
+    Server error during analysis processing.
+    
+    ```json
+    {
+      "detail": "Analysis failed: Connection timeout to MCP server"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="tools" title="503 - Service Unavailable">
+    MCP server connection failed or service is down.
+    
+    ```json
+    {
+      "detail": "Sports analysis service unavailable: MCP server failed to initialize"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Available Endpoints
+
+BlitzAgent provides the following API endpoints:
+
+<CardGroup cols={2}>
+  <Card
+    title="POST /analyze"
+    icon="search"
+    href="/api-reference/analyze"
+  >
+    Perform comprehensive sports analysis with full response
+  </Card>
+  
+  <Card
+    title="POST /analyze/stream"
+    icon="play"
+    href="/api-reference/stream"
+  >
+    Stream real-time analysis events as they happen
+  </Card>
+  
+  <Card
+    title="GET /health"
+    icon="heart"
+    href="/api-reference/health"
+  >
+    Check server health and MCP connection status
+  </Card>
+</CardGroup>
+
+## Interactive Documentation
+
+Explore the API interactively using the built-in Swagger UI:
+
+<Card
+  title="Swagger UI"
+  icon="book-open"
+  href="http://localhost:8001/docs"
+>
+  Interactive API documentation with live testing capabilities
+</Card>
+
+## SDK and Examples
+
+While BlitzAgent doesn't have official SDKs yet, here are examples in popular languages:
+
+<CodeGroup>
+```python Python with httpx
+import httpx
+import asyncio
+
+class BlitzAgentClient:
+    def __init__(self, api_key: str, base_url: str = "http://localhost:8001"):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+    
+    async def analyze(self, query: str, extra_context: str = None):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/analyze",
+                headers=self.headers,
+                json={"query": query, "extra_context": extra_context}
+            )
+            return response.json()
+
+# Usage
+client = BlitzAgentClient("your_api_key")
+result = await client.analyze("What are LeBron's stats this season?")
+```
+
+```javascript JavaScript/Node.js
+class BlitzAgentClient {
+  constructor(apiKey, baseUrl = 'http://localhost:8001') {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
+  }
+
+  async analyze(query, extraContext = null) {
+    const response = await fetch(`${this.baseUrl}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: query,
+        extra_context: extraContext
+      })
+    });
+
+    return await response.json();
+  }
+}
+
+// Usage
+const client = new BlitzAgentClient('your_api_key');
+const result = await client.analyze("What are LeBron's stats this season?");
+```
+
+```bash cURL
+#!/bin/bash
+
+API_KEY="your_api_key"
+BASE_URL="http://localhost:8001"
+
+analyze_sports() {
+  local query="$1"
+  local context="$2"
+  
+  curl -X POST "$BASE_URL/analyze" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $API_KEY" \
+    -d "{
+      \"query\": \"$query\",
+      \"extra_context\": \"$context\"
+    }" | jq '.'
+}
+
+# Usage
+analyze_sports "What are LeBron's stats this season?" "Focus on playoffs"
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Start with /analyze"
+    icon="rocket"
+    href="/api-reference/analyze"
+  >
+    Learn about the main analysis endpoint
+  </Card>
+  
+  <Card
+    title="Try Streaming"
+    icon="play"
+    href="/api-reference/stream"
+  >
+    Explore real-time streaming analysis
+  </Card>
+  
+  <Card
+    title="View Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    See real-world usage examples and use cases
+  </Card>
+  
+  <Card
+    title="Authentication Guide"
+    icon="key"
+    href="/authentication"
+  >
+    Set up secure authentication for production
+  </Card>
+</CardGroup>

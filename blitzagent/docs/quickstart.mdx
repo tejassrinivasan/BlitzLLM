@@ -1,80 +1,268 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quickstart Guide"
+description: "Get BlitzAgent up and running in minutes"
 ---
 
-## Get started in three steps
+# Get Started with BlitzAgent
 
-Get your documentation site running locally and make your first customization.
+<img
+  src="/images/blitzbot.png"
+  alt="BlitzBot"
+  width="150"
+  style={{ float: "right", margin: "0 0 20px 20px" }}
+/>
 
-### Step 1: Set up your local environment
+This guide will help you install, configure, and start using BlitzAgent for sports analysis in just a few minutes.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+<Steps>
+  <Step title="Python 3.9+">
+    BlitzAgent requires Python 3.9 or higher. Check your version:
+    ```bash
+    python --version
+    ```
+  </Step>
+  <Step title="Anthropic API Key">
+    Get your API key from [Anthropic Console](https://console.anthropic.com/). You'll need this for Claude 4 Sonnet access.
+  </Step>
+  <Step title="Access to Blitz MCP Server">
+    Ensure you have access to the Blitz MCP server for sports data connectivity.
+  </Step>
+</Steps>
+
+## Installation
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+  <Accordion icon="download" title="Clone the Repository">
+    Clone the BlitzAgent repository to your local machine:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+    ```bash
+    git clone https://github.com/tejassrinivasan/BlitzLLM.git
+    cd BlitzLLM/blitzagent
+    ```
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+  
+  <Accordion icon="package" title="Install Dependencies">
+    Install the required Python packages:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+    ```bash
+    pip install -r requirements.txt
+    ```
+    
+    This installs:
+    - `pydantic-ai-slim[mcp]` for agent framework with MCP support
+    - `fastapi` for the REST API server
+    - `anthropic` for Claude 4 Sonnet integration
+    - And other required dependencies
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+## Configuration
 
 <AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+  <Accordion icon="key" title="Set Up Environment Variables">
+    Create a `.env` file or set environment variables directly:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
+    ```bash
+    # Required: Anthropic API Key
+    export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
+    
+    # Required: API Authentication
+    export API_KEY="your_secure_api_key"
+    
+    # Optional: Server Configuration
+    export HOST="0.0.0.0"
+    export PORT="8001"
+    export LOG_LEVEL="INFO"
+    ```
+    
+    <Warning>
+      Both `ANTHROPIC_API_KEY` and `API_KEY` are required. The `API_KEY` is used to authenticate requests to your BlitzAgent instance.
+    </Warning>
+  </Accordion>
+  
+  <Accordion icon="cog" title="Verify Configuration">
+    Test your configuration by running a quick validation:
+    
+    ```bash
+    python -c "from config import Config; Config.validate(); print('✅ Configuration is valid!')"
+    ```
   </Accordion>
 </AccordionGroup>
 
-### Step 3: Go live
+## Running BlitzAgent
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<AccordionGroup>
+  <Accordion icon="rocket" title="Start the Server">
+    Launch BlitzAgent with the following command:
+    
+    ```bash
+    python main.py
+    ```
+    
+    You should see output similar to:
+    ```
+    INFO:     Starting BlitzAgent server...
+    INFO:     MCP server initialized successfully
+    INFO:     Agent created with MCP tools
+    INFO:     Server running on http://0.0.0.0:8001
+    ```
+  </Accordion>
+  
+  <Accordion icon="globe" title="Test the API">
+    Open another terminal and test your installation:
+    
+    ```bash
+    curl -X GET "http://localhost:8001/health"
+    ```
+    
+    You should receive a health check response confirming the server is running.
+  </Accordion>
+</AccordionGroup>
 
-## Next steps
+## Your First Analysis
 
-Now that you have your docs running, explore these key features:
+Now let's run your first sports analysis query:
+
+<CodeGroup>
+```bash curl
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "What are Stephen Curry'\''s three-point shooting stats this season?",
+    "extra_context": "Focus on recent performance trends"
+  }'
+```
+
+```python Python
+import httpx
+import asyncio
+
+async def test_analysis():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://localhost:8001/analyze",
+            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            json={
+                "query": "What are Stephen Curry's three-point shooting stats this season?",
+                "extra_context": "Focus on recent performance trends"
+            }
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ Analysis successful!")
+            print(f"Response: {result['response'][:200]}...")
+        else:
+            print(f"❌ Error: {response.status_code}")
+            print(response.text)
+
+asyncio.run(test_analysis())
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8001/analyze', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY'
+  },
+  body: JSON.stringify({
+    query: "What are Stephen Curry's three-point shooting stats this season?",
+    extra_context: "Focus on recent performance trends"
+  })
+});
+
+const result = await response.json();
+console.log('Analysis:', result.response);
+```
+</CodeGroup>
+
+## Interactive Documentation
+
+Once your server is running, visit the interactive API documentation:
+
+<Card
+  title="Swagger UI Documentation"
+  icon="book-open"
+  href="http://localhost:8001/docs"
+>
+  Explore all endpoints with interactive examples at `http://localhost:8001/docs`
+</Card>
+
+## What's Next?
+
+Now that BlitzAgent is running, explore these features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card
+    title="Authentication Setup"
+    icon="shield"
+    href="/authentication"
+  >
+    Configure secure API authentication for production use.
+  </Card>
+  
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Explore all available endpoints and their parameters.
+  </Card>
+  
+  <Card
+    title="Example Queries"
+    icon="lightbulb"
+    href="/examples"
+  >
+    See real-world examples for different types of sports analysis.
+  </Card>
+  
+  <Card
+    title="Streaming Analysis"
+    icon="play"
+    href="/features/streaming-analysis"
+  >
+    Learn about real-time streaming responses for complex queries.
+  </Card>
 </CardGroup>
 
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="exclamation-triangle" title="Common Issues">
+    **MCP Server Connection Failed**
+    - Verify your internet connection
+    - Check that the Blitz MCP server is accessible
+    - Ensure proper database credentials in environment
+    
+    **Authentication Errors**
+    - Verify your `ANTHROPIC_API_KEY` is valid
+    - Ensure `API_KEY` is set for request authentication
+    - Check that API keys are properly formatted
+    
+    **Import Errors**
+    - Reinstall dependencies: `pip install -r requirements.txt`
+    - Check Python version compatibility (3.9+)
+  </Accordion>
+  
+  <Accordion icon="bug" title="Debug Mode">
+    For detailed debugging information, set the log level to DEBUG:
+    
+    ```bash
+    export LOG_LEVEL=DEBUG
+    python main.py
+    ```
+    
+    This will provide detailed logs about MCP connections, agent operations, and error details.
+  </Accordion>
+</AccordionGroup>
+
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Need Help?** If you encounter issues, check the [troubleshooting guide](/troubleshooting) or contact support at [support@blitzagent.com](mailto:support@blitzagent.com).
 </Note>

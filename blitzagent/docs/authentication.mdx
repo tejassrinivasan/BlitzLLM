@@ -1,0 +1,572 @@
+---
+title: "Authentication & Configuration"
+description: "Complete guide to securing and configuring BlitzAgent"
+---
+
+# Authentication & Configuration
+
+BlitzAgent requires proper authentication setup to ensure secure access to its sports analysis capabilities. This guide covers all authentication methods and configuration options.
+
+## Required API Keys
+
+BlitzAgent requires two types of API keys to function properly:
+
+<AccordionGroup>
+  <Accordion icon="anthropic" title="Anthropic API Key (Required)">
+    **Purpose**: Access to Claude 4 Sonnet for AI analysis
+    
+    **How to get it**:
+    1. Visit [Anthropic Console](https://console.anthropic.com/)
+    2. Create an account or sign in
+    3. Navigate to API Keys section
+    4. Generate a new API key
+    
+    **Environment variable**: `ANTHROPIC_API_KEY`
+    
+    ```bash
+    export ANTHROPIC_API_KEY="sk-ant-api03-..."
+    ```
+    
+    <Warning>
+      Keep your Anthropic API key secure and never expose it in client-side code.
+    </Warning>
+  </Accordion>
+  
+  <Accordion icon="shield" title="BlitzAgent API Key (Required)">
+    **Purpose**: Authentication for requests to your BlitzAgent instance
+    
+    **How to set it**: You create this key for your deployment
+    
+    **Environment variable**: `API_KEY`
+    
+    ```bash
+    export API_KEY="your_secure_random_key_here"
+    ```
+    
+    <Tip>
+      Generate a strong, random API key using: `openssl rand -hex 32`
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Authentication Methods
+
+BlitzAgent supports three authentication configurations:
+
+### Single API Key (Recommended for development)
+
+Use one API key for all requests:
+
+<CodeGroup>
+```bash Environment Variable
+export API_KEY="your_secure_api_key_here"
+```
+
+```bash Usage
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer your_secure_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are LeBron'\''s stats this season?"}'
+```
+</CodeGroup>
+
+### Multiple Client Keys (JSON String)
+
+Configure multiple API keys for different clients via environment variable:
+
+<CodeGroup>
+```bash Environment Variable
+export API_KEYS_JSON='{"client_1": "key_for_client_1", "client_2": "key_for_client_2", "admin": "admin_super_secure_key"}'
+```
+
+```bash Client 1 Usage
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer key_for_client_1" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "NBA standings this season"}'
+```
+
+```bash Admin Usage
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer admin_super_secure_key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Complex multi-league analysis"}'
+```
+</CodeGroup>
+
+### Multiple Client Keys (File)
+
+Store API keys in a JSON file for easier management:
+
+<CodeGroup>
+```bash Environment Variable
+export API_KEYS_FILE="/path/to/api_keys.json"
+```
+
+```json api_keys.json
+{
+  "frontend_app": "fe_1234567890abcdef",
+  "mobile_app": "mb_abcdef1234567890",
+  "data_team": "dt_secure_key_here",
+  "admin": "admin_ultra_secure_key"
+}
+```
+
+```bash Usage
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer fe_1234567890abcdef" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Player comparison analysis"}'
+```
+</CodeGroup>
+
+## Complete Configuration Guide
+
+### Environment Variables Reference
+
+<ParamField header="ANTHROPIC_API_KEY" type="string" required>
+  Your Anthropic API key for Claude 4 Sonnet access
+  
+  **Format**: `sk-ant-api03-...`
+  
+  **Example**: `sk-ant-api03-1234567890abcdef`
+</ParamField>
+
+<ParamField header="API_KEY" type="string" required>
+  Single API key for request authentication (alternative to API_KEYS_JSON/FILE)
+  
+  **Format**: Any secure string
+  
+  **Example**: `your_secure_random_key_here`
+</ParamField>
+
+<ParamField header="API_KEYS_JSON" type="string" optional>
+  JSON string containing multiple client API keys
+  
+  **Format**: `{"client_name": "api_key", ...}`
+  
+  **Example**: `{"app1": "key1", "app2": "key2"}`
+</ParamField>
+
+<ParamField header="API_KEYS_FILE" type="string" optional>
+  Path to JSON file containing multiple client API keys
+  
+  **Format**: File path
+  
+  **Example**: `/etc/blitzagent/api_keys.json`
+  
+  **Default**: `api_keys.json`
+</ParamField>
+
+<ParamField header="HOST" type="string" optional>
+  Server host address
+  
+  **Default**: `0.0.0.0`
+  
+  **Example**: `localhost` (development), `0.0.0.0` (production)
+</ParamField>
+
+<ParamField header="PORT" type="integer" optional>
+  Server port number
+  
+  **Default**: `8001`
+  
+  **Example**: `8000`, `3000`
+</ParamField>
+
+<ParamField header="LOG_LEVEL" type="string" optional>
+  Logging verbosity level
+  
+  **Default**: `INFO`
+  
+  **Options**: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
+</ParamField>
+
+### Configuration Examples
+
+<Tabs>
+  <Tab title="Development">
+    ```bash Development Setup
+    # Minimal development configuration
+    export ANTHROPIC_API_KEY="sk-ant-api03-your-dev-key"
+    export API_KEY="dev-key-123"
+    export LOG_LEVEL="DEBUG"
+    export HOST="localhost"
+    export PORT="8001"
+    ```
+  </Tab>
+  
+  <Tab title="Production">
+    ```bash Production Setup
+    # Production configuration with multiple clients
+    export ANTHROPIC_API_KEY="sk-ant-api03-your-prod-key"
+    export API_KEYS_FILE="/etc/blitzagent/api_keys.json"
+    export LOG_LEVEL="INFO"
+    export HOST="0.0.0.0"
+    export PORT="8001"
+    ```
+  </Tab>
+  
+  <Tab title="Docker">
+    ```dockerfile Dockerfile
+    FROM python:3.11-slim
+    
+    WORKDIR /app
+    COPY . .
+    RUN pip install -r requirements.txt
+    
+    # Set production defaults
+    ENV HOST=0.0.0.0
+    ENV PORT=8001
+    ENV LOG_LEVEL=INFO
+    ENV API_KEYS_FILE=/app/api_keys.json
+    
+    EXPOSE 8001
+    CMD ["python", "main.py"]
+    ```
+    
+    ```yaml docker-compose.yml
+    version: '3.8'
+    services:
+      blitzagent:
+        build: .
+        ports:
+          - "8001:8001"
+        environment:
+          - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+          - API_KEYS_FILE=/app/api_keys.json
+        volumes:
+          - ./api_keys.json:/app/api_keys.json:ro
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+    ```
+  </Tab>
+  
+  <Tab title="Kubernetes">
+    ```yaml Kubernetes Deployment
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: blitzagent-secrets
+    type: Opaque
+    stringData:
+      anthropic-api-key: "sk-ant-api03-your-key"
+      api-keys: |
+        {
+          "frontend": "fe_secure_key",
+          "mobile": "mb_secure_key",
+          "admin": "admin_secure_key"
+        }
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: blitzagent
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: blitzagent
+      template:
+        metadata:
+          labels:
+            app: blitzagent
+        spec:
+          containers:
+          - name: blitzagent
+            image: blitzagent:latest
+            ports:
+            - containerPort: 8001
+            env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: blitzagent-secrets
+                  key: anthropic-api-key
+            - name: API_KEYS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: blitzagent-secrets
+                  key: api-keys
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8001"
+            - name: LOG_LEVEL
+              value: "INFO"
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8001
+              initialDelaySeconds: 30
+              periodSeconds: 10
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8001
+              initialDelaySeconds: 5
+              periodSeconds: 5
+    ```
+  </Tab>
+</Tabs>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion icon="key" title="API Key Management">
+    **Strong Key Generation**:
+    ```bash
+    # Generate secure random keys
+    openssl rand -hex 32
+    python -c "import secrets; print(secrets.token_hex(32))"
+    ```
+    
+    **Key Rotation**:
+    - Rotate API keys regularly (monthly/quarterly)
+    - Use different keys for different environments
+    - Implement key versioning for smooth transitions
+    
+    **Storage**:
+    - Never commit keys to version control
+    - Use environment variables or secure secret management
+    - Restrict file permissions for key files (`chmod 600`)
+  </Accordion>
+  
+  <Accordion icon="network" title="Network Security">
+    **HTTPS/TLS**:
+    ```nginx
+    server {
+        listen 443 ssl;
+        server_name your-domain.com;
+        
+        ssl_certificate /path/to/cert.pem;
+        ssl_certificate_key /path/to/key.pem;
+        
+        location / {
+            proxy_pass http://localhost:8001;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+    
+    **Firewall Rules**:
+    - Only allow necessary ports (443 for HTTPS, 22 for SSH)
+    - Restrict access to management interfaces
+    - Use IP allowlisting for administrative access
+  </Accordion>
+  
+  <Accordion icon="monitor" title="Security Monitoring">
+    **Audit Logging**:
+    ```python
+    # Enable detailed request logging
+    import logging
+    
+    # Set up audit logger
+    audit_logger = logging.getLogger('audit')
+    audit_handler = logging.FileHandler('/var/log/blitzagent/audit.log')
+    audit_logger.addHandler(audit_handler)
+    
+    # Log all API requests
+    def log_request(request, client_info):
+        audit_logger.info({
+            'timestamp': datetime.now().isoformat(),
+            'client': client_info.get('client_name'),
+            'ip': request.client.host,
+            'query': request.json().get('query'),
+            'endpoint': request.url.path
+        })
+    ```
+    
+    **Rate Limiting**:
+    ```python
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    
+    limiter = Limiter(key_func=get_remote_address)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    
+    @app.post("/analyze")
+    @limiter.limit("10/minute")
+    async def analyze_endpoint(request: Request, ...):
+        # Analysis logic
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Authentication Testing
+
+Test your authentication setup with these commands:
+
+<CodeGroup>
+```bash Valid API Key Test
+# Should return 200 with analysis
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer your_valid_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Test query"}' \
+  -w "%{http_code}\n"
+```
+
+```bash Invalid API Key Test
+# Should return 401 Unauthorized
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer invalid_key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Test query"}' \
+  -w "%{http_code}\n"
+```
+
+```bash Missing API Key Test
+# Should return 401 Unauthorized
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Test query"}' \
+  -w "%{http_code}\n"
+```
+</CodeGroup>
+
+## Client SDK Examples
+
+<CodeGroup>
+```python Python Client
+class BlitzAgentClient:
+    def __init__(self, api_key: str, base_url: str = "http://localhost:8001"):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+    
+    async def analyze(self, query: str, extra_context: str = None):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/analyze",
+                headers=self.headers,
+                json={"query": query, "extra_context": extra_context}
+            )
+            response.raise_for_status()
+            return response.json()
+
+# Usage
+client = BlitzAgentClient("your_api_key")
+result = await client.analyze("What are LeBron's stats this season?")
+```
+
+```javascript JavaScript Client
+class BlitzAgentClient {
+  constructor(apiKey, baseUrl = 'http://localhost:8001') {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
+    this.headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async analyze(query, extraContext = null) {
+    const response = await fetch(`${this.baseUrl}/analyze`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        query: query,
+        extra_context: extraContext
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    return await response.json();
+  }
+}
+
+// Usage
+const client = new BlitzAgentClient('your_api_key');
+const result = await client.analyze("What are LeBron's stats this season?");
+```
+</CodeGroup>
+
+## Troubleshooting Authentication
+
+<AccordionGroup>
+  <Accordion icon="exclamation-triangle" title="401 Unauthorized">
+    **Possible causes**:
+    - Invalid or missing API key
+    - Incorrect authorization header format
+    - Expired or revoked API key
+    
+    **Solutions**:
+    1. Verify API key is correct
+    2. Check header format: `Authorization: Bearer YOUR_KEY`
+    3. Ensure API key is active and not expired
+  </Accordion>
+  
+  <Accordion icon="server" title="Configuration Errors">
+    **Possible causes**:
+    - Missing required environment variables
+    - Invalid JSON in API_KEYS_JSON
+    - Inaccessible API_KEYS_FILE
+    
+    **Solutions**:
+    1. Run configuration validation: `python -c "from config import Config; Config.validate()"`
+    2. Check environment variables: `env | grep -E "(ANTHROPIC|API_KEY)"`
+    3. Verify file permissions and existence
+  </Accordion>
+  
+  <Accordion icon="anthropic" title="Anthropic API Issues">
+    **Possible causes**:
+    - Invalid Anthropic API key
+    - Insufficient credits/quota
+    - API rate limiting
+    
+    **Solutions**:
+    1. Verify key at [Anthropic Console](https://console.anthropic.com/)
+    2. Check usage and billing
+    3. Implement exponential backoff for rate limits
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Explore the complete API documentation
+  </Card>
+  
+  <Card
+    title="Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    See authentication in real-world examples
+  </Card>
+  
+  <Card
+    title="Configuration"
+    icon="cog"
+    href="/configuration"
+  >
+    Advanced configuration options
+  </Card>
+  
+  <Card
+    title="Troubleshooting"
+    icon="wrench"
+    href="/troubleshooting"
+  >
+    Detailed troubleshooting guide
+  </Card>
+</CardGroup>

@@ -1,0 +1,513 @@
+---
+title: "POST /analyze/stream"
+description: "Stream real-time analysis events for sports queries"
+---
+
+# Stream Sports Analysis
+
+The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see BlitzAgent's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
+
+## Endpoint
+
+<CodeGroup>
+```bash Endpoint
+POST /analyze/stream
+```
+</CodeGroup>
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for API authentication
+  ```
+  Authorization: Bearer YOUR_API_KEY
+  ```
+</ParamField>
+
+## Request Body
+
+The request body is identical to the `/analyze` endpoint:
+
+<ParamField body="query" type="string" required>
+  The natural language sports analysis question or request.
+</ParamField>
+
+<ParamField body="extra_context" type="string" optional>
+  Additional context to include in the analysis.
+</ParamField>
+
+<ParamField body="image" type="string" optional>
+  Base64 encoded image URL to provide as visual context.
+</ParamField>
+
+## Response Format
+
+The response is a **Server-Sent Events (SSE)** stream where each event contains:
+
+<ResponseField name="event_type" type="string" required>
+  Type of event being streamed. Common types include:
+  - `analysis_start` - Analysis has begun
+  - `league_detection` - League automatically detected
+  - `tool_call` - MCP tool is being called
+  - `reasoning` - Claude is processing/reasoning
+  - `data_retrieval` - Fetching data from sources
+  - `analysis_complete` - Final analysis ready
+  - `error` - An error occurred
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Human-readable description of what's happening at this stage of the analysis.
+</ResponseField>
+
+<ResponseField name="data" type="object" optional>
+  Additional structured data related to the current event.
+  
+  <Expandable title="data">
+    <ResponseField name="query" type="string">
+      The original query being processed
+    </ResponseField>
+    
+    <ResponseField name="league" type="string">
+      Detected league (nba, mlb)
+    </ResponseField>
+    
+    <ResponseField name="tool_name" type="string">
+      Name of the MCP tool being called
+    </ResponseField>
+    
+    <ResponseField name="progress" type="number">
+      Progress percentage (0-100) when available
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="timestamp" type="string" required>
+  ISO timestamp of when this event occurred.
+</ResponseField>
+
+## Examples
+
+### Streaming NBA Analysis
+
+<RequestExample>
+```bash cURL
+curl -X POST "http://localhost:8001/analyze/stream" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "Compare LeBron James and Michael Jordan in playoff performances",
+    "extra_context": "Include advanced metrics and clutch performance"
+  }' \
+  --no-buffer
+```
+
+```python Python with SSE
+import httpx
+import json
+
+async def stream_analysis():
+    async with httpx.AsyncClient() as client:
+        async with client.stream(
+            "POST", 
+            "http://localhost:8001/analyze/stream",
+            headers={
+                "Authorization": "Bearer YOUR_API_KEY",
+                "Content-Type": "application/json"
+            },
+            json={
+                "query": "Compare LeBron James and Michael Jordan in playoff performances",
+                "extra_context": "Include advanced metrics and clutch performance"
+            }
+        ) as response:
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    try:
+                        event_data = json.loads(line[6:])  # Remove "data: " prefix
+                        print(f"[{event_data['event_type']}] {event_data['message']}")
+                        
+                        if event_data['event_type'] == 'analysis_complete':
+                            print(f"Final result: {event_data['data']['response']}")
+                            break
+                    except json.JSONDecodeError:
+                        continue
+
+# Run the streaming analysis
+await stream_analysis()
+```
+
+```javascript JavaScript with EventSource
+const streamAnalysis = () => {
+  fetch('http://localhost:8001/analyze/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer YOUR_API_KEY'
+    },
+    body: JSON.stringify({
+      query: "Compare LeBron James and Michael Jordan in playoff performances",
+      extra_context: "Include advanced metrics and clutch performance"
+    })
+  }).then(response => {
+    const reader = response.body.getReader();
+    
+    const readStream = () => {
+      reader.read().then(({ done, value }) => {
+        if (done) return;
+        
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+        
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+              console.log(`[${event.event_type}] ${event.message}`);
+              
+              if (event.event_type === 'analysis_complete') {
+                console.log('Final result:', event.data.response);
+                return;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        });
+        
+        readStream(); // Continue reading
+      });
+    };
+    
+    readStream();
+  });
+};
+
+streamAnalysis();
+```
+</RequestExample>
+
+<ResponseExample>
+```
+data: {"event_type": "analysis_start", "message": "Starting analysis of query: 'Compare LeBron James and Michael Jordan in playoff performances'", "data": {"query": "Compare LeBron James and Michael Jordan in playoff performances", "extra_context": "Include advanced metrics and clutch performance"}, "timestamp": "2024-01-15T10:30:00Z"}
+
+data: {"event_type": "league_detection", "message": "Detected league: NBA", "data": {"league": "nba", "confidence": 0.95}, "timestamp": "2024-01-15T10:30:01Z"}
+
+data: {"event_type": "tool_call", "message": "Searching NBA database for LeBron James playoff statistics", "data": {"tool_name": "query_database", "table": "playoff_stats"}, "timestamp": "2024-01-15T10:30:02Z"}
+
+data: {"event_type": "data_retrieval", "message": "Retrieved 284 playoff games for LeBron James", "data": {"records_found": 284, "years_covered": "2006-2024"}, "timestamp": "2024-01-15T10:30:04Z"}
+
+data: {"event_type": "tool_call", "message": "Searching NBA database for Michael Jordan playoff statistics", "data": {"tool_name": "query_database", "table": "playoff_stats"}, "timestamp": "2024-01-15T10:30:05Z"}
+
+data: {"event_type": "data_retrieval", "message": "Retrieved 179 playoff games for Michael Jordan", "data": {"records_found": 179, "years_covered": "1985-1998"}, "timestamp": "2024-01-15T10:30:07Z"}
+
+data: {"event_type": "reasoning", "message": "Analyzing clutch performance metrics and advanced statistics", "data": {"progress": 60}, "timestamp": "2024-01-15T10:30:09Z"}
+
+data: {"event_type": "tool_call", "message": "Calculating advanced playoff metrics for comparison", "data": {"tool_name": "calculate_advanced_stats", "metrics": ["PER", "BPM", "VORP"]}, "timestamp": "2024-01-15T10:30:11Z"}
+
+data: {"event_type": "reasoning", "message": "Synthesizing comprehensive comparison analysis", "data": {"progress": 90}, "timestamp": "2024-01-15T10:30:13Z"}
+
+data: {"event_type": "analysis_complete", "message": "Analysis completed successfully", "data": {"response": "**LeBron James vs Michael Jordan: Playoff Performance Comparison**\n\nThis comparison examines two of the greatest players in NBA history through their playoff performances...", "usage": {"total_tokens": 1247}}, "timestamp": "2024-01-15T10:30:15Z"}
+```
+</ResponseExample>
+
+### Streaming MLB Query
+
+<RequestExample>
+```bash cURL
+curl -X POST "http://localhost:8001/analyze/stream" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "Which pitcher has the best ERA in high-leverage situations this season?",
+    "extra_context": "Focus on relievers with at least 30 innings pitched"
+  }' \
+  --no-buffer
+```
+</RequestExample>
+
+## Event Types Reference
+
+<AccordionGroup>
+  <Accordion icon="play" title="analysis_start">
+    Indicates the beginning of the analysis process.
+    
+    **Typical data:**
+    - `query`: The original user query
+    - `extra_context`: Additional context provided
+    - `image`: Image data if provided
+  </Accordion>
+  
+  <Accordion icon="target" title="league_detection">
+    Shows when BlitzAgent has automatically detected the sport/league.
+    
+    **Typical data:**
+    - `league`: Detected league (nba, mlb)
+    - `confidence`: Detection confidence score (0-1)
+    - `reasoning`: Why this league was chosen
+  </Accordion>
+  
+  <Accordion icon="database" title="tool_call">
+    Indicates that an MCP tool is being called to retrieve or process data.
+    
+    **Typical data:**
+    - `tool_name`: Name of the tool being called
+    - `parameters`: Parameters passed to the tool
+    - `table`: Database table being queried (if applicable)
+  </Accordion>
+  
+  <Accordion icon="download" title="data_retrieval">
+    Shows successful data retrieval from various sources.
+    
+    **Typical data:**
+    - `records_found`: Number of records retrieved
+    - `source`: Data source (database, web, betting)
+    - `years_covered`: Time range of data
+  </Accordion>
+  
+  <Accordion icon="brain" title="reasoning">
+    Indicates Claude is processing and reasoning about the data.
+    
+    **Typical data:**
+    - `progress`: Analysis progress percentage
+    - `stage`: Current reasoning stage
+    - `focus`: What aspect is being analyzed
+  </Accordion>
+  
+  <Accordion icon="check" title="analysis_complete">
+    Final event containing the complete analysis result.
+    
+    **Typical data:**
+    - `response`: Complete analysis response
+    - `usage`: Token usage information
+    - `duration`: Total analysis time
+  </Accordion>
+  
+  <Accordion icon="exclamation-triangle" title="error">
+    Indicates an error occurred during analysis.
+    
+    **Typical data:**
+    - `error_type`: Type of error
+    - `error_message`: Detailed error description
+    - `retry_possible`: Whether the request can be retried
+  </Accordion>
+</AccordionGroup>
+
+## Implementation Examples
+
+### React Component with Streaming
+
+```javascript React Hook
+import { useState, useEffect } from 'react';
+
+const useStreamingAnalysis = (apiKey) => {
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [finalResult, setFinalResult] = useState(null);
+
+  const streamAnalysis = async (query, extraContext = null) => {
+    setIsLoading(true);
+    setEvents([]);
+    setFinalResult(null);
+
+    try {
+      const response = await fetch('/analyze/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ query, extra_context: extraContext })
+      });
+
+      const reader = response.body.getReader();
+      
+      const readStream = async () => {
+        const { done, value } = await reader.read();
+        if (done) return;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+              setEvents(prev => [...prev, event]);
+              
+              if (event.event_type === 'analysis_complete') {
+                setFinalResult(event.data.response);
+                setIsLoading(false);
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        });
+
+        if (!done) readStream();
+      };
+
+      readStream();
+    } catch (error) {
+      console.error('Streaming error:', error);
+      setIsLoading(false);
+    }
+  };
+
+  return { events, isLoading, finalResult, streamAnalysis };
+};
+
+// Usage in component
+const SportsAnalysis = () => {
+  const { events, isLoading, finalResult, streamAnalysis } = useStreamingAnalysis('your_api_key');
+
+  return (
+    <div>
+      <button 
+        onClick={() => streamAnalysis("What are LeBron's stats this season?")}
+        disabled={isLoading}
+      >
+        Analyze
+      </button>
+      
+      <div className="events">
+        {events.map((event, index) => (
+          <div key={index} className={`event ${event.event_type}`}>
+            <strong>[{event.event_type}]</strong> {event.message}
+          </div>
+        ))}
+      </div>
+      
+      {finalResult && (
+        <div className="final-result">
+          <h3>Analysis Complete</h3>
+          <p>{finalResult}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Python AsyncIO with Real-time Processing
+
+```python Python AsyncIO
+import asyncio
+import json
+import httpx
+from typing import AsyncGenerator, Dict, Any
+
+class StreamingAnalysisClient:
+    def __init__(self, api_key: str, base_url: str = "http://localhost:8001"):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+    
+    async def stream_analysis(
+        self, 
+        query: str, 
+        extra_context: str = None
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Stream analysis events in real-time"""
+        payload = {"query": query}
+        if extra_context:
+            payload["extra_context"] = extra_context
+        
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/analyze/stream",
+                headers=self.headers,
+                json=payload
+            ) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        try:
+                            event = json.loads(line[6:])
+                            yield event
+                            
+                            if event['event_type'] == 'analysis_complete':
+                                break
+                        except json.JSONDecodeError:
+                            continue
+
+# Usage
+async def main():
+    client = StreamingAnalysisClient("your_api_key")
+    
+    async for event in client.stream_analysis(
+        "Compare Shohei Ohtani's pitching and hitting stats",
+        "Focus on his two-way player uniqueness"
+    ):
+        print(f"[{event['timestamp']}] {event['event_type']}: {event['message']}")
+        
+        if event['event_type'] == 'analysis_complete':
+            print("\nFinal Analysis:")
+            print(event['data']['response'])
+
+asyncio.run(main())
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion icon="zap" title="When to Use Streaming">
+    - **Complex queries** that may take 10+ seconds
+    - **User interfaces** where you want to show progress
+    - **Debugging** to understand the analysis process
+    - **Real-time dashboards** with live updates
+  </Accordion>
+  
+  <Accordion icon="code" title="Implementation Tips">
+    - Always handle JSON parsing errors gracefully
+    - Buffer events for smooth UI updates
+    - Show progress indicators based on event types
+    - Implement proper error handling for stream interruptions
+  </Accordion>
+  
+  <Accordion icon="performance" title="Performance Considerations">
+    - Streaming has slight overhead compared to `/analyze`
+    - Use connection pooling for multiple requests
+    - Consider caching for repeated similar queries
+    - Handle client disconnections properly
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+Stream errors are sent as regular events with `event_type: "error"`:
+
+```json
+{
+  "event_type": "error",
+  "message": "MCP server connection failed",
+  "data": {
+    "error_type": "connection_error",
+    "error_code": "MCP_UNAVAILABLE",
+    "retry_possible": true
+  },
+  "timestamp": "2024-01-15T10:30:10Z"
+}
+```
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card
+    title="POST /analyze"
+    icon="search"
+    href="/api-reference/analyze"
+  >
+    Standard analysis endpoint for simpler queries
+  </Card>
+  
+  <Card
+    title="GET /health"
+    icon="heart"
+    href="/api-reference/health"
+  >
+    Check server health before starting streams
+  </Card>
+</CardGroup>

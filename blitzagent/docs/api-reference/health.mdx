@@ -1,0 +1,511 @@
+---
+title: "GET /health"
+description: "Check server health and MCP connection status"
+---
+
+# Health Check
+
+The `/health` endpoint provides a quick way to check if BlitzAgent is running properly and if all required services are available.
+
+## Endpoint
+
+<CodeGroup>
+```bash Endpoint
+GET /health
+```
+</CodeGroup>
+
+## Authentication
+
+<Note>
+  The health check endpoint does not require authentication and can be called without an API key.
+</Note>
+
+## Response
+
+<ResponseField name="status" type="string" required>
+  Overall health status of the service. Possible values:
+  - `healthy` - All systems operational
+  - `degraded` - Some non-critical issues
+  - `unhealthy` - Critical issues present
+</ResponseField>
+
+<ResponseField name="timestamp" type="string" required>
+  ISO timestamp of when the health check was performed.
+</ResponseField>
+
+<ResponseField name="services" type="object" required>
+  Status of individual service components.
+  
+  <Expandable title="services">
+    <ResponseField name="api" type="object">
+      FastAPI server status
+      
+      <Expandable title="api">
+        <ResponseField name="status" type="string">
+          API server status (`up` or `down`)
+        </ResponseField>
+        <ResponseField name="uptime" type="number">
+          Server uptime in seconds
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="mcp_server" type="object">
+      MCP server connection status
+      
+      <Expandable title="mcp_server">
+        <ResponseField name="status" type="string">
+          MCP connection status (`connected`, `disconnected`, or `error`)
+        </ResponseField>
+        <ResponseField name="last_check" type="string">
+          Timestamp of last successful MCP operation
+        </ResponseField>
+        <ResponseField name="tools_available" type="number">
+          Number of MCP tools available
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="anthropic" type="object">
+      Claude API connection status
+      
+      <Expandable title="anthropic">
+        <ResponseField name="status" type="string">
+          Anthropic API status (`available` or `unavailable`)
+        </ResponseField>
+        <ResponseField name="model" type="string">
+          Current Claude model being used
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="version" type="string" optional>
+  BlitzAgent version information
+</ResponseField>
+
+## Examples
+
+### Healthy System
+
+<RequestExample>
+```bash cURL
+curl -X GET "http://localhost:8001/health"
+```
+
+```python Python
+import httpx
+import asyncio
+
+async def check_health():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:8001/health")
+        return response.json()
+
+health_status = await check_health()
+print(f"Status: {health_status['status']}")
+```
+
+```javascript JavaScript
+const checkHealth = async () => {
+  const response = await fetch('http://localhost:8001/health');
+  const health = await response.json();
+  console.log(`Status: ${health.status}`);
+  return health;
+};
+
+const health = await checkHealth();
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "services": {
+    "api": {
+      "status": "up",
+      "uptime": 3600
+    },
+    "mcp_server": {
+      "status": "connected",
+      "last_check": "2024-01-15T10:29:55Z",
+      "tools_available": 12
+    },
+    "anthropic": {
+      "status": "available",
+      "model": "claude-sonnet-4-20250514"
+    }
+  },
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+### Degraded System
+
+<ResponseExample>
+```json
+{
+  "status": "degraded",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "services": {
+    "api": {
+      "status": "up",
+      "uptime": 3600
+    },
+    "mcp_server": {
+      "status": "connected",
+      "last_check": "2024-01-15T10:25:00Z",
+      "tools_available": 8,
+      "warning": "Some database tools unavailable"
+    },
+    "anthropic": {
+      "status": "available",
+      "model": "claude-sonnet-4-20250514"
+    }
+  },
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+### Unhealthy System
+
+<ResponseExample>
+```json
+{
+  "status": "unhealthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "services": {
+    "api": {
+      "status": "up",
+      "uptime": 3600
+    },
+    "mcp_server": {
+      "status": "disconnected",
+      "last_check": "2024-01-15T10:20:00Z",
+      "tools_available": 0,
+      "error": "Connection timeout to MCP server"
+    },
+    "anthropic": {
+      "status": "unavailable",
+      "error": "Invalid API key"
+    }
+  },
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+## Status Interpretation
+
+<AccordionGroup>
+  <Accordion icon="check-circle" title="healthy">
+    **All systems operational**
+    - API server is running
+    - MCP server is connected with all tools available
+    - Anthropic API is accessible
+    - Sports analysis requests will work normally
+  </Accordion>
+  
+  <Accordion icon="exclamation-triangle" title="degraded">
+    **Some non-critical issues present**
+    - API server is running
+    - MCP server may have limited functionality
+    - Some data sources might be temporarily unavailable
+    - Most analysis requests will still work, but some features may be limited
+  </Accordion>
+  
+  <Accordion icon="x-circle" title="unhealthy">
+    **Critical issues prevent normal operation**
+    - MCP server is disconnected, or
+    - Anthropic API is unavailable, or
+    - Other critical services are down
+    - Analysis requests will likely fail
+  </Accordion>
+</AccordionGroup>
+
+## Using Health Checks
+
+### Load Balancer Health Checks
+
+Configure your load balancer to use the health endpoint:
+
+<CodeGroup>
+```yaml NGINX
+upstream blitzagent {
+    server localhost:8001;
+}
+
+server {
+    location /health {
+        proxy_pass http://blitzagent/health;
+        access_log off;
+    }
+    
+    location / {
+        proxy_pass http://blitzagent;
+        
+        # Only route if healthy
+        if ($upstream_status != 200) {
+            return 503;
+        }
+    }
+}
+```
+
+```yaml Kubernetes
+apiVersion: v1
+kind: Service
+metadata:
+  name: blitzagent-service
+spec:
+  selector:
+    app: blitzagent
+  ports:
+  - port: 8001
+    targetPort: 8001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blitzagent
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: blitzagent
+  template:
+    metadata:
+      labels:
+        app: blitzagent
+    spec:
+      containers:
+      - name: blitzagent
+        image: blitzagent:latest
+        ports:
+        - containerPort: 8001
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+```
+
+```yaml Docker Compose
+version: '3.8'
+services:
+  blitzagent:
+    image: blitzagent:latest
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - API_KEY=${API_KEY}
+```
+</CodeGroup>
+
+### Application Health Monitoring
+
+<CodeGroup>
+```python Python Monitoring
+import httpx
+import asyncio
+import logging
+from datetime import datetime
+
+class BlitzAgentMonitor:
+    def __init__(self, base_url: str = "http://localhost:8001"):
+        self.base_url = base_url
+        self.logger = logging.getLogger(__name__)
+    
+    async def check_health(self) -> dict:
+        """Check BlitzAgent health status"""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.base_url}/health",
+                    timeout=10.0
+                )
+                return response.json()
+        except Exception as e:
+            self.logger.error(f"Health check failed: {e}")
+            return {"status": "unhealthy", "error": str(e)}
+    
+    async def monitor_continuously(self, interval: int = 60):
+        """Continuously monitor health status"""
+        while True:
+            health = await self.check_health()
+            status = health.get("status", "unknown")
+            
+            if status == "healthy":
+                self.logger.info("✅ BlitzAgent is healthy")
+            elif status == "degraded":
+                self.logger.warning("⚠️ BlitzAgent is degraded")
+            else:
+                self.logger.error("❌ BlitzAgent is unhealthy")
+                # Send alert to monitoring system
+                await self.send_alert(health)
+            
+            await asyncio.sleep(interval)
+    
+    async def send_alert(self, health_data: dict):
+        """Send alert when service is unhealthy"""
+        # Implement your alerting logic here
+        pass
+
+# Usage
+monitor = BlitzAgentMonitor()
+await monitor.monitor_continuously(interval=30)
+```
+
+```javascript JavaScript Monitoring
+class BlitzAgentMonitor {
+  constructor(baseUrl = 'http://localhost:8001') {
+    this.baseUrl = baseUrl;
+  }
+
+  async checkHealth() {
+    try {
+      const response = await fetch(`${this.baseUrl}/health`, {
+        timeout: 10000
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return { status: 'unhealthy', error: error.message };
+    }
+  }
+
+  async monitorContinuously(interval = 60000) {
+    setInterval(async () => {
+      const health = await this.checkHealth();
+      const status = health.status || 'unknown';
+
+      switch (status) {
+        case 'healthy':
+          console.log('✅ BlitzAgent is healthy');
+          break;
+        case 'degraded':
+          console.warn('⚠️ BlitzAgent is degraded');
+          break;
+        default:
+          console.error('❌ BlitzAgent is unhealthy');
+          // Send alert
+          await this.sendAlert(health);
+      }
+    }, interval);
+  }
+
+  async sendAlert(healthData) {
+    // Implement your alerting logic here
+  }
+}
+
+// Usage
+const monitor = new BlitzAgentMonitor();
+monitor.monitorContinuously(30000); // Check every 30 seconds
+```
+</CodeGroup>
+
+## Common Issues and Solutions
+
+<AccordionGroup>
+  <Accordion icon="database" title="MCP Server Disconnected">
+    **Symptoms:**
+    - `mcp_server.status` is `disconnected` or `error`
+    - `tools_available` is 0
+    
+    **Solutions:**
+    1. Check internet connectivity
+    2. Verify MCP server credentials in environment variables
+    3. Restart BlitzAgent service
+    4. Check MCP server logs for connection issues
+  </Accordion>
+  
+  <Accordion icon="key" title="Anthropic API Unavailable">
+    **Symptoms:**
+    - `anthropic.status` is `unavailable`
+    - Error mentions API key issues
+    
+    **Solutions:**
+    1. Verify `ANTHROPIC_API_KEY` environment variable
+    2. Check API key validity at [Anthropic Console](https://console.anthropic.com/)
+    3. Ensure sufficient API credits/quota
+    4. Check for API rate limiting
+  </Accordion>
+  
+  <Accordion icon="server" title="API Server Issues">
+    **Symptoms:**
+    - Cannot reach `/health` endpoint
+    - Connection timeouts or errors
+    
+    **Solutions:**
+    1. Check if BlitzAgent process is running
+    2. Verify port 8001 is not blocked by firewall
+    3. Check server logs for startup errors
+    4. Verify environment variables are set correctly
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring Best Practices
+
+<AccordionGroup>
+  <Accordion icon="chart-line" title="Monitoring Frequency">
+    - **Production**: Check every 30-60 seconds
+    - **Development**: Check every 2-5 minutes
+    - **Load balancers**: Check every 5-10 seconds
+    - Implement exponential backoff for failed checks
+  </Accordion>
+  
+  <Accordion icon="bell" title="Alerting Strategy">
+    - Alert immediately on `unhealthy` status
+    - Alert after 5 minutes of `degraded` status
+    - Include health check response in alerts
+    - Set up escalation for persistent issues
+  </Accordion>
+  
+  <Accordion icon="history" title="Health History">
+    - Log all health check responses
+    - Track uptime and downtime periods
+    - Monitor performance trends over time
+    - Set up dashboards for health metrics
+  </Accordion>
+</AccordionGroup>
+
+## Related Information
+
+<CardGroup cols={2}>
+  <Card
+    title="Configuration Guide"
+    icon="cog"
+    href="/configuration"
+  >
+    Learn how to configure BlitzAgent for optimal health
+  </Card>
+  
+  <Card
+    title="Troubleshooting"
+    icon="wrench"
+    href="/troubleshooting"
+  >
+    Detailed troubleshooting guide for common issues
+  </Card>
+</CardGroup>

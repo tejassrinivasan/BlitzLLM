@@ -1,0 +1,789 @@
+---
+title: "Configuration"
+description: "Advanced configuration options for BlitzAgent deployment and optimization"
+---
+
+# Configuration
+
+This guide covers advanced configuration options for BlitzAgent, including production deployment settings, performance optimization, and customization options.
+
+## Environment Configuration
+
+### Complete Environment Variables
+
+<ParamField header="ANTHROPIC_API_KEY" type="string" required>
+  Your Anthropic API key for Claude 4 Sonnet access
+  
+  ```bash
+  export ANTHROPIC_API_KEY="sk-ant-api03-your-key-here"
+  ```
+</ParamField>
+
+<ParamField header="API_KEY" type="string">
+  Single API key for client authentication (mutually exclusive with API_KEYS_JSON/FILE)
+  
+  ```bash
+  export API_KEY="your_secure_api_key"
+  ```
+</ParamField>
+
+<ParamField header="API_KEYS_JSON" type="string">
+  JSON string with multiple client API keys
+  
+  ```bash
+  export API_KEYS_JSON='{"client1": "key1", "client2": "key2"}'
+  ```
+</ParamField>
+
+<ParamField header="API_KEYS_FILE" type="string">
+  Path to JSON file containing multiple client API keys
+  
+  ```bash
+  export API_KEYS_FILE="/etc/blitzagent/api_keys.json"
+  ```
+  
+  **Default**: `api_keys.json`
+</ParamField>
+
+<ParamField header="HOST" type="string">
+  Server host binding address
+  
+  ```bash
+  export HOST="0.0.0.0"  # Production
+  export HOST="localhost"  # Development
+  ```
+  
+  **Default**: `0.0.0.0`
+</ParamField>
+
+<ParamField header="PORT" type="integer">
+  Server port number
+  
+  ```bash
+  export PORT="8001"
+  ```
+  
+  **Default**: `8001`
+</ParamField>
+
+<ParamField header="LOG_LEVEL" type="string">
+  Logging verbosity level
+  
+  ```bash
+  export LOG_LEVEL="INFO"
+  ```
+  
+  **Options**: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
+  
+  **Default**: `INFO`
+</ParamField>
+
+<ParamField header="MCP_COMMAND" type="string">
+  Command to start the MCP server
+  
+  ```bash
+  export MCP_COMMAND="blitz-agent-mcp"
+  ```
+  
+  **Default**: `blitz-agent-mcp`
+</ParamField>
+
+## Production Configuration
+
+### Docker Deployment
+
+<CodeGroup>
+```dockerfile Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd -m -u 1000 blitzagent && \
+    chown -R blitzagent:blitzagent /app
+USER blitzagent
+
+# Set production environment defaults
+ENV HOST=0.0.0.0
+ENV PORT=8001
+ENV LOG_LEVEL=INFO
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8001/health || exit 1
+
+EXPOSE 8001
+
+CMD ["python", "main.py"]
+```
+
+```yaml docker-compose.yml
+version: '3.8'
+
+services:
+  blitzagent:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - API_KEYS_FILE=/app/config/api_keys.json
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./config/api_keys.json:/app/config/api_keys.json:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - blitzagent
+    restart: unless-stopped
+```
+
+```nginx nginx.conf
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream blitzagent {
+        server blitzagent:8001;
+    }
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/m;
+
+    server {
+        listen 80;
+        server_name your-domain.com;
+        return 301 https://$server_name$request_uri;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name your-domain.com;
+
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+
+        # Security headers
+        add_header X-Frame-Options DENY;
+        add_header X-Content-Type-Options nosniff;
+        add_header X-XSS-Protection "1; mode=block";
+
+        # API endpoints
+        location /analyze {
+            limit_req zone=api burst=5 nodelay;
+            proxy_pass http://blitzagent;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 300s;
+        }
+
+        location /health {
+            proxy_pass http://blitzagent;
+            access_log off;
+        }
+
+        # Documentation
+        location /docs {
+            proxy_pass http://blitzagent;
+            proxy_set_header Host $host;
+        }
+    }
+}
+```
+</CodeGroup>
+
+### Kubernetes Deployment
+
+<CodeGroup>
+```yaml deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blitzagent
+  labels:
+    app: blitzagent
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: blitzagent
+  template:
+    metadata:
+      labels:
+        app: blitzagent
+    spec:
+      containers:
+      - name: blitzagent
+        image: blitzagent:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: blitzagent-secrets
+              key: anthropic-api-key
+        - name: API_KEYS_JSON
+          valueFrom:
+            secretKeyRef:
+              name: blitzagent-secrets
+              key: api-keys
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8001"
+        - name: LOG_LEVEL
+          value: "INFO"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blitzagent-service
+spec:
+  selector:
+    app: blitzagent
+  ports:
+  - port: 8001
+    targetPort: 8001
+  type: ClusterIP
+```
+
+```yaml secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: blitzagent-secrets
+type: Opaque
+stringData:
+  anthropic-api-key: "sk-ant-api03-your-actual-key"
+  api-keys: |
+    {
+      "frontend": "fe_production_key",
+      "mobile": "mb_production_key",
+      "admin": "admin_production_key"
+    }
+```
+
+```yaml ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blitzagent-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - api.yourblitzagent.com
+    secretName: blitzagent-tls
+  rules:
+  - host: api.yourblitzagent.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: blitzagent-service
+            port:
+              number: 8001
+```
+</CodeGroup>
+
+## Performance Optimization
+
+### Resource Configuration
+
+<AccordionGroup>
+  <Accordion icon="server" title="Memory Configuration">
+    **Recommended Memory Allocation**:
+    - **Development**: 512MB minimum
+    - **Production**: 1GB recommended, 2GB for high traffic
+    - **High Load**: 4GB+ for enterprise usage
+    
+    **Memory Optimization**:
+    ```python
+    # Custom configuration for high-memory environments
+    import gc
+    import os
+    
+    # Increase garbage collection frequency for memory efficiency
+    gc.set_threshold(700, 10, 10)
+    
+    # Configure for production memory usage
+    os.environ['PYTHONMALLOC'] = 'malloc'
+    ```
+  </Accordion>
+  
+  <Accordion icon="zap" title="CPU Optimization">
+    **CPU Recommendations**:
+    - **Minimum**: 1 CPU core
+    - **Recommended**: 2-4 CPU cores
+    - **High Performance**: 8+ cores for concurrent requests
+    
+    **AsyncIO Configuration**:
+    ```python
+    # Optimize for high concurrency
+    import asyncio
+    import uvloop  # Optional: faster event loop
+    
+    # Use uvloop for better performance (Unix only)
+    if hasattr(asyncio, 'set_event_loop_policy'):
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    ```
+  </Accordion>
+  
+  <Accordion icon="clock" title="Timeout Configuration">
+    **Request Timeouts**:
+    ```python
+    # Custom timeout configuration
+    ANTHROPIC_TIMEOUT = 60  # Claude API timeout
+    MCP_TIMEOUT = 30        # MCP server timeout
+    HTTP_TIMEOUT = 120      # Overall request timeout
+    ```
+    
+    **Environment Variables**:
+    ```bash
+    export ANTHROPIC_TIMEOUT=60
+    export MCP_TIMEOUT=30
+    export HTTP_TIMEOUT=120
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Caching Configuration
+
+<CodeGroup>
+```python In-Memory Caching
+# Add to main.py for basic caching
+from functools import lru_cache
+import time
+
+class SimpleCache:
+    def __init__(self, max_size=1000, ttl=300):  # 5 minute TTL
+        self.cache = {}
+        self.max_size = max_size
+        self.ttl = ttl
+    
+    def get(self, key):
+        if key in self.cache:
+            value, timestamp = self.cache[key]
+            if time.time() - timestamp < self.ttl:
+                return value
+            else:
+                del self.cache[key]
+        return None
+    
+    def set(self, key, value):
+        if len(self.cache) >= self.max_size:
+            # Remove oldest entry
+            oldest_key = min(self.cache.keys(), key=lambda k: self.cache[k][1])
+            del self.cache[oldest_key]
+        
+        self.cache[key] = (value, time.time())
+
+# Usage in analysis
+cache = SimpleCache()
+
+async def cached_analysis(query: str):
+    cache_key = f"analysis:{hash(query)}"
+    cached_result = cache.get(cache_key)
+    
+    if cached_result:
+        return cached_result
+    
+    result = await perform_analysis(query)
+    cache.set(cache_key, result)
+    return result
+```
+
+```yaml Redis Caching (Docker Compose)
+version: '3.8'
+
+services:
+  blitzagent:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+```
+</CodeGroup>
+
+## Monitoring and Observability
+
+### Logging Configuration
+
+<CodeGroup>
+```python Advanced Logging
+import logging
+import logging.handlers
+import json
+from datetime import datetime
+
+# Custom JSON formatter
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_entry = {
+            'timestamp': datetime.fromtimestamp(record.created).isoformat(),
+            'level': record.levelname,
+            'message': record.getMessage(),
+            'module': record.module,
+            'function': record.funcName,
+            'line': record.lineno
+        }
+        
+        if hasattr(record, 'query'):
+            log_entry['query'] = record.query
+        if hasattr(record, 'client'):
+            log_entry['client'] = record.client
+        if hasattr(record, 'duration'):
+            log_entry['duration_ms'] = record.duration
+            
+        return json.dumps(log_entry)
+
+# Configure structured logging
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Console handler with JSON formatting
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(JSONFormatter())
+    logger.addHandler(console_handler)
+    
+    # File handler with rotation
+    file_handler = logging.handlers.RotatingFileHandler(
+        'logs/blitzagent.log',
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=5
+    )
+    file_handler.setFormatter(JSONFormatter())
+    logger.addHandler(file_handler)
+    
+    return logger
+```
+
+```yaml Prometheus Monitoring
+# Add to docker-compose.yml
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:
+```
+</CodeGroup>
+
+### Health Check Configuration
+
+<CodeGroup>
+```python Custom Health Checks
+# Enhanced health check endpoint
+from datetime import datetime, timedelta
+
+class HealthChecker:
+    def __init__(self):
+        self.last_mcp_check = None
+        self.last_anthropic_check = None
+        self.check_interval = timedelta(minutes=5)
+    
+    async def comprehensive_health_check(self):
+        health_status = {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "services": {},
+            "metrics": {}
+        }
+        
+        # Check MCP server
+        mcp_status = await self.check_mcp_server()
+        health_status["services"]["mcp_server"] = mcp_status
+        
+        # Check Anthropic API
+        anthropic_status = await self.check_anthropic_api()
+        health_status["services"]["anthropic"] = anthropic_status
+        
+        # Check system resources
+        system_metrics = await self.get_system_metrics()
+        health_status["metrics"] = system_metrics
+        
+        # Determine overall status
+        if any(service.get("status") == "error" for service in health_status["services"].values()):
+            health_status["status"] = "unhealthy"
+        elif any(service.get("status") == "warning" for service in health_status["services"].values()):
+            health_status["status"] = "degraded"
+        
+        return health_status
+```
+
+```bash Health Check Scripts
+#!/bin/bash
+# health_check.sh - External health monitoring script
+
+API_KEY="your_api_key"
+BASE_URL="http://localhost:8001"
+
+# Check basic health endpoint
+HEALTH_RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/health.json "$BASE_URL/health")
+HEALTH_CODE=${HEALTH_RESPONSE: -3}
+
+if [ "$HEALTH_CODE" != "200" ]; then
+    echo "CRITICAL: Health check failed with status $HEALTH_CODE"
+    exit 2
+fi
+
+# Check if services are healthy
+STATUS=$(jq -r '.status' /tmp/health.json)
+
+case $STATUS in
+    "healthy")
+        echo "OK: All services healthy"
+        exit 0
+        ;;
+    "degraded")
+        echo "WARNING: Some services degraded"
+        exit 1
+        ;;
+    "unhealthy")
+        echo "CRITICAL: Services unhealthy"
+        exit 2
+        ;;
+    *)
+        echo "UNKNOWN: Unknown status $STATUS"
+        exit 3
+        ;;
+esac
+```
+</CodeGroup>
+
+## Security Configuration
+
+### API Security
+
+<AccordionGroup>
+  <Accordion icon="shield" title="API Key Security">
+    **Key Generation**:
+    ```bash
+    # Generate secure API keys
+    openssl rand -hex 32
+    python -c "import secrets; print(secrets.token_urlsafe(32))"
+    ```
+    
+    **Key Storage**:
+    ```bash
+    # Secure file permissions
+    chmod 600 /etc/blitzagent/api_keys.json
+    chown blitzagent:blitzagent /etc/blitzagent/api_keys.json
+    ```
+    
+    **Key Rotation**:
+    ```python
+    # Graceful key rotation support
+    {
+        "client1": {
+            "current": "new_key_123",
+            "previous": "old_key_456",
+            "expires": "2024-02-01T00:00:00Z"
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="network" title="Network Security">
+    **Firewall Rules**:
+    ```bash
+    # Ubuntu/Debian UFW configuration
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow ssh
+    ufw allow 443/tcp
+    ufw allow from 10.0.0.0/8 to any port 8001  # Internal only
+    ufw enable
+    ```
+    
+    **TLS Configuration**:
+    ```nginx
+    # Strong TLS configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Environment-Specific Configurations
+
+<Tabs>
+  <Tab title="Development">
+    ```bash
+    # Development environment
+    export ANTHROPIC_API_KEY="sk-ant-api03-dev-key"
+    export API_KEY="dev-key-12345"
+    export HOST="localhost"
+    export PORT="8001"
+    export LOG_LEVEL="DEBUG"
+    
+    # Development-specific settings
+    export ANTHROPIC_TIMEOUT="30"
+    export MCP_TIMEOUT="15"
+    export ENABLE_DEBUG_TOOLS="true"
+    ```
+  </Tab>
+  
+  <Tab title="Staging">
+    ```bash
+    # Staging environment
+    export ANTHROPIC_API_KEY="sk-ant-api03-staging-key"
+    export API_KEYS_FILE="/etc/blitzagent/staging_keys.json"
+    export HOST="0.0.0.0"
+    export PORT="8001"
+    export LOG_LEVEL="INFO"
+    
+    # Staging-specific settings
+    export ANTHROPIC_TIMEOUT="45"
+    export MCP_TIMEOUT="20"
+    export RATE_LIMIT_ENABLED="true"
+    ```
+  </Tab>
+  
+  <Tab title="Production">
+    ```bash
+    # Production environment
+    export ANTHROPIC_API_KEY="sk-ant-api03-prod-key"
+    export API_KEYS_FILE="/etc/blitzagent/prod_keys.json"
+    export HOST="0.0.0.0"
+    export PORT="8001"
+    export LOG_LEVEL="WARNING"
+    
+    # Production-specific settings
+    export ANTHROPIC_TIMEOUT="60"
+    export MCP_TIMEOUT="30"
+    export RATE_LIMIT_ENABLED="true"
+    export MONITORING_ENABLED="true"
+    export CACHE_ENABLED="true"
+    ```
+  </Tab>
+</Tabs>
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Complete authentication and security setup guide
+  </Card>
+  
+  <Card
+    title="Troubleshooting"
+    icon="wrench"
+    href="/troubleshooting"
+  >
+    Detailed troubleshooting for configuration issues
+  </Card>
+  
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    API documentation with configuration examples
+  </Card>
+  
+  <Card
+    title="Health Monitoring"
+    icon="heart"
+    href="/api-reference/health"
+  >
+    Health check endpoint for monitoring systems
+  </Card>
+</CardGroup>

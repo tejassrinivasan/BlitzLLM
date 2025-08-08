@@ -1,0 +1,755 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions for BlitzAgent deployment and operation"
+---
+
+# Troubleshooting Guide
+
+This comprehensive troubleshooting guide helps you diagnose and resolve common issues with BlitzAgent installation, configuration, and operation.
+
+## Quick Diagnostics
+
+Start with these basic diagnostic steps:
+
+<Steps>
+  <Step title="Check Server Status">
+    ```bash
+    curl -X GET "http://localhost:8001/health"
+    ```
+    This should return a 200 status with health information.
+  </Step>
+  
+  <Step title="Verify Environment Variables">
+    ```bash
+    python -c "from config import Config; Config.validate(); print('✅ Configuration valid')"
+    ```
+    This validates all required environment variables.
+  </Step>
+  
+  <Step title="Test Basic Analysis">
+    ```bash
+    curl -X POST "http://localhost:8001/analyze" \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "Test query"}'
+    ```
+    This tests end-to-end functionality.
+  </Step>
+</Steps>
+
+## Common Issues and Solutions
+
+### Installation and Startup Issues
+
+<AccordionGroup>
+  <Accordion icon="exclamation-triangle" title="Dependencies Installation Failed">
+    **Symptoms**:
+    - `pip install -r requirements.txt` fails
+    - Import errors when starting BlitzAgent
+    - ModuleNotFoundError exceptions
+    
+    **Common Causes**:
+    - Python version incompatibility
+    - Missing system dependencies
+    - Network connectivity issues
+    
+    **Solutions**:
+    ```bash
+    # Check Python version (must be 3.9+)
+    python --version
+    
+    # Upgrade pip and setuptools
+    pip install --upgrade pip setuptools wheel
+    
+    # Install system dependencies (Ubuntu/Debian)
+    sudo apt-get update
+    sudo apt-get install python3-dev build-essential
+    
+    # Install system dependencies (macOS)
+    brew install python
+    xcode-select --install
+    
+    # Clean install
+    pip cache purge
+    pip install -r requirements.txt --no-cache-dir
+    
+    # Alternative: Use virtual environment
+    python -m venv venv
+    source venv/bin/activate  # Linux/macOS
+    # or
+    venv\Scripts\activate  # Windows
+    pip install -r requirements.txt
+    ```
+  </Accordion>
+  
+  <Accordion icon="server" title="Server Won't Start">
+    **Symptoms**:
+    - `python main.py` exits immediately
+    - "Address already in use" errors
+    - Permission denied errors
+    
+    **Common Causes**:
+    - Port 8001 already in use
+    - Missing environment variables
+    - Insufficient permissions
+    
+    **Solutions**:
+    ```bash
+    # Check if port is in use
+    netstat -tulpn | grep :8001
+    # or
+    lsof -i :8001
+    
+    # Kill process using the port
+    sudo kill -9 $(lsof -t -i:8001)
+    
+    # Use different port
+    export PORT=8002
+    python main.py
+    
+    # Check environment variables
+    env | grep -E "(ANTHROPIC|API_KEY)"
+    
+    # Run with debug logging
+    export LOG_LEVEL=DEBUG
+    python main.py
+    
+    # Check file permissions
+    ls -la main.py
+    chmod +x main.py
+    ```
+  </Accordion>
+  
+  <Accordion icon="key" title="Configuration Validation Errors">
+    **Symptoms**:
+    - "ANTHROPIC_API_KEY environment variable is required"
+    - "API keys are required" errors
+    - Configuration validation failures
+    
+    **Common Causes**:
+    - Missing required environment variables
+    - Invalid API key format
+    - Inaccessible API keys file
+    
+    **Solutions**:
+    ```bash
+    # Verify Anthropic API key
+    echo $ANTHROPIC_API_KEY
+    # Should start with "sk-ant-api03-"
+    
+    # Test Anthropic API key
+    curl -X POST "https://api.anthropic.com/v1/complete" \
+      -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"prompt": "test", "model": "claude-sonnet-4", "max_tokens": 10}'
+    
+    # Check API keys configuration
+    if [ -n "$API_KEYS_FILE" ]; then
+        echo "Using API keys file: $API_KEYS_FILE"
+        ls -la "$API_KEYS_FILE"
+        cat "$API_KEYS_FILE"  # Verify JSON format
+    fi
+    
+    # Validate JSON format
+    python -c "import json; print(json.loads(open('$API_KEYS_FILE').read()))"
+    
+    # Set minimal configuration
+    export ANTHROPIC_API_KEY="your_key_here"
+    export API_KEY="simple_test_key"
+    python main.py
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### MCP Server Issues
+
+<AccordionGroup>
+  <Accordion icon="database" title="MCP Server Connection Failed">
+    **Symptoms**:
+    - "MCP server failed to initialize" errors
+    - "Sports analysis service unavailable" responses
+    - Health check shows MCP as disconnected
+    
+    **Common Causes**:
+    - Network connectivity issues
+    - Incorrect database credentials
+    - MCP server not accessible
+    
+    **Solutions**:
+    ```bash
+    # Test MCP server directly
+    blitz-agent-mcp --help
+    
+    # Check database connectivity
+    ping blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    
+    # Test database connection
+    psql -h blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com \
+         -U postgres -d nba_db
+    
+    # Verify MCP environment variables
+    echo "MCP Command: $MCP_COMMAND"
+    echo "Database Host: $POSTGRES_HOST"
+    echo "Database User: $POSTGRES_USER"
+    
+    # Check MCP server logs
+    export LOG_LEVEL=DEBUG
+    python main.py 2>&1 | grep -i mcp
+    
+    # Test without MCP (will show warning but start)
+    export SKIP_MCP_CONNECTION_TEST=true
+    python main.py
+    ```
+  </Accordion>
+  
+  <Accordion icon="clock" title="MCP Server Timeout">
+    **Symptoms**:
+    - Slow response times
+    - Request timeouts during analysis
+    - Intermittent MCP connection issues
+    
+    **Common Causes**:
+    - Network latency
+    - Database query complexity
+    - Resource constraints
+    
+    **Solutions**:
+    ```bash
+    # Increase timeout settings
+    export MCP_TIMEOUT=60
+    export ANTHROPIC_TIMEOUT=120
+    
+    # Monitor network latency
+    ping -c 10 blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    
+    # Check system resources
+    htop
+    # or
+    top
+    
+    # Monitor MCP operations
+    export LOG_LEVEL=DEBUG
+    python main.py | grep -E "(mcp|timeout|slow)"
+    
+    # Use connection pooling
+    export POSTGRES_MAX_CONNECTIONS=10
+    export POSTGRES_POOL_SIZE=5
+    ```
+  </Accordion>
+  
+  <Accordion icon="shield" title="Database Authentication Issues">
+    **Symptoms**:
+    - "Authentication failed" errors
+    - "FATAL: password authentication failed"
+    - Connection refused by database
+    
+    **Common Causes**:
+    - Incorrect database password
+    - Database user permissions
+    - SSL/TLS configuration issues
+    
+    **Solutions**:
+    ```bash
+    # Verify database credentials
+    export POSTGRES_HOST="blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com"
+    export POSTGRES_USER="postgres"
+    export POSTGRES_PASSWORD="_V8fn.eo62B(gZD|OcQcu~0|aP8["
+    export POSTGRES_PORT="5432"
+    export POSTGRES_SSL="true"
+    
+    # Test database connection directly
+    psql "postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/nba_db?sslmode=require"
+    
+    # Check SSL configuration
+    openssl s_client -connect $POSTGRES_HOST:$POSTGRES_PORT -starttls postgres
+    
+    # Use connection string format
+    export DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/nba_db?sslmode=require"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### API and Authentication Issues
+
+<AccordionGroup>
+  <Accordion icon="lock" title="401 Unauthorized Responses">
+    **Symptoms**:
+    - "Invalid API key" responses
+    - Authentication failures
+    - 401 status codes
+    
+    **Common Causes**:
+    - Missing Authorization header
+    - Incorrect API key format
+    - Expired or invalid API keys
+    
+    **Solutions**:
+    ```bash
+    # Test API key format
+    curl -X POST "http://localhost:8001/analyze" \
+      -H "Authorization: Bearer your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "test"}'
+    
+    # Check API key configuration
+    echo "API_KEY: $API_KEY"
+    echo "API_KEYS_JSON: $API_KEYS_JSON"
+    echo "API_KEYS_FILE: $API_KEYS_FILE"
+    
+    # Verify JSON format for multiple keys
+    python -c "
+    import json
+    import os
+    if os.getenv('API_KEYS_JSON'):
+        print(json.loads(os.getenv('API_KEYS_JSON')))
+    elif os.getenv('API_KEYS_FILE'):
+        with open(os.getenv('API_KEYS_FILE')) as f:
+            print(json.load(f))
+    "
+    
+    # Test with curl verbose output
+    curl -v -X POST "http://localhost:8001/analyze" \
+      -H "Authorization: Bearer your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "test"}'
+    ```
+  </Accordion>
+  
+  <Accordion icon="anthropic" title="Anthropic API Issues">
+    **Symptoms**:
+    - "Anthropic API unavailable" errors
+    - 429 rate limit errors
+    - Invalid model errors
+    
+    **Common Causes**:
+    - Invalid Anthropic API key
+    - Rate limiting
+    - Insufficient credits
+    - Model availability issues
+    
+    **Solutions**:
+    ```bash
+    # Test Anthropic API key directly
+    curl -X POST "https://api.anthropic.com/v1/messages" \
+      -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
+      -H "Content-Type: application/json" \
+      -H "anthropic-version: 2023-06-01" \
+      -d '{
+        "model": "claude-3-sonnet-20240229",
+        "max_tokens": 10,
+        "messages": [{"role": "user", "content": "Hello"}]
+      }'
+    
+    # Check API usage and billing
+    echo "Visit: https://console.anthropic.com/account/billing"
+    
+    # Handle rate limiting
+    export ANTHROPIC_TIMEOUT=120
+    # Implement exponential backoff in requests
+    
+    # Try alternative model
+    # Update main.py to use claude-3-sonnet-20240229 instead of claude-sonnet-4
+    
+    # Check account status
+    curl -X GET "https://api.anthropic.com/v1/account" \
+      -H "Authorization: Bearer $ANTHROPIC_API_KEY"
+    ```
+  </Accordion>
+  
+  <Accordion icon="server" title="500 Internal Server Errors">
+    **Symptoms**:
+    - Generic 500 error responses
+    - "Analysis failed" messages
+    - Server crashes or exceptions
+    
+    **Common Causes**:
+    - Unhandled exceptions in analysis
+    - Resource exhaustion
+    - Invalid query formats
+    
+    **Solutions**:
+    ```bash
+    # Enable debug logging
+    export LOG_LEVEL=DEBUG
+    python main.py
+    
+    # Check server logs
+    tail -f logs/blitzagent.log
+    
+    # Monitor system resources
+    htop
+    df -h
+    free -h
+    
+    # Test with simple query
+    curl -X POST "http://localhost:8001/analyze" \
+      -H "Authorization: Bearer your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "What is basketball?"}'
+    
+    # Check for memory leaks
+    ps aux | grep python
+    
+    # Restart with clean state
+    pkill -f "python main.py"
+    python main.py
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Performance Issues
+
+<AccordionGroup>
+  <Accordion icon="clock" title="Slow Response Times">
+    **Symptoms**:
+    - Analysis taking longer than 30 seconds
+    - Timeouts on complex queries
+    - Degraded performance over time
+    
+    **Common Causes**:
+    - Complex database queries
+    - Network latency
+    - Resource constraints
+    - Memory leaks
+    
+    **Solutions**:
+    ```bash
+    # Monitor query performance
+    export LOG_LEVEL=DEBUG
+    python main.py | grep -E "(duration|timing|slow)"
+    
+    # Check database query performance
+    # Add query logging to PostgreSQL
+    
+    # Monitor network latency
+    ping -c 10 blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    traceroute blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    
+    # Increase timeouts
+    export ANTHROPIC_TIMEOUT=120
+    export MCP_TIMEOUT=60
+    export HTTP_TIMEOUT=180
+    
+    # Use streaming for complex queries
+    curl -X POST "http://localhost:8001/analyze/stream" \
+      -H "Authorization: Bearer your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "complex analysis query"}'
+    
+    # Monitor memory usage
+    ps aux | grep python
+    top -p $(pgrep -f "python main.py")
+    
+    # Restart periodically to clear memory
+    pkill -f "python main.py"
+    python main.py
+    ```
+  </Accordion>
+  
+  <Accordion icon="memory" title="High Memory Usage">
+    **Symptoms**:
+    - Increasing memory consumption
+    - Out of memory errors
+    - System slowdown
+    
+    **Common Causes**:
+    - Memory leaks in long-running processes
+    - Large response caching
+    - Inefficient data processing
+    
+    **Solutions**:
+    ```bash
+    # Monitor memory usage
+    watch -n 5 'ps aux | grep python'
+    
+    # Check for memory leaks
+    python -m tracemalloc main.py
+    
+    # Reduce memory usage
+    export PYTHONOPTIMIZE=1
+    export PYTHONDONTWRITEBYTECODE=1
+    
+    # Implement memory limits (Docker)
+    docker run --memory=1g blitzagent
+    
+    # Configure garbage collection
+    python -c "
+    import gc
+    gc.set_threshold(700, 10, 10)
+    print('GC thresholds set')
+    "
+    
+    # Use memory profiling
+    pip install memory-profiler
+    python -m memory_profiler main.py
+    ```
+  </Accordion>
+  
+  <Accordion icon="network" title="Network Connectivity Issues">
+    **Symptoms**:
+    - Connection timeouts
+    - Intermittent failures
+    - DNS resolution errors
+    
+    **Common Causes**:
+    - Network configuration
+    - Firewall restrictions
+    - DNS issues
+    
+    **Solutions**:
+    ```bash
+    # Test basic connectivity
+    ping google.com
+    ping api.anthropic.com
+    ping blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    
+    # Check DNS resolution
+    nslookup api.anthropic.com
+    nslookup blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com
+    
+    # Test HTTPS connectivity
+    curl -I https://api.anthropic.com
+    
+    # Check firewall rules
+    sudo ufw status
+    sudo iptables -L
+    
+    # Test specific ports
+    telnet blitz-instance-1.cdu6kma429k4.us-west-2.rds.amazonaws.com 5432
+    nc -zv api.anthropic.com 443
+    
+    # Use alternative DNS
+    export RESOLVE_CONF="/etc/resolv.conf.backup"
+    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+    
+    # Configure proxy if needed
+    export HTTP_PROXY=http://proxy.company.com:8080
+    export HTTPS_PROXY=http://proxy.company.com:8080
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Docker and Container Issues
+
+<AccordionGroup>
+  <Accordion icon="docker" title="Docker Build Failures">
+    **Symptoms**:
+    - Docker build command fails
+    - Package installation errors in container
+    - Base image issues
+    
+    **Solutions**:
+    ```bash
+    # Clear Docker cache
+    docker system prune -a
+    
+    # Build with no cache
+    docker build --no-cache -t blitzagent .
+    
+    # Check Dockerfile syntax
+    docker build --dry-run -t blitzagent .
+    
+    # Use verbose logging
+    docker build --progress=plain -t blitzagent .
+    
+    # Test base image
+    docker run -it python:3.11-slim bash
+    
+    # Build with different base image
+    # Change Dockerfile FROM line to:
+    # FROM python:3.11
+    ```
+  </Accordion>
+  
+  <Accordion icon="container" title="Container Runtime Issues">
+    **Symptoms**:
+    - Container exits immediately
+    - Environment variables not available
+    - Volume mounting issues
+    
+    **Solutions**:
+    ```bash
+    # Check container logs
+    docker logs blitzagent
+    
+    # Run container interactively
+    docker run -it blitzagent bash
+    
+    # Verify environment variables
+    docker run blitzagent env
+    
+    # Check volume mounts
+    docker run -v $(pwd)/config:/app/config blitzagent ls -la /app/config
+    
+    # Override entrypoint for debugging
+    docker run --entrypoint bash -it blitzagent
+    
+    # Check resource limits
+    docker stats blitzagent
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Development and Debugging
+
+### Debug Mode Configuration
+
+<CodeGroup>
+```bash Enable Debug Logging
+export LOG_LEVEL=DEBUG
+python main.py
+```
+
+```python Add Debug Endpoints
+# Add to main.py for debugging
+@app.get("/debug/config")
+async def debug_config():
+    return {
+        "anthropic_api_key_set": bool(Config.ANTHROPIC_API_KEY),
+        "api_key_set": bool(Config.API_KEY),
+        "host": Config.HOST,
+        "port": Config.PORT,
+        "log_level": Config.LOG_LEVEL,
+        "mcp_command": Config.MCP_COMMAND
+    }
+
+@app.get("/debug/mcp")
+async def debug_mcp():
+    agent = SportsAnalysisAgent()
+    return {
+        "mcp_available": agent.mcp_available,
+        "mcp_server": str(agent.mcp_server) if agent.mcp_server else None
+    }
+```
+
+```bash Test with Minimal Query
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Authorization: Bearer your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is sports?"}' \
+  -v
+```
+</CodeGroup>
+
+### Log Analysis
+
+<CodeGroup>
+```bash Monitor Logs in Real-time
+tail -f logs/blitzagent.log | jq '.'
+```
+
+```bash Search for Specific Issues
+grep -i error logs/blitzagent.log
+grep -i "mcp" logs/blitzagent.log
+grep -i "anthropic" logs/blitzagent.log
+```
+
+```python Custom Log Analysis
+import json
+
+def analyze_logs(log_file):
+    errors = []
+    warnings = []
+    
+    with open(log_file) as f:
+        for line in f:
+            try:
+                log_entry = json.loads(line)
+                if log_entry['level'] == 'ERROR':
+                    errors.append(log_entry)
+                elif log_entry['level'] == 'WARNING':
+                    warnings.append(log_entry)
+            except json.JSONDecodeError:
+                continue
+    
+    print(f"Found {len(errors)} errors and {len(warnings)} warnings")
+    return errors, warnings
+
+errors, warnings = analyze_logs('logs/blitzagent.log')
+```
+</CodeGroup>
+
+## Getting Help
+
+### Diagnostic Information to Collect
+
+When reporting issues, please include:
+
+<AccordionGroup>
+  <Accordion icon="info" title="System Information">
+    ```bash
+    # Collect system info
+    uname -a
+    python --version
+    pip list
+    docker --version  # if using Docker
+    
+    # BlitzAgent specific info
+    python -c "from config import Config; print(vars(Config))"
+    curl -s http://localhost:8001/health | jq '.'
+    ```
+  </Accordion>
+  
+  <Accordion icon="file-text" title="Log Files">
+    ```bash
+    # Recent logs
+    tail -100 logs/blitzagent.log
+    
+    # Error logs
+    grep -i error logs/blitzagent.log | tail -20
+    
+    # Server startup logs
+    python main.py 2>&1 | head -50
+    ```
+  </Accordion>
+  
+  <Accordion icon="settings" title="Configuration">
+    ```bash
+    # Environment variables (redact sensitive values)
+    env | grep -E "(ANTHROPIC|API_KEY|HOST|PORT|LOG_LEVEL)" | sed 's/=.*/=***REDACTED***/'
+    
+    # Configuration validation
+    python -c "from config import Config; Config.validate(); print('Config valid')"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Support Channels
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Issues"
+    icon="github"
+    href="https://github.com/tejassrinivasan/BlitzLLM/issues"
+  >
+    Report bugs and request features on GitHub
+  </Card>
+  
+  <Card
+    title="Documentation"
+    icon="book"
+    href="/quickstart"
+  >
+    Review the complete documentation for solutions
+  </Card>
+  
+  <Card
+    title="Health Monitoring"
+    icon="heart"
+    href="/api-reference/health"
+  >
+    Use health checks to monitor system status
+  </Card>
+  
+  <Card
+    title="Configuration Guide"
+    icon="cog"
+    href="/configuration"
+  >
+    Advanced configuration for production environments
+  </Card>
+</CardGroup>
+
+<Note>
+  When reporting issues, please redact sensitive information like API keys and passwords before sharing logs or configuration details.
+</Note>

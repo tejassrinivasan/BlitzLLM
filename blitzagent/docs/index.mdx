@@ -1,97 +1,207 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "BlitzAgent Documentation"
+description: "A powerful AI sports analysis agent powered by Claude 4 Sonnet and the Blitz MCP server"
 ---
 
-## Setting up
+# Welcome to BlitzAgent
 
-Get your documentation site up and running in minutes.
+BlitzAgent is a sophisticated AI-powered sports analysis agent built with [Pydantic AI](https://ai.pydantic.dev/agents/) that connects to the Blitz MCP server and uses Claude 4 Sonnet for advanced reasoning and analysis.
+
+<img
+  className="block dark:hidden"
+  src="/images/blitzbot.png"
+  alt="BlitzBot"
+  width="200"
+  style={{ margin: "20px auto", display: "block" }}
+/>
+<img
+  className="hidden dark:block"
+  src="/images/blitzbot.png"
+  alt="BlitzBot"
+  width="200"
+  style={{ margin: "20px auto", display: "block" }}
+/>
 
 <Card
-  title="Start here"
+  title="Quick Start"
   icon="rocket"
   href="/quickstart"
   horizontal
 >
-  Follow our three step quickstart guide.
+  Get BlitzAgent running in minutes with our step-by-step guide.
 </Card>
 
-## Make it yours
+## Key Features
 
-Design a docs site that looks great and empowers your users.
+BlitzAgent provides comprehensive sports analytics capabilities through an easy-to-use REST API:
 
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="🤖 Claude 4 Sonnet Integration"
+    icon="brain"
   >
-    Edit your docs locally and preview them in real time.
+    Uses Anthropic's most advanced reasoning model with superior intelligence and 200K context window.
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="🏈 Multi-League Support"
+    icon="trophy"
+    href="/features/multi-league-support"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Comprehensive analysis for both NBA and MLB with automatic league detection.
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
+    title="📊 Real-time Analysis"
+    icon="chart-line"
+    href="/features/streaming-analysis"
+  >
+    Streaming responses with real-time analysis events and progress updates.
+  </Card>
+  <Card
+    title="🔌 MCP Server Integration"
+    icon="link"
+    href="/features/data-sources"
+  >
+    Connect to comprehensive sports databases, web scraping, and live betting data.
+  </Card>
+</CardGroup>
+
+## What You Can Analyze
+
+BlitzAgent excels at various sports analysis tasks:
+
+<AccordionGroup>
+  <Accordion icon="user" title="Player Analysis">
+    - Performance statistics and metrics
+    - Career trends and comparisons
+    - Injury impact analysis
+    - Fantasy football/basketball insights
+  </Accordion>
+  <Accordion icon="users" title="Team Analysis">
+    - Team performance and trends
+    - Matchup analysis and predictions
+    - Roster construction and depth charts
+    - Historical team comparisons
+  </Accordion>
+  <Accordion icon="chart-bar" title="Advanced Analytics">
+    - Expected value calculations
+    - Prop bet recommendations
+    - Market inefficiency identification
+    - Statistical modeling and projections
+  </Accordion>
+  <Accordion icon="clock" title="Real-time Insights">
+    - Live game analysis
+    - Breaking news impact
+    - Injury report updates
+    - Betting line movements
+  </Accordion>
+</AccordionGroup>
+
+## Data Sources
+
+BlitzAgent has access to comprehensive sports data through multiple sources:
+
+<Steps>
+  <Step title="Historical Database">
+    PostgreSQL database with comprehensive player stats, team records, and historical performance data for NBA and MLB.
+  </Step>
+  <Step title="Web Scraping">
+    Real-time sports news, injury reports, trade information, and current events from reliable sports sources.
+  </Step>
+  <Step title="Live Betting Data">
+    Current betting lines, odds movements, and market data from major sportsbooks for informed analysis.
+  </Step>
+</Steps>
+
+## Example Queries
+
+Here are some examples of what you can ask BlitzAgent:
+
+<CodeGroup>
+```bash NBA Example
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "How has LeBron James performed in clutch situations this season?",
+    "extra_context": "Focus on games in the last 5 minutes with score within 5 points"
+  }'
+```
+
+```bash MLB Example
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "What are the best pitching matchups for today?",
+    "extra_context": "Include weather conditions and ballpark factors"
+  }'
+```
+
+```python Python SDK
+import httpx
+import asyncio
+
+async def analyze_sports():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://localhost:8001/analyze",
+            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            json={
+                "query": "Which NBA teams have the best three-point defense?",
+                "extra_context": "Include data from the last 20 games"
+            }
+        )
+        result = response.json()
+        print(result["response"])
+
+asyncio.run(analyze_sports())
+```
+</CodeGroup>
+
+## Getting Started
+
+Ready to start analyzing sports data? Follow these steps:
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation & Setup"
+    icon="download"
+    href="/quickstart"
+  >
+    Install BlitzAgent and configure your environment in just a few minutes.
+  </Card>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Set up API keys and configure authentication for secure access.
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
     href="/api-reference/introduction"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Explore all available endpoints with detailed examples and parameters.
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Examples"
+    icon="lightbulb"
+    href="/examples"
   >
-    Add sample code to demonstrate how to use your product.
+    See real-world examples and use cases for different types of analysis.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Architecture
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+BlitzAgent is built with modern, reliable technologies:
+
+- **[Pydantic AI](https://ai.pydantic.dev/)**: Agent-centric design with full type safety
+- **[FastAPI](https://fastapi.tiangolo.com/)**: High-performance async web framework
+- **[Claude 4 Sonnet](https://anthropic.com/)**: Advanced reasoning capabilities with 200K context
+- **[MCP Protocol](https://modelcontextprotocol.io/)**: Seamless tool integration for data access
+
+<Note>
+  BlitzAgent requires an Anthropic API key and access to the Blitz MCP server. See our [quickstart guide](/quickstart) for setup instructions.
+</Note>
