@@ -1,23 +1,43 @@
 ---
-title: "Multi-League Support"
-description: "Comprehensive NBA and MLB analysis with automatic league detection"
+title: "League Support"
+description: "Comprehensive NBA analysis with automatic detection, more leagues coming soon"
 ---
 
-# Multi-League Support
+Blitz provides comprehensive sports analysis for professional basketball, with automatic player and team detection and sport-specific insights.
 
-BlitzAgent provides seamless support for both NBA and MLB analysis through intelligent league detection and specialized data sources. The system automatically determines which league your query refers to and applies the appropriate analysis framework.
+## Current Support
 
-## Automatic League Detection
+<CardGroup cols={2}>
+  <Card
+    title="🏀 NBA"
+    icon="basketball"
+  >
+    **National Basketball Association**
+    
+    Complete player stats, team analysis, game predictions, and historical data dating back multiple seasons with automatic detection.
+  </Card>
+  
+  <Card
+    title="⚾ MLB"
+    icon="baseball"
+  >
+    **Major League Baseball**
+    
+    Coming soon - comprehensive baseball analytics and player performance data.
+  </Card>
+</CardGroup>
 
-BlitzAgent uses advanced natural language processing to automatically detect which sport and league your query refers to:
+## Automatic Detection
+
+Blitz automatically detects NBA queries through:
 
 <AccordionGroup>
-  <Accordion icon="basketball" title="NBA Detection">
-    **Team Names**: Lakers, Warriors, Celtics, Bulls, etc.
+  <Accordion icon="basketball" title="NBA Recognition">
+    **Team Names**: Lakers, Warriors, Celtics, Bulls, Heat, etc.
     
     **Player Names**: LeBron James, Stephen Curry, Kevin Durant, etc.
     
-    **Basketball Terms**: three-pointer, assists, rebounds, blocks, steals, PER, usage rate, etc.
+    **Basketball Terms**: three-pointer, assists, rebounds, blocks, PER, usage rate, etc.
     
     **Example Queries**:
     - "How many three-pointers did Steph Curry make last game?"
@@ -25,33 +45,16 @@ BlitzAgent uses advanced natural language processing to automatically detect whi
     - "Which team has the best defensive rating?"
   </Accordion>
   
-  <Accordion icon="baseball" title="MLB Detection">
-    **Team Names**: Yankees, Dodgers, Red Sox, Giants, etc.
-    
-    **Player Names**: Aaron Judge, Shohei Ohtani, Mike Trout, etc.
-    
-    **Baseball Terms**: ERA, WHIP, RBI, home runs, strikeouts, batting average, etc.
-    
-    **Example Queries**:
-    - "What's Gerrit Cole's ERA this season?"
-    - "Yankees vs Red Sox pitching matchup analysis"
-    - "Best closer in baseball right now"
-  </Accordion>
-  
   <Accordion icon="brain" title="Contextual Intelligence">
-    **Seasonal Context**: Understands when NBA season vs MLB season is active
-    
-    **Multi-Sport Players**: Correctly handles athletes who play multiple sports
+    **Seasonal Context**: Understands when NBA season is active
     
     **Ambiguous Queries**: Asks for clarification when league cannot be determined
     
-    **Cross-League Comparisons**: Can analyze across sports when explicitly requested
+    **Player Context**: Recognizes current and former NBA players automatically
   </Accordion>
 </AccordionGroup>
 
-## League-Specific Features
-
-### NBA Analysis Capabilities
+## NBA Analysis Capabilities
 
 <CardGroup cols={2}>
   <Card
@@ -61,7 +64,7 @@ BlitzAgent uses advanced natural language processing to automatically detect whi
     - Traditional stats (PPG, APG, RPG)
     - Advanced metrics (PER, BPM, VORP)
     - Shooting efficiency (TS%, eFG%)
-    - Defensive metrics (DPBM, steals, blocks)
+    - Defensive metrics (steals, blocks)
   </Card>
   
   <Card
@@ -70,8 +73,8 @@ BlitzAgent uses advanced natural language processing to automatically detect whi
   >
     - Offensive/Defensive ratings
     - Pace and efficiency metrics
-    - Four factors analysis
-    - Lineup and rotation analysis
+    - Team performance trends
+    - Lineup analysis
   </Card>
   
   <Card
@@ -81,357 +84,75 @@ BlitzAgent uses advanced natural language processing to automatically detect whi
     - Clutch performance (last 5 minutes)
     - Playoff vs regular season splits
     - Home/away performance
-    - Back-to-back game impact
+    - Recent form analysis
   </Card>
   
   <Card
-    title="Advanced Concepts"
+    title="Advanced Insights"
     icon="chart-line"
   >
-    - Shot chart analysis
+    - Shot selection analysis
     - Plus/minus impact
     - Usage rate and efficiency
-    - Lineup combinations
+    - Matchup advantages
   </Card>
 </CardGroup>
 
-### MLB Analysis Capabilities
-
-<CardGroup cols={2}>
-  <Card
-    title="Pitching Analysis"
-    icon="baseball"
-  >
-    - Traditional stats (ERA, WHIP, W-L)
-    - Advanced metrics (xFIP, SIERA, K/9)
-    - Pitch usage and velocity
-    - Situational effectiveness
-  </Card>
-  
-  <Card
-    title="Hitting Analysis"
-    icon="chart-bar"
-  >
-    - Slash line (AVG/OBP/SLG)
-    - Power metrics (HR, ISO, XBH)
-    - Plate discipline (BB%, K%)
-    - Situational hitting (RISP, clutch)
-  </Card>
-  
-  <Card
-    title="Team Performance"
-    icon="trophy"
-  >
-    - Run differential analysis
-    - Bullpen effectiveness
-    - Defensive efficiency
-    - Situational performance
-  </Card>
-  
-  <Card
-    title="Contextual Factors"
-    icon="cloud-sun"
-  >
-    - Ballpark factors
-    - Weather impact
-    - Platoon advantages
-    - Rest and travel effects
-  </Card>
-</CardGroup>
-
-## Database Schema Support
-
-BlitzAgent connects to specialized databases for each league with comprehensive historical data:
-
-### NBA Database Schema
+## Example Queries
 
 <CodeGroup>
-```sql Player Stats Tables
--- Current season stats
-SELECT * FROM player_stats_2024 
-WHERE player_name = 'LeBron James';
-
--- Advanced metrics
-SELECT * FROM advanced_stats_2024 
-WHERE team_abbr = 'LAL';
-
--- Game-by-game performance
-SELECT * FROM game_logs_2024 
-WHERE player_id = 'jamesle01'
-ORDER BY game_date DESC;
-```
-
-```sql Team Performance Tables
--- Team efficiency metrics
-SELECT * FROM team_stats_2024 
-WHERE team_abbr = 'BOS';
-
--- Four factors analysis
-SELECT * FROM team_four_factors_2024;
-
--- Lineup combinations
-SELECT * FROM lineup_stats_2024 
-WHERE minutes_played > 50;
-```
-</CodeGroup>
-
-### MLB Database Schema
-
-<CodeGroup>
-```sql Pitching Tables
--- Pitcher statistics
-SELECT * FROM pitching_stats_2024 
-WHERE player_name = 'Gerrit Cole';
-
--- Advanced pitching metrics
-SELECT * FROM pitching_advanced_2024 
-WHERE innings_pitched > 50;
-
--- Game-by-game starts
-SELECT * FROM pitching_game_logs_2024 
-WHERE pitcher_id = 'colege01';
-```
-
-```sql Batting Tables
--- Hitter statistics
-SELECT * FROM batting_stats_2024 
-WHERE player_name = 'Aaron Judge';
-
--- Situational hitting
-SELECT * FROM batting_situational_2024 
-WHERE situation = 'RISP';
-
--- Game-by-game performance
-SELECT * FROM batting_game_logs_2024 
-WHERE batter_id = 'judgaa01';
-```
-</CodeGroup>
-
-## Cross-League Analysis
-
-While most queries are league-specific, BlitzAgent can handle cross-league comparisons and multi-sport analysis:
-
-<AccordionGroup>
-  <Accordion icon="arrows-left-right" title="Athletic Comparisons">
-    **Example Query**: "Compare the athletic dominance of LeBron James in basketball to Mike Trout in baseball"
-    
-    **Analysis Approach**:
-    - League-relative performance metrics
-    - Dominance relative to peers
-    - Longevity and consistency
-    - Impact on team success
-    - Historical context within each sport
-  </Accordion>
-  
-  <Accordion icon="chart-mixed" title="Statistical Parallels">
-    **Example Query**: "What's the basketball equivalent of a pitcher's ERA?"
-    
-    **Analysis Approach**:
-    - Explain defensive efficiency metrics
-    - Compare how stats measure impact
-    - Discuss normalization across sports
-    - Provide context for interpretation
-  </Accordion>
-  
-  <Accordion icon="trophy" title="Championship Analysis">
-    **Example Query**: "Compare the championship paths of the 2020 Lakers and 2020 Dodgers"
-    
-    **Analysis Approach**:
-    - Regular season performance
-    - Playoff/postseason journey
-    - Key contributors and storylines
-    - Historical significance
-    - City/organizational impact
-  </Accordion>
-</AccordionGroup>
-
-## League Detection Examples
-
-<CodeGroup>
-```bash Clear NBA Query
-curl -X POST "http://localhost:8001/analyze" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+```bash Player Analysis
+curl -X POST "https://blitzagent.onrender.com/analyze" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "How many three-pointers did Stephen Curry make this season?"
   }'
-
-# Response includes: "Detected league: NBA"
 ```
 
-```bash Clear MLB Query
-curl -X POST "http://localhost:8001/analyze" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+```bash Team Comparison
+curl -X POST "https://blitzagent.onrender.com/analyze" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What is Jacob deGrom'\''s ERA and strikeout rate?"
+    "query": "Compare Lakers and Warriors offensive efficiency this season"
   }'
-
-# Response includes: "Detected league: MLB"
-```
-
-```bash Ambiguous Query
-curl -X POST "http://localhost:8001/analyze" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "Who are the best teams this year?"
-  }'
-
-# BlitzAgent will ask for clarification or infer from context
-```
-
-```bash Multi-League Query
-curl -X POST "http://localhost:8001/analyze" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "Compare LeBron James'\'' dominance in NBA to Mike Trout'\''s in MLB",
-    "extra_context": "Focus on how each player stands out relative to their peers"
-  }'
-
-# BlitzAgent handles both leagues in the analysis
 ```
 </CodeGroup>
 
-## Data Sources by League
-
-### NBA Data Sources
-
-<Steps>
-  <Step title="Historical Database">
-    **Coverage**: 1946-present complete NBA history
-    
-    **Data Types**: 
-    - Player statistics (traditional and advanced)
-    - Team performance metrics
-    - Game-by-game logs
-    - Playoff and championship data
-    - Draft and transaction history
-  </Step>
-  
-  <Step title="Real-time NBA Data">
-    **Coverage**: Current season live updates
-    
-    **Data Types**:
-    - Live game scores and stats
-    - Injury reports and news
-    - Trade rumors and transactions
-    - Schedule and broadcast information
-  </Step>
-  
-  <Step title="NBA Betting Markets">
-    **Coverage**: Current games and futures
-    
-    **Data Types**:
-    - Point spreads and totals
-    - Player prop markets
-    - Championship and award odds
-    - Line movement tracking
-  </Step>
-</Steps>
-
-### MLB Data Sources
-
-<Steps>
-  <Step title="Historical Database">
-    **Coverage**: 1871-present complete MLB history
-    
-    **Data Types**:
-    - Pitching and batting statistics
-    - Team performance and standings
-    - Game-by-game box scores
-    - Postseason and World Series data
-    - Draft and transaction history
-  </Step>
-  
-  <Step title="Real-time MLB Data">
-    **Coverage**: Current season live updates
-    
-    **Data Types**:
-    - Live game scores and play-by-play
-    - Injury reports and roster moves
-    - Trade deadline activity
-    - Weather and ballpark conditions
-  </Step>
-  
-  <Step title="MLB Betting Markets">
-    **Coverage**: Daily games and futures
-    
-    **Data Types**:
-    - Run lines and totals
-    - Pitcher and batter props
-    - Season win totals
-    - Award and championship odds
-  </Step>
-</Steps>
-
-## Best Practices for Multi-League Queries
-
-<AccordionGroup>
-  <Accordion icon="target" title="Specific League References">
-    **Good**: "NBA MVP candidates this season"
-    
-    **Better**: "Who are the top NBA MVP candidates this season based on advanced metrics?"
-    
-    Include sport-specific terminology to ensure accurate detection.
-  </Accordion>
-  
-  <Accordion icon="calendar" title="Seasonal Context">
-    **Important**: Remember that NBA and MLB seasons run on different schedules
-    
-    - NBA: October-June (with playoffs through June)
-    - MLB: March-October (with playoffs through November)
-    
-    BlitzAgent understands seasonal context and will analyze accordingly.
-  </Accordion>
-  
-  <Accordion icon="chart-bar" title="Metric Specificity">
-    **NBA-specific**: PER, BPM, VORP, TS%, usage rate
-    
-    **MLB-specific**: ERA, WHIP, OPS, WAR, BABIP
-    
-    **Universal**: Games, wins, losses, performance trends
-  </Accordion>
-</AccordionGroup>
-
 ## Future League Support
 
-BlitzAgent's architecture is designed to support additional leagues and sports:
+Blitz's architecture is designed to support additional leagues:
 
 <CardGroup cols={2}>
+  <Card
+    title="MLB Support"
+    icon="baseball"
+  >
+    Baseball analytics including pitching stats, batting analysis, and team performance metrics.
+  </Card>
+  
   <Card
     title="NFL Support"
     icon="football"
   >
-    Planned support for NFL analysis including player stats, team performance, and fantasy football insights.
+    Planned support for NFL analysis including player stats and team performance.
   </Card>
   
   <Card
     title="NHL Support"
     icon="hockey-puck"
   >
-    Future NHL capabilities for hockey analytics, including advanced metrics and playoff analysis.
+    Future NHL capabilities for hockey analytics and playoff analysis.
   </Card>
   
   <Card
     title="International Sports"
     icon="globe"
   >
-    Potential expansion to soccer, cricket, and other international sports leagues.
-  </Card>
-  
-  <Card
-    title="College Sports"
-    icon="graduation-cap"
-  >
-    College basketball and football analysis during tournament seasons.
+    Potential expansion to soccer and other international sports leagues.
   </Card>
 </CardGroup>
-
-<Note>
-  BlitzAgent's multi-league support continues to evolve. If you have specific league or sport requirements, contact our team to discuss custom implementations.
-</Note>
 
 ## Related Documentation
 
@@ -441,7 +162,7 @@ BlitzAgent's architecture is designed to support additional leagues and sports:
     icon="database"
     href="/features/data-sources"
   >
-    Learn about the comprehensive data sources behind each league
+    Learn about the comprehensive data sources for NBA analysis
   </Card>
   
   <Card
@@ -449,22 +170,6 @@ BlitzAgent's architecture is designed to support additional leagues and sports:
     icon="lightbulb"
     href="/examples"
   >
-    See real-world examples for both NBA and MLB analysis
-  </Card>
-  
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference/introduction"
-  >
-    Complete API documentation with league-specific examples
-  </Card>
-  
-  <Card
-    title="Configuration"
-    icon="cog"
-    href="/configuration"
-  >
-    Configure BlitzAgent for optimal multi-league performance
+    See real-world examples for NBA analysis
   </Card>
 </CardGroup>

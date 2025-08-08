@@ -12,7 +12,7 @@ This guide covers advanced configuration options for BlitzAgent, including produ
 ### Complete Environment Variables
 
 <ParamField header="ANTHROPIC_API_KEY" type="string" required>
-  Your Anthropic API key for Claude 4 Sonnet access
+  Your Anthropic API key for advanced reasoning LLM models 4 models access
   
   ```bash
   export ANTHROPIC_API_KEY="sk-ant-api03-your-key-here"
@@ -393,7 +393,7 @@ spec:
     **Request Timeouts**:
     ```python
     # Custom timeout configuration
-    ANTHROPIC_TIMEOUT = 60  # Claude API timeout
+    ANTHROPIC_TIMEOUT = 60  # advanced reasoning LLM models API timeout
     MCP_TIMEOUT = 30        # MCP server timeout
     HTTP_TIMEOUT = 120      # Overall request timeout
     ```

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Blitz API",
-    "description": "AI-powered sports analysis API using Claude 4 Sonnet and comprehensive sports data",
+    "description": "AI-powered sports analysis API using advanced reasoning LLM models and comprehensive sports data",
     "version": "1.0.0",
     "contact": {
       "name": "Blitz Support",
@@ -24,7 +24,7 @@
     "/analyze": {
       "post": {
         "summary": "Analyze Sports Query",
-        "description": "Perform comprehensive sports analysis with natural language queries using Claude 4 Sonnet",
+        "description": "Perform comprehensive sports analysis with natural language queries using Claude 4 models",
         "operationId": "analyzeSportsQuery",
         "requestBody": {
           "required": true,

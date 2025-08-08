@@ -53,7 +53,7 @@ The response is a **Server-Sent Events (SSE)** stream where each event contains:
   - `analysis_start` - Analysis has begun
   - `league_detection` - League automatically detected
   - `tool_call` - MCP tool is being called
-  - `reasoning` - Claude is processing/reasoning
+  - `reasoning` - advanced reasoning LLM models is processing/reasoning
   - `data_retrieval` - Fetching data from sources
   - `analysis_complete` - Final analysis ready
   - `error` - An error occurred
@@ -268,7 +268,7 @@ curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
   </Accordion>
   
   <Accordion icon="brain" title="reasoning">
-    Indicates Claude is processing and reasoning about the data.
+    Indicates advanced reasoning LLM models is processing and reasoning about the data.
     
     **Typical data:**
     - `progress`: Analysis progress percentage

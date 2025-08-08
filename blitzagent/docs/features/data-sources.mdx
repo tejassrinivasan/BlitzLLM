@@ -1,535 +1,187 @@
 ---
 title: "Data Sources"
-description: "Comprehensive sports data from databases, web scraping, and live betting markets"
+description: "Comprehensive NBA data from historical records and web scraping"
 ---
 
-# Data Sources
+Blitz leverages comprehensive data sources to provide accurate, up-to-date NBA analysis through our optimized data architecture.
 
-BlitzAgent leverages multiple comprehensive data sources to provide accurate, up-to-date sports analysis. Our three-tier data architecture ensures both historical depth and real-time accuracy across NBA and MLB analysis.
-
-## Data Source Architecture
+## Data Source Overview
 
 <Steps>
-  <Step title="Historical Database (Primary)">
-    **PostgreSQL databases** containing decades of comprehensive sports statistics
+  <Step title="Historical Data">
+    **Comprehensive NBA Records**
     
-    **Priority**: Highest for statistical analysis and historical trends
-    
-    **Update Frequency**: Daily batch updates during season, end-of-season comprehensive updates
+    Decades of NBA player statistics, team records, and historical performance data spanning multiple seasons with detailed game-by-game information.
   </Step>
   
-  <Step title="Web Scraping (Secondary)">
-    **Real-time web data** from official sources and sports news sites
+  <Step title="Web Scraping">
+    **Real-time Information**
     
-    **Priority**: Medium for current events, injury reports, and breaking news
-    
-    **Update Frequency**: Continuous updates throughout the day
-  </Step>
-  
-  <Step title="Betting Markets (Tertiary)">
-    **Live betting data** from major sportsbooks and odds providers
-    
-    **Priority**: Lower for market insights and predictive analysis
-    
-    **Update Frequency**: Real-time updates as markets move
+    Current sports news, injury reports, trade information, roster changes, and breaking developments from reliable sports sources.
   </Step>
 </Steps>
 
-## Historical Database Sources
-
-### NBA Database
-
-<AccordionGroup>
-  <Accordion icon="basketball" title="Player Statistics Tables">
-    **Coverage**: 1946-present (79 seasons)
-    
-    **Traditional Stats**:
-    - `player_stats_regular_season`: PPG, APG, RPG, FG%, 3P%, FT%
-    - `player_stats_playoffs`: Postseason performance metrics
-    - `player_stats_advanced`: PER, BPM, VORP, Win Shares, Usage Rate
-    
-    **Game-Level Data**:
-    - `game_logs`: Individual game performances
-    - `shot_charts`: Spatial shooting data with coordinates
-    - `plus_minus`: On-court impact metrics
-    
-    **Example Query**:
-    ```sql
-    SELECT player_name, season, ppg, apg, rpg, fg_pct, ts_pct
-    FROM player_stats_regular_season 
-    WHERE player_name = 'LeBron James' 
-    ORDER BY season DESC;
-    ```
-  </Accordion>
-  
-  <Accordion icon="users" title="Team Performance Tables">
-    **Coverage**: Complete franchise history for all 30 teams
-    
-    **Team Stats**:
-    - `team_stats_regular_season`: Offensive/defensive ratings, pace, efficiency
-    - `team_stats_playoffs`: Postseason team performance
-    - `team_four_factors`: eFG%, TOV%, OREB%, FT Rate
-    
-    **Advanced Metrics**:
-    - `team_lineup_stats`: Lineup combinations and effectiveness
-    - `team_clutch_stats`: Performance in close games
-    - `team_home_away_splits`: Venue-specific performance
-    
-    **Example Query**:
-    ```sql
-    SELECT team_name, season, wins, losses, off_rating, def_rating, net_rating
-    FROM team_stats_regular_season 
-    WHERE season = '2023-24' 
-    ORDER BY net_rating DESC;
-    ```
-  </Accordion>
-  
-  <Accordion icon="calendar" title="Game and Schedule Data">
-    **Coverage**: Every NBA game since 1946
-    
-    **Game Results**:
-    - `games`: Scores, dates, venues, attendance
-    - `game_box_scores`: Detailed team and player statistics
-    - `game_play_by_play`: Shot-by-shot game progression
-    
-    **Schedule Information**:
-    - `schedule`: Upcoming games, TV coverage, venue details
-    - `injury_reports`: Player availability and injury status
-    - `transactions`: Trades, signings, releases
-  </Accordion>
-  
-  <Accordion icon="trophy" title="Historical Context">
-    **Awards and Recognition**:
-    - `awards_mvp`: MVP voting and winners
-    - `awards_all_star`: All-Star selections and voting
-    - `awards_all_nba`: All-NBA team selections
-    
-    **Draft and Development**:
-    - `draft_history`: Draft picks, trades, and selections
-    - `rookie_stats`: First-year player performance
-    - `career_progression`: Player development over time
-  </Accordion>
-</AccordionGroup>
-
-### MLB Database
-
-<AccordionGroup>
-  <Accordion icon="baseball" title="Pitching Statistics">
-    **Coverage**: 1871-present (153 seasons)
-    
-    **Traditional Pitching**:
-    - `pitching_stats`: ERA, WHIP, W-L, innings pitched, strikeouts
-    - `pitching_advanced`: xFIP, SIERA, K/9, BB/9, HR/9
-    - `pitching_situational`: Performance vs left/right, RISP, high leverage
-    
-    **Game-Level Pitching**:
-    - `pitching_game_logs`: Start-by-start performance
-    - `pitch_by_pitch`: Individual pitch data with velocity and location
-    - `bullpen_usage`: Relief appearance patterns and effectiveness
-    
-    **Example Query**:
-    ```sql
-    SELECT pitcher_name, season, era, whip, strikeouts, innings_pitched
-    FROM pitching_stats 
-    WHERE season = 2024 AND innings_pitched > 100
-    ORDER BY era ASC;
-    ```
-  </Accordion>
-  
-  <Accordion icon="chart-bar" title="Batting Statistics">
-    **Coverage**: Complete offensive statistics for all players
-    
-    **Traditional Batting**:
-    - `batting_stats`: AVG, OBP, SLG, OPS, HR, RBI, stolen bases
-    - `batting_advanced`: wOBA, wRC+, ISO, BABIP, sprint speed
-    - `batting_situational`: RISP, clutch, vs LHP/RHP
-    
-    **Plate Discipline**:
-    - `plate_discipline`: Walk rate, strikeout rate, swing metrics
-    - `batting_game_logs`: Game-by-game offensive performance
-    - `hit_trajectory`: Launch angle, exit velocity, hard-hit rate
-  </Accordion>
-  
-  <Accordion icon="shield" title="Defensive Metrics">
-    **Coverage**: Fielding statistics and advanced defensive metrics
-    
-    **Traditional Defense**:
-    - `fielding_stats`: Errors, assists, putouts, fielding percentage
-    - `defensive_advanced`: DRS, UZR, OAA (Outs Above Average)
-    - `catcher_defense`: Framing, blocking, throwing metrics
-    
-    **Positional Analysis**:
-    - Position-specific metrics for each defensive role
-    - Range and conversion rate statistics
-    - Shift effectiveness and positioning data
-  </Accordion>
-  
-  <Accordion icon="calendar" title="Game Results and Context">
-    **Coverage**: Every MLB game with detailed context
-    
-    **Game Data**:
-    - `games`: Scores, weather, attendance, ballpark factors
-    - `box_scores`: Complete game statistics for teams and players
-    - `play_by_play`: Inning-by-inning game progression
-    
-    **Contextual Factors**:
-    - Weather conditions and their impact on play
-    - Ballpark dimensions and offensive/pitching factors
-    - Umpire tendencies and strike zone analysis
-  </Accordion>
-</AccordionGroup>
-
-## Real-Time Web Scraping
-
-### NBA Web Sources
+## NBA Data Coverage
 
 <CardGroup cols={2}>
   <Card
-    title="Official NBA Sources"
-    icon="globe"
+    title="📊 Player Statistics"
+    icon="user"
   >
-    **NBA.com**: Official statistics, injury reports, transactions
+    **Traditional Metrics**
+    - Points, rebounds, assists per game
+    - Field goal and free throw percentages
+    - Minutes played and games started
     
-    **Team Websites**: Roster updates, coaching changes, press releases
-    
-    **NBA Media**: Press conferences, interviews, insider reports
+    **Advanced Analytics**
+    - Player efficiency rating (PER)
+    - True shooting percentage
+    - Usage rates and impact metrics
   </Card>
   
   <Card
-    title="Sports Media"
-    icon="newspaper"
+    title="🏀 Team Performance"
+    icon="users"
   >
-    **ESPN**: Breaking news, trade rumors, analysis
+    **Team Statistics**
+    - Offensive and defensive ratings
+    - Pace of play and efficiency
+    - Home/away performance splits
     
-    **The Athletic**: In-depth reporting and insider information
-    
-    **Basketball Reference**: Statistical updates and corrections
-  </Card>
-</CardGroup>
-
-### MLB Web Sources
-
-<CardGroup cols={2}>
-  <Card
-    title="Official MLB Sources"
-    icon="globe"
-  >
-    **MLB.com**: Official statistics, transactions, injury reports
-    
-    **Team Websites**: Roster moves, minor league updates
-    
-    **MLB Network**: Trade deadline coverage, insider reports
+    **Historical Records**
+    - Season standings and records
+    - Playoff performance history
+    - Head-to-head matchup data
   </Card>
   
   <Card
-    title="Specialized Baseball Media"
-    icon="newspaper"
-  >
-    **FanGraphs**: Advanced statistics and analysis
-    
-    **Baseball Prospectus**: Prospect rankings and development
-    
-    **MLB Trade Rumors**: Transaction tracking and speculation
-  </Card>
-</CardGroup>
-
-### Web Scraping Capabilities
-
-<AccordionGroup>
-  <Accordion icon="clock" title="Real-Time Updates">
-    **Injury Reports**: Latest player availability and status changes
-    
-    **Roster Moves**: Trades, signings, releases, and promotions
-    
-    **Breaking News**: Game postponements, suspension announcements
-    
-    **Update Frequency**: Every 15 minutes during active hours
-  </Accordion>
-  
-  <Accordion icon="chart-line" title="Performance Tracking">
-    **Recent Form**: Last 10 games performance trends
-    
-    **Hot/Cold Streaks**: Shooting slumps, hitting streaks
-    
-    **Milestone Watch**: Players approaching career achievements
-    
-    **Team Chemistry**: Lineup changes and their impact
-  </Accordion>
-  
-  <Accordion icon="calendar" title="Schedule Intelligence">
-    **Rest Advantages**: Back-to-back games, travel schedules
-    
-    **Opponent Analysis**: Head-to-head matchup history
-    
-    **Venue Factors**: Home/away splits, altitude, weather
-    
-    **TV Schedule**: National broadcasts and their implications
-  </Accordion>
-</AccordionGroup>
-
-## Live Betting Market Data
-
-### Sportsbook Coverage
-
-<CardGroup cols={2}>
-  <Card
-    title="Major US Sportsbooks"
-    icon="dollar-sign"
-  >
-    **DraftKings**: Point spreads, totals, player props
-    
-    **FanDuel**: Game lines, futures, live betting
-    
-    **BetMGM**: Extensive prop markets, alternate lines
-    
-    **Caesars**: Competitive odds, unique betting options
-  </Card>
-  
-  <Card
-    title="Offshore and International"
-    icon="globe"
-  >
-    **Pinnacle**: Sharp betting lines, high limits
-    
-    **Bovada**: Recreational betting markets
-    
-    **Bet365**: Extensive international coverage
-    
-    **Asian Markets**: Alternative perspectives on value
-  </Card>
-</CardGroup>
-
-### Betting Market Types
-
-<AccordionGroup>
-  <Accordion icon="target" title="Game Lines">
-    **Point Spreads**: Team handicaps and adjustments
-    
-    **Totals (O/U)**: Combined score predictions
-    
-    **Moneylines**: Straight win/loss betting
-    
-    **Alternate Lines**: Different spreads and totals with adjusted odds
-    
-    **Live Betting**: In-game odds that update in real-time
-  </Accordion>
-  
-  <Accordion icon="user" title="Player Props">
-    **NBA Props**:
-    - Points, assists, rebounds, three-pointers made
-    - Combined stats (PRA), double-doubles, triple-doubles
-    - Team-specific props (first basket, last basket)
-    
-    **MLB Props**:
-    - Hits, RBIs, home runs, stolen bases
-    - Pitcher strikeouts, innings pitched, earned runs
-    - First inning runs, team totals by inning
-  </Accordion>
-  
-  <Accordion icon="trophy" title="Futures Markets">
-    **Season-Long Bets**:
-    - Championship odds for teams
-    - MVP, Rookie of the Year, Cy Young awards
-    - Division winners, playoff positioning
-    - Season win totals for teams
-    
-    **Market Intelligence**:
-    - Odds movement tracking
-    - Sharp vs public money indicators
-    - Consensus betting percentages
-  </Accordion>
-</AccordionGroup>
-
-### Betting Analytics
-
-<AccordionGroup>
-  <Accordion icon="chart-line" title="Line Movement Analysis">
-    **Opening vs Closing Lines**: How odds change from opening to game time
-    
-    **Steam Moves**: Rapid line movements indicating sharp money
-    
-    **Reverse Line Movement**: Lines moving against public betting percentages
-    
-    **Key Number Analysis**: Important point spreads and totals in each sport
-  </Accordion>
-  
-  <Accordion icon="brain" title="Market Inefficiencies">
-    **Value Identification**: Comparing our projections to market odds
-    
-    **Arbitrage Opportunities**: Price discrepancies between sportsbooks
-    
-    **Correlation Betting**: Related prop bets with connected outcomes
-    
-    **Historical Performance**: Track record against closing lines
-  </Accordion>
-</AccordionGroup>
-
-## Data Quality and Validation
-
-### Accuracy Measures
-
-<Steps>
-  <Step title="Source Verification">
-    **Primary Source Priority**: Official league data takes precedence
-    
-    **Cross-Reference Validation**: Multiple sources confirm critical data points
-    
-    **Error Detection**: Automated systems flag statistical anomalies
-  </Step>
-  
-  <Step title="Real-Time Validation">
-    **Live Updates**: Continuous monitoring of data feeds
-    
-    **Discrepancy Resolution**: Automatic correction of conflicting information
-    
-    **Manual Review**: Human verification of unusual or important updates
-  </Step>
-  
-  <Step title="Historical Consistency">
-    **Retroactive Corrections**: Updates applied to historical records when needed
-    
-    **Version Control**: Track changes to maintain data integrity
-    
-    **Audit Trails**: Complete history of data modifications
-  </Step>
-</Steps>
-
-### Data Freshness
-
-<CardGroup cols={2}>
-  <Card
-    title="Historical Data"
-    icon="history"
-  >
-    **NBA**: Updated within 24 hours of game completion
-    
-    **MLB**: Same-day updates for completed games
-    
-    **Season Stats**: Recalculated after each game
-    
-    **Advanced Metrics**: Updated weekly with comprehensive analysis
-  </Card>
-  
-  <Card
-    title="Real-Time Data"
-    icon="clock"
-  >
-    **Injury Reports**: Updated within minutes of announcements
-    
-    **Betting Lines**: Real-time updates as markets move
-    
-    **Breaking News**: Immediate integration into analysis
-    
-    **Live Scores**: Updated every 30 seconds during games
-  </Card>
-</CardGroup>
-
-## Data Privacy and Security
-
-<AccordionGroup>
-  <Accordion icon="shield" title="Data Protection">
-    **Encryption**: All data transmission and storage encrypted
-    
-    **Access Controls**: Role-based access to sensitive information
-    
-    **Compliance**: Adherence to sports data licensing agreements
-    
-    **Audit Logging**: Complete tracking of data access and usage
-  </Accordion>
-  
-  <Accordion icon="scale" title="Licensing and Legal">
-    **Official Partnerships**: Licensed data from major sports leagues
-    
-    **Fair Use**: Web scraping conducted within legal boundaries
-    
-    **Attribution**: Proper crediting of data sources when required
-    
-    **Usage Limits**: Respect for rate limiting and terms of service
-  </Accordion>
-</AccordionGroup>
-
-## Future Data Expansions
-
-<CardGroup cols={2}>
-  <Card
-    title="Enhanced Analytics"
+    title="📈 Game Data"
     icon="chart-line"
   >
-    **Player Tracking**: Detailed movement and positioning data
+    **Game-by-Game**
+    - Individual game performances
+    - Shooting charts and locations
+    - Quarter-by-quarter breakdowns
     
-    **Biomechanics**: Injury prediction and performance optimization
-    
-    **Video Analysis**: Computer vision for play recognition
-    
-    **Social Sentiment**: Fan and media reaction analysis
+    **Situational Stats**
+    - Clutch time performance
+    - Performance vs different opponents
+    - Recent form and trends
   </Card>
   
   <Card
-    title="Additional Sports"
-    icon="football"
+    title="📰 Current Information"
+    icon="newspaper"
   >
-    **NFL**: Football statistics and analytics
+    **Live Updates**
+    - Injury reports and status
+    - Trade rumors and transactions
+    - Roster moves and signings
     
-    **NHL**: Hockey performance metrics
-    
-    **College Sports**: University basketball and football
-    
-    **International**: Soccer, cricket, and global sports
+    **News Integration**
+    - Breaking news and developments
+    - Coach and player interviews
+    - Performance analysis and insights
   </Card>
 </CardGroup>
 
-## API Integration Examples
+## Data Quality & Processing
 
-<CodeGroup>
-```python Data Source Query
-# Query specific data sources
-result = await client.analyze(
-    "What data sources show LeBron's recent performance?",
-    "Include database stats, recent news, and betting props"
-)
+<AccordionGroup>
+  <Accordion icon="shield-check" title="Data Accuracy">
+    **Quality Assurance**
+    - Multi-source verification for all statistics
+    - Automated data validation processes
+    - Regular updates to ensure current information
+    
+    **Historical Integrity**
+    - Comprehensive historical records
+    - Consistent statistical definitions
+    - Verified performance metrics
+  </Accordion>
+  
+  <Accordion icon="zap" title="Real-time Updates">
+    **Live Information**
+    - Injury status monitoring
+    - Roster change tracking
+    - News and development updates
+    
+    **Frequency**
+    - Player statistics updated after each game
+    - News and updates multiple times daily
+    - Injury reports as they become available
+  </Accordion>
+  
+  <Accordion icon="brain" title="Data Intelligence">
+    **Smart Processing**
+    - Contextual understanding of player roles
+    - Situational performance analysis
+    - Trend identification and pattern recognition
+    
+    **Enhanced Analysis**
+    - Performance correlation analysis
+    - Predictive indicators
+    - Historical comparison frameworks
+  </Accordion>
+</AccordionGroup>
 
-# Response will detail:
-# - Database: Season averages, advanced metrics
-# - Web scraping: Recent injury reports, news
-# - Betting: Current prop bet lines
-```
+## Coverage Scope
 
-```sql Direct Database Access
--- Example of historical database query
-SELECT 
-    p.player_name,
-    p.season,
-    p.ppg,
-    p.apg,
-    p.rpg,
-    a.per,
-    a.ts_pct
-FROM player_stats_regular_season p
-JOIN player_stats_advanced a ON p.player_id = a.player_id 
-    AND p.season = a.season
-WHERE p.player_name = 'Stephen Curry'
-    AND p.season >= '2020-21'
-ORDER BY p.season DESC;
-```
-</CodeGroup>
+### Current NBA Support
+- **All 30 NBA teams** with complete roster information
+- **Active and historical players** with comprehensive statistics
+- **Game data** from recent seasons with detailed breakdowns
+- **Real-time updates** during the NBA season
+
+### Future Expansion
+- **MLB data integration** coming soon
+- **Additional leagues** and sports planned
+- **Enhanced analytics** and deeper insights
+- **International basketball** leagues potential
+
+## Data Integration
+
+Our platform seamlessly integrates multiple data sources to provide:
+
+<CardGroup cols={2}>
+  <Card
+    title="Comprehensive Analysis"
+    icon="chart-mixed"
+  >
+    Combines historical performance with current form to provide complete player and team analysis.
+  </Card>
+  
+  <Card
+    title="Contextual Intelligence"
+    icon="lightbulb"
+  >
+    Understands situational factors like injuries, recent trades, and performance trends.
+  </Card>
+  
+  <Card
+    title="Real-time Accuracy"
+    icon="clock"
+  >
+    Provides up-to-date information that reflects the current state of teams and players.
+  </Card>
+  
+  <Card
+    title="Historical Context"
+    icon="calendar"
+  >
+    Places current performance in historical perspective for meaningful comparisons.
+  </Card>
+</CardGroup>
 
 ## Related Documentation
 
 <CardGroup cols={2}>
   <Card
-    title="Multi-League Support"
-    icon="trophy"
+    title="League Support"
+    icon="basketball"
     href="/features/multi-league-support"
   >
-    Learn how data sources support both NBA and MLB analysis
-  </Card>
-  
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference/introduction"
-  >
-    Complete API documentation for data access
+    Learn about NBA analysis capabilities and future league support
   </Card>
   
   <Card
@@ -537,14 +189,6 @@ ORDER BY p.season DESC;
     icon="lightbulb"
     href="/examples"
   >
-    Real-world examples using different data sources
-  </Card>
-  
-  <Card
-    title="Streaming Analysis"
-    icon="play"
-    href="/features/streaming-analysis"
-  >
-    See how data sources are accessed in real-time
+    See real-world examples of data-driven sports analysis
   </Card>
 </CardGroup>

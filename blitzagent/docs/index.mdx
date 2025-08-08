@@ -5,18 +5,28 @@ description: "AI agent layer for sports - natural language sports query engine a
 
 # Welcome to Blitz
 
-Blitz is an AI agent layer for sports, starting with the most accurate natural-language sports query engine, trained on highly processed and optimized historical data. We are already able to answer questions far beyond what is possible anywhere else, and our performance will only continue to improve over time. 
-
-This search layer is only the foundation. Our full value comes from delivering custom AI solutions that automate high-value workflows for sports businesses, whether that be chatbot interfaces, social media content generation, predictive models, insights, scouting reports, etc. - all powered by our data engine. The platform is flexible and can integrate with businesses' proprietary data directly, enabling precise and customizable actions for any sports-related need.
-
-You can call endpoints that interact with our current search agent, but more agents will be coming that will automate tasks in the sports industry. A combination of these agents can then be utilized within custom workflows.
-
 <img
   src="/images/blitzbot.png"
   alt="BlitzBot"
-  width="200"
-  style={{ margin: "20px auto", display: "block" }}
+  width="150"
+  style={{ float: "right", margin: "0 0 20px 20px" }}
 />
+
+**Blitz** is an AI agent layer for sports that provides developers with powerful tools to build sports-intelligent applications. Our platform starts with the most accurate natural-language sports query engine, trained on highly processed and optimized historical NBA data.
+
+**Current Capabilities:**
+- Natural language sports queries with advanced reasoning
+- Comprehensive NBA player and team analysis  
+- Real-time data integration and insights
+- RESTful API with streaming support
+
+**Platform Vision:**
+Our search agent is the foundation for a broader ecosystem of AI agents that automate high-value workflows for sports businesses - from chatbot interfaces and social media content generation to predictive models and scouting reports. The platform integrates with your proprietary data to enable precise, customizable actions for any sports-related need.
+
+**Getting Started:**
+Access our current search agent through simple API endpoints, with additional specialized agents coming soon. Combine multiple agents to create sophisticated automated workflows for your sports applications.
+
+**Ready to get started?** Test out our endpoints in the [API Reference](/api-reference/introduction) tab or follow our [Quick Start](/quickstart) guide.
 
 <Card
   title="Quick Start"
@@ -33,11 +43,11 @@ Blitz provides comprehensive sports analytics capabilities through an easy-to-us
 
 <CardGroup cols={2}>
   <Card
-    title="🏈 Multi-League Support"
+    title="🏀 League Support"
     icon="trophy"
     href="/features/multi-league-support"
   >
-    Comprehensive analysis for both NBA and MLB with automatic league detection.
+    Comprehensive NBA analysis with automatic player and team detection. MLB support coming soon.
   </Card>
   <Card
     title="📊 Real-time Analysis"
@@ -95,17 +105,14 @@ Blitz excels at various sports analysis tasks:
 
 ## Data Sources
 
-Blitz has access to comprehensive sports data through multiple sources:
+Blitz leverages comprehensive sports data through multiple sources:
 
 <Steps>
-  <Step title="Historical Database">
-    PostgreSQL database with comprehensive player stats, team records, and historical performance data for NBA and MLB.
+  <Step title="Historical Data">
+    Comprehensive NBA player statistics, team records, and historical performance data spanning multiple seasons.
   </Step>
   <Step title="Web Scraping">
     Real-time sports news, injury reports, trade information, and current events from reliable sports sources.
-  </Step>
-  <Step title="Live Betting Data">
-    Current betting lines, odds movements, and market data from major sportsbooks for informed analysis.
   </Step>
 </Steps>
 
@@ -114,7 +121,7 @@ Blitz has access to comprehensive sports data through multiple sources:
 Here are some examples of what you can ask Blitz:
 
 <CodeGroup>
-```bash NBA Example
+```bash Player Analysis
 curl -X POST "https://blitzagent.onrender.com/analyze" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
@@ -124,13 +131,13 @@ curl -X POST "https://blitzagent.onrender.com/analyze" \
   }'
 ```
 
-```bash MLB Example
+```bash Team Analysis
 curl -X POST "https://blitzagent.onrender.com/analyze" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
-    "query": "What are the best pitching matchups for today?",
-    "extra_context": "Include weather conditions and ballpark factors"
+    "query": "Which NBA teams have the best three-point defense this season?",
+    "extra_context": "Include opponent shooting percentages and defensive schemes"
   }'
 ```
 
