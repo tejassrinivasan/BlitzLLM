@@ -1,11 +1,11 @@
 ---
-title: "BlitzAgent Documentation"
-description: "A powerful AI sports analysis agent powered by Claude 4 Sonnet and the Blitz MCP server"
+title: "Blitz Documentation"
+description: "AI-powered sports analysis API for building intelligent agent workflows"
 ---
 
-# Welcome to BlitzAgent
+# Welcome to Blitz
 
-BlitzAgent is a sophisticated AI-powered sports analysis agent built with [Pydantic AI](https://ai.pydantic.dev/agents/) that connects to the Blitz MCP server and uses Claude 4 Sonnet for advanced reasoning and analysis.
+Blitz is a sophisticated AI-powered sports analysis API that provides comprehensive NBA and MLB insights through simple API calls. Integrate Blitz into your agent workflows, applications, and automation systems to access advanced sports analytics powered by Claude 4 Sonnet.
 
 <img
   src="/images/blitzbot.png"
@@ -20,20 +20,14 @@ BlitzAgent is a sophisticated AI-powered sports analysis agent built with [Pydan
   href="/quickstart"
   horizontal
 >
-  Get BlitzAgent running in minutes with our step-by-step guide.
+  Start making API calls to Blitz in minutes with just your API key.
 </Card>
 
 ## Key Features
 
-BlitzAgent provides comprehensive sports analytics capabilities through an easy-to-use REST API:
+Blitz provides comprehensive sports analytics capabilities through an easy-to-use REST API:
 
 <CardGroup cols={2}>
-  <Card
-    title="🤖 Claude 4 Sonnet Integration"
-    icon="brain"
-  >
-    Uses Anthropic's most advanced reasoning model with superior intelligence and 200K context window.
-  </Card>
   <Card
     title="🏈 Multi-League Support"
     icon="trophy"
@@ -49,17 +43,24 @@ BlitzAgent provides comprehensive sports analytics capabilities through an easy-
     Streaming responses with real-time analysis events and progress updates.
   </Card>
   <Card
-    title="🔌 MCP Server Integration"
+    title="🔗 Agent Integration"
     icon="link"
-    href="/features/data-sources"
+    href="/examples#agent-workflows"
   >
-    Connect to comprehensive sports databases, web scraping, and live betting data.
+    Easy integration into agent workflows and automation systems.
+  </Card>
+  <Card
+    title="🚀 Simple API"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Just one API key needed - no complex setup or infrastructure required.
   </Card>
 </CardGroup>
 
 ## What You Can Analyze
 
-BlitzAgent excels at various sports analysis tasks:
+Blitz excels at various sports analysis tasks:
 
 <AccordionGroup>
   <Accordion icon="user" title="Player Analysis">
@@ -90,7 +91,7 @@ BlitzAgent excels at various sports analysis tasks:
 
 ## Data Sources
 
-BlitzAgent has access to comprehensive sports data through multiple sources:
+Blitz has access to comprehensive sports data through multiple sources:
 
 <Steps>
   <Step title="Historical Database">
@@ -106,13 +107,13 @@ BlitzAgent has access to comprehensive sports data through multiple sources:
 
 ## Example Queries
 
-Here are some examples of what you can ask BlitzAgent:
+Here are some examples of what you can ask Blitz:
 
 <CodeGroup>
 ```bash NBA Example
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "How has LeBron James performed in clutch situations this season?",
     "extra_context": "Focus on games in the last 5 minutes with score within 5 points"
@@ -120,9 +121,9 @@ curl -X POST "http://localhost:8001/analyze" \
 ```
 
 ```bash MLB Example
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "What are the best pitching matchups for today?",
     "extra_context": "Include weather conditions and ballpark factors"
@@ -136,8 +137,8 @@ import asyncio
 async def analyze_sports():
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8001/analyze",
-            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            "https://api.blitz.com/analyze",
+            headers={"Authorization": "Bearer YOUR_BLITZ_API_KEY"},
             json={
                 "query": "Which NBA teams have the best three-point defense?",
                 "extra_context": "Include data from the last 20 games"

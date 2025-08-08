@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "BlitzAgent",
+  "name": "Blitz",
   "colors": {
     "primary": "#DC2626",
     "light": "#EF4444",

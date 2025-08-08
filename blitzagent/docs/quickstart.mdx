@@ -1,9 +1,9 @@
 ---
 title: "Quickstart Guide"
-description: "Get BlitzAgent up and running in minutes"
+description: "Start using the Blitz API for sports analysis in minutes"
 ---
 
-# Get Started with BlitzAgent
+# Get Started with Blitz
 
 <img
   src="/images/blitzbot.png"
@@ -12,126 +12,37 @@ description: "Get BlitzAgent up and running in minutes"
   style={{ float: "right", margin: "0 0 20px 20px" }}
 />
 
-This guide will help you install, configure, and start using BlitzAgent for sports analysis in just a few minutes.
+This guide will help you start making sports analysis API calls to Blitz in just a few minutes. No installation or setup required - just get your API key and start analyzing sports data.
 
-## Prerequisites
-
-Before you begin, make sure you have:
+## Get Your API Key
 
 <Steps>
-  <Step title="Python 3.9+">
-    BlitzAgent requires Python 3.9 or higher. Check your version:
+  <Step title="Sign Up">
+    Create your Blitz account to get access to the sports analysis API.
+  </Step>
+  
+  <Step title="Get API Key">
+    Navigate to your dashboard and copy your Blitz API key. You'll use this to authenticate all API requests.
+  </Step>
+  
+  <Step title="Test Connection">
+    Verify your API key works with a simple test call:
     ```bash
-    python --version
+    curl -X GET "https://api.blitz.com/health" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY"
     ```
-  </Step>
-  <Step title="Anthropic API Key">
-    Get your API key from [Anthropic Console](https://console.anthropic.com/). You'll need this for Claude 4 Sonnet access.
-  </Step>
-  <Step title="Access to Blitz MCP Server">
-    Ensure you have access to the Blitz MCP server for sports data connectivity.
   </Step>
 </Steps>
 
-## Installation
-
-<AccordionGroup>
-  <Accordion icon="download" title="Clone the Repository">
-    Clone the BlitzAgent repository to your local machine:
-    
-    ```bash
-    git clone https://github.com/tejassrinivasan/BlitzLLM.git
-    cd BlitzLLM/blitzagent
-    ```
-  </Accordion>
-  
-  <Accordion icon="package" title="Install Dependencies">
-    Install the required Python packages:
-    
-    ```bash
-    pip install -r requirements.txt
-    ```
-    
-    This installs:
-    - `pydantic-ai-slim[mcp]` for agent framework with MCP support
-    - `fastapi` for the REST API server
-    - `anthropic` for Claude 4 Sonnet integration
-    - And other required dependencies
-  </Accordion>
-</AccordionGroup>
-
-## Configuration
-
-<AccordionGroup>
-  <Accordion icon="key" title="Set Up Environment Variables">
-    Create a `.env` file or set environment variables directly:
-    
-    ```bash
-    # Required: Anthropic API Key
-    export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
-    
-    # Required: API Authentication
-    export API_KEY="your_secure_api_key"
-    
-    # Optional: Server Configuration
-    export HOST="0.0.0.0"
-    export PORT="8001"
-    export LOG_LEVEL="INFO"
-    ```
-    
-    <Warning>
-      Both `ANTHROPIC_API_KEY` and `API_KEY` are required. The `API_KEY` is used to authenticate requests to your BlitzAgent instance.
-    </Warning>
-  </Accordion>
-  
-  <Accordion icon="cog" title="Verify Configuration">
-    Test your configuration by running a quick validation:
-    
-    ```bash
-    python -c "from config import Config; Config.validate(); print('✅ Configuration is valid!')"
-    ```
-  </Accordion>
-</AccordionGroup>
-
-## Running BlitzAgent
-
-<AccordionGroup>
-  <Accordion icon="rocket" title="Start the Server">
-    Launch BlitzAgent with the following command:
-    
-    ```bash
-    python main.py
-    ```
-    
-    You should see output similar to:
-    ```
-    INFO:     Starting BlitzAgent server...
-    INFO:     MCP server initialized successfully
-    INFO:     Agent created with MCP tools
-    INFO:     Server running on http://0.0.0.0:8001
-    ```
-  </Accordion>
-  
-  <Accordion icon="globe" title="Test the API">
-    Open another terminal and test your installation:
-    
-    ```bash
-    curl -X GET "http://localhost:8001/health"
-    ```
-    
-    You should receive a health check response confirming the server is running.
-  </Accordion>
-</AccordionGroup>
-
 ## Your First Analysis
 
-Now let's run your first sports analysis query:
+Now let's make your first sports analysis call:
 
 <CodeGroup>
-```bash curl
-curl -X POST "http://localhost:8001/analyze" \
+```bash cURL
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "What are Stephen Curry'\''s three-point shooting stats this season?",
     "extra_context": "Focus on recent performance trends"
@@ -142,11 +53,14 @@ curl -X POST "http://localhost:8001/analyze" \
 import httpx
 import asyncio
 
-async def test_analysis():
+async def test_blitz():
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8001/analyze",
-            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            "https://api.blitz.com/analyze",
+            headers={
+                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
+                "Content-Type": "application/json"
+            },
             json={
                 "query": "What are Stephen Curry's three-point shooting stats this season?",
                 "extra_context": "Focus on recent performance trends"
@@ -161,122 +75,322 @@ async def test_analysis():
             print(f"❌ Error: {response.status_code}")
             print(response.text)
 
-asyncio.run(test_analysis())
+asyncio.run(test_blitz())
 ```
 
 ```javascript JavaScript
-const response = await fetch('http://localhost:8001/analyze', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_API_KEY'
-  },
-  body: JSON.stringify({
-    query: "What are Stephen Curry's three-point shooting stats this season?",
-    extra_context: "Focus on recent performance trends"
-  })
-});
+const analyzeWithBlitz = async () => {
+  const response = await fetch('https://api.blitz.com/analyze', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
+    },
+    body: JSON.stringify({
+      query: "What are Stephen Curry's three-point shooting stats this season?",
+      extra_context: "Focus on recent performance trends"
+    })
+  });
+  
+  if (response.ok) {
+    const result = await response.json();
+    console.log('✅ Analysis:', result.response);
+  } else {
+    console.error('❌ Error:', response.status, await response.text());
+  }
+};
 
-const result = await response.json();
-console.log('Analysis:', result.response);
+analyzeWithBlitz();
 ```
 </CodeGroup>
 
-## Interactive Documentation
+## API Endpoints
 
-Once your server is running, you can test the API in multiple ways:
+Blitz provides two main endpoints for sports analysis:
 
 <CardGroup cols={2}>
   <Card
-    title="API Documentation"
-    icon="book-open"
-    href="http://localhost:8001/docs"
+    title="POST /analyze"
+    icon="search"
+    href="/api-reference/analyze"
   >
-    Interactive Swagger UI for testing endpoints at `http://localhost:8001/docs`
+    **Standard Analysis**
+    
+    Get comprehensive sports analysis with a single API call. Perfect for most use cases.
+    
+    ```bash
+    https://api.blitz.com/analyze
+    ```
   </Card>
   
   <Card
-    title="Stream Viewer"
+    title="POST /analyze/stream"
     icon="play"
-    href="http://localhost:8001/stream_viewer.html"
+    href="/api-reference/stream"
   >
-    Built-in tool for testing streaming analysis at `http://localhost:8001/stream_viewer.html`
+    **Streaming Analysis**
+    
+    Get real-time analysis events for complex queries. See the reasoning process as it happens.
+    
+    ```bash
+    https://api.blitz.com/analyze/stream
+    ```
   </Card>
 </CardGroup>
 
-<Note>
-  **Testing Tips**: Use the Swagger UI for the `/analyze` and `/health` endpoints. For the `/analyze/stream` endpoint, use the Stream Viewer tool since standard API playgrounds don't support Server-Sent Events.
-</Note>
+## Example Use Cases
 
-## What's Next?
+<AccordionGroup>
+  <Accordion icon="basketball" title="NBA Analysis">
+    **Player Performance**:
+    ```json
+    {
+      "query": "How has Luka Dončić performed this season?",
+      "extra_context": "Include advanced metrics and recent trends"
+    }
+    ```
+    
+    **Team Comparisons**:
+    ```json
+    {
+      "query": "Compare the Lakers and Warriors offensive efficiency",
+      "extra_context": "Focus on last 15 games"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="baseball" title="MLB Analysis">
+    **Pitching Analysis**:
+    ```json
+    {
+      "query": "What's Gerrit Cole's ERA and strikeout rate this season?",
+      "extra_context": "Compare to his career averages"
+    }
+    ```
+    
+    **Team Performance**:
+    ```json
+    {
+      "query": "How do the Dodgers perform against left-handed pitching?",
+      "extra_context": "Include both regular season and playoff data"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Fantasy Sports">
+    **Player Projections**:
+    ```json
+    {
+      "query": "Who are the top fantasy basketball players for this week?",
+      "extra_context": "Include game counts and matchup difficulty"
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="dollar-sign" title="Betting Analysis">
+    **Value Identification**:
+    ```json
+    {
+      "query": "Analyze the Lakers vs Celtics game for betting value",
+      "extra_context": "Include line movement and injury impacts"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
-Now that BlitzAgent is running, explore these features:
+## Integration into Workflows
+
+### Agent Workflows
+
+Integrate Blitz into your AI agent workflows:
+
+<CodeGroup>
+```python AI Agent Integration
+from blitz_client import BlitzClient
+
+class SportsAnalysisAgent:
+    def __init__(self, blitz_api_key):
+        self.blitz = BlitzClient(blitz_api_key)
+    
+    async def analyze_player_performance(self, player_name, context=""):
+        query = f"Analyze {player_name}'s performance this season"
+        result = await self.blitz.analyze(query, context)
+        return result
+    
+    async def get_betting_insights(self, game_matchup):
+        query = f"Provide betting analysis for {game_matchup}"
+        result = await self.blitz.analyze(query, "Include line movement and value bets")
+        return result
+
+# Usage in workflow
+agent = SportsAnalysisAgent("your_blitz_api_key")
+analysis = await agent.analyze_player_performance("LeBron James", "Focus on clutch performance")
+```
+
+```javascript Workflow Automation
+class SportsWorkflow {
+  constructor(blitzApiKey) {
+    this.blitzApiKey = blitzApiKey;
+    this.baseUrl = 'https://api.blitz.com';
+  }
+
+  async getPlayerInsights(playerName) {
+    const response = await fetch(`${this.baseUrl}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.blitzApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: `Analyze ${playerName}'s recent performance and injury status`,
+        extra_context: "Include fantasy relevance and upcoming schedule"
+      })
+    });
+    
+    return await response.json();
+  }
+
+  async dailySportsReport() {
+    const queries = [
+      "Top NBA storylines today",
+      "MLB games with best betting value",
+      "Fantasy football waiver wire pickups"
+    ];
+    
+    const analyses = await Promise.all(
+      queries.map(query => this.analyzeQuery(query))
+    );
+    
+    return this.compileReport(analyses);
+  }
+}
+```
+</CodeGroup>
+
+### Automation Examples
 
 <CardGroup cols={2}>
   <Card
-    title="Authentication Setup"
-    icon="shield"
-    href="/authentication"
+    title="Daily Reports"
+    icon="calendar"
   >
-    Configure secure API authentication for production use.
+    **Automated Analysis**
+    
+    Set up scheduled analysis for daily sports insights, injury reports, and betting opportunities.
   </Card>
   
+  <Card
+    title="Real-time Alerts"
+    icon="bell"
+  >
+    **Event Monitoring**
+    
+    Monitor for breaking news, player injuries, or line movements and get instant analysis.
+  </Card>
+  
+  <Card
+    title="Fantasy Optimization"
+    icon="trophy"
+  >
+    **Lineup Assistance**
+    
+    Integrate with fantasy platforms to get AI-powered lineup recommendations and player analysis.
+  </Card>
+  
+  <Card
+    title="Research Pipeline"
+    icon="search"
+  >
+    **Data Analysis**
+    
+    Build research workflows that combine Blitz insights with other data sources for comprehensive analysis.
+  </Card>
+</CardGroup>
+
+## Response Format
+
+All Blitz API responses follow this structure:
+
+<CodeGroup>
+```json Success Response
+{
+  "response": "Stephen Curry is having an exceptional season from three-point range, shooting 42.8% on 11.2 attempts per game. His recent 10-game stretch shows improved efficiency with 45.1% from beyond the arc, indicating strong form heading into the playoffs. Compared to his career average of 42.6%, this season represents continued elite performance at age 36.",
+  "usage": {
+    "requests": 1,
+    "request_tokens": 156,
+    "response_tokens": 487,
+    "total_tokens": 643
+  }
+}
+```
+
+```json Error Response
+{
+  "detail": "Invalid API key"
+}
+```
+</CodeGroup>
+
+## Rate Limits
+
+<AccordionGroup>
+  <Accordion icon="zap" title="API Limits">
+    - **Rate Limit**: 100 requests per minute per API key
+    - **Concurrent**: 10 simultaneous requests
+    - **Monthly**: Based on your subscription plan
+    
+    Rate limit headers are included in responses:
+    ```
+    X-RateLimit-Limit: 100
+    X-RateLimit-Remaining: 95
+    X-RateLimit-Reset: 1640995200
+    ```
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Optimization Tips">
+    - Use streaming for complex queries to see progress
+    - Cache results for repeated queries
+    - Batch related questions in a single query
+    - Use extra_context to get more focused results
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<CardGroup cols={2}>
   <Card
     title="API Reference"
     icon="code"
     href="/api-reference/introduction"
   >
-    Explore all available endpoints and their parameters.
+    Explore detailed API documentation with interactive examples.
   </Card>
   
   <Card
-    title="Example Queries"
+    title="Examples & Use Cases"
     icon="lightbulb"
     href="/examples"
   >
-    See real-world examples for different types of sports analysis.
+    See real-world examples and agent workflow integrations.
   </Card>
   
   <Card
-    title="Streaming Analysis"
-    icon="play"
-    href="/features/streaming-analysis"
+    title="Authentication"
+    icon="key"
+    href="/authentication"
   >
-    Learn about real-time streaming responses for complex queries.
+    Learn about API key management and security best practices.
+  </Card>
+  
+  <Card
+    title="Features"
+    icon="star"
+    href="/features/multi-league-support"
+  >
+    Discover advanced features like streaming analysis and multi-league support.
   </Card>
 </CardGroup>
 
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion icon="exclamation-triangle" title="Common Issues">
-    **MCP Server Connection Failed**
-    - Verify your internet connection
-    - Check that the Blitz MCP server is accessible
-    - Ensure proper database credentials in environment
-    
-    **Authentication Errors**
-    - Verify your `ANTHROPIC_API_KEY` is valid
-    - Ensure `API_KEY` is set for request authentication
-    - Check that API keys are properly formatted
-    
-    **Import Errors**
-    - Reinstall dependencies: `pip install -r requirements.txt`
-    - Check Python version compatibility (3.9+)
-  </Accordion>
-  
-  <Accordion icon="bug" title="Debug Mode">
-    For detailed debugging information, set the log level to DEBUG:
-    
-    ```bash
-    export LOG_LEVEL=DEBUG
-    python main.py
-    ```
-    
-    This will provide detailed logs about MCP connections, agent operations, and error details.
-  </Accordion>
-</AccordionGroup>
-
 <Note>
-  **Need Help?** If you encounter issues, check the [troubleshooting guide](/troubleshooting) or contact support at [support@blitzagent.com](mailto:support@blitzagent.com).
+  **Need Help?** Check our [examples](/examples) for specific use cases or contact support if you encounter any issues with the API.
 </Note>
