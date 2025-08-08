@@ -87,6 +87,7 @@
       }
     ]
   },
+  "openapi": "/api-reference/openapi.json",
   "contextual": {
     "options": [
      "copy",

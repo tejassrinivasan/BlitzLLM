@@ -184,15 +184,29 @@ console.log('Analysis:', result.response);
 
 ## Interactive Documentation
 
-Once your server is running, visit the interactive API documentation:
+Once your server is running, you can test the API in multiple ways:
 
-<Card
-  title="Swagger UI Documentation"
-  icon="book-open"
-  href="http://localhost:8001/docs"
->
-  Explore all endpoints with interactive examples at `http://localhost:8001/docs`
-</Card>
+<CardGroup cols={2}>
+  <Card
+    title="API Documentation"
+    icon="book-open"
+    href="http://localhost:8001/docs"
+  >
+    Interactive Swagger UI for testing endpoints at `http://localhost:8001/docs`
+  </Card>
+  
+  <Card
+    title="Stream Viewer"
+    icon="play"
+    href="http://localhost:8001/stream_viewer.html"
+  >
+    Built-in tool for testing streaming analysis at `http://localhost:8001/stream_viewer.html`
+  </Card>
+</CardGroup>
+
+<Note>
+  **Testing Tips**: Use the Swagger UI for the `/analyze` and `/health` endpoints. For the `/analyze/stream` endpoint, use the Stream Viewer tool since standard API playgrounds don't support Server-Sent Events.
+</Note>
 
 ## What's Next?
 

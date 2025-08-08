@@ -1,12 +1,15 @@
 ---
 title: "POST /analyze/stream"
 description: "Stream real-time analysis events for sports queries"
-api: "POST http://localhost:8001/analyze/stream"
 ---
 
 # Stream Sports Analysis
 
 The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see BlitzAgent's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
+
+<Warning>
+  **Interactive Testing Limitation**: This endpoint uses Server-Sent Events (SSE) streaming, which cannot be tested in standard API playgrounds. Use the code examples below or the [Stream Viewer Tool](#stream-viewer-tool) for testing.
+</Warning>
 
 ## Endpoint
 
@@ -492,6 +495,46 @@ Stream errors are sent as regular events with `event_type: "error"`:
   "timestamp": "2024-01-15T10:30:10Z"
 }
 ```
+
+## Stream Viewer Tool
+
+BlitzAgent includes a built-in stream viewer for testing the streaming endpoint interactively:
+
+<Steps>
+  <Step title="Start BlitzAgent Server">
+    Make sure your BlitzAgent server is running:
+    ```bash
+    python main.py
+    ```
+  </Step>
+  
+  <Step title="Open Stream Viewer">
+    Navigate to the stream viewer in your browser:
+    ```
+    http://localhost:8001/stream_viewer.html
+    ```
+    
+    Or open the `stream_viewer.html` file directly from your BlitzAgent installation directory.
+  </Step>
+  
+  <Step title="Test Streaming Analysis">
+    - Enter your API key
+    - Type a sports analysis query
+    - Watch real-time events as they stream
+    - See the final analysis result
+  </Step>
+</Steps>
+
+<Card
+  title="Stream Viewer Features"
+  icon="play"
+>
+  - **Real-time Event Display**: See each analysis step as it happens
+  - **Event Filtering**: Choose which event types to display
+  - **Progress Tracking**: Visual progress bars for long analyses
+  - **Error Handling**: Clear error messages and retry options
+  - **Export Results**: Save analysis results and event logs
+</Card>
 
 ## Related Endpoints
 
