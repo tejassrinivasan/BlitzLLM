@@ -72,13 +72,8 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Support",
+          "anchor": "Contact",
           "href": "mailto:tejas@blitzanalytics.co",
-          "icon": "envelope"
-        },
-        {
-          "anchor": "Contact Devon",
-          "href": "mailto:devon@blitzanalytics.co",
           "icon": "envelope"
         }
       ]
@@ -91,7 +86,7 @@
   "navbar": {
             "links": [
           {
-            "label": "Contact Support",
+            "label": "Contact",
             "href": "mailto:tejas@blitzanalytics.co"
           }
         ]
