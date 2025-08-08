@@ -40,10 +40,8 @@
             ]
           },
           {
-            "group": "Development",
+            "group": "Support",
             "pages": [
-              "development",
-              "configuration",
               "troubleshooting"
             ]
           }

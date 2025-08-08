@@ -210,236 +210,105 @@ This page provides comprehensive examples of how to use Blitz for different type
   </Accordion>
 </AccordionGroup>
 
-## Coming Soon: MLB Examples
+## Coming Soon: MLB Support
 
-### Pitching Analysis
+MLB analysis capabilities are in development and will include:
 
-<AccordionGroup>
-  <Accordion icon="baseball" title="Pitcher Performance">
-    **Use Case**: Comprehensive pitcher analysis and metrics
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How has Gerrit Cole performed this season?",
-        "extra_context": "Include ERA, WHIP, strikeout rate, and recent start analysis"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Traditional stats (ERA, WHIP, W-L)
-    - Advanced metrics (xFIP, SIERA, K/9)
-    - Recent performance trends
-    - Pitch usage and effectiveness
-    - League rankings and context
-  </Accordion>
+<CardGroup cols={2}>
+  <Card
+    title="⚾ Pitching Analysis"
+    icon="baseball"
+  >
+    **Comprehensive Metrics**
+    - ERA, WHIP, and strikeout rates
+    - Advanced pitching analytics
+    - Bullpen effectiveness analysis
+    - Matchup-specific performance
+  </Card>
   
-  <Accordion icon="chart-mixed" title="Bullpen Analysis">
-    **Use Case**: Relief pitcher and bullpen performance evaluation
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Which teams have the best bullpens this season?",
-        "extra_context": "Include high-leverage situations, save percentage, and late-inning performance"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Bullpen ERA and WHIP rankings
-    - High-leverage performance
-    - Save conversion rates
-    - Late-inning statistics
-    - Depth and reliability assessment
-  </Accordion>
-</AccordionGroup>
-
-### Hitting Analysis
-
-<AccordionGroup>
-  <Accordion icon="chart-line" title="Offensive Production">
-    **Use Case**: Hitter performance and production analysis
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Aaron Judge'\''s offensive numbers this season",
-        "extra_context": "Include power metrics, plate discipline, and clutch hitting"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Slash line (AVG/OBP/SLG)
-    - Power metrics (HR, XBH, ISO)
-    - Plate discipline (BB%, K%, O-Swing%)
-    - Clutch performance
-    - League comparisons
-  </Accordion>
+  <Card
+    title="🥎 Hitting Analysis"
+    icon="chart-bar"
+  >
+    **Offensive Metrics**
+    - Slash line statistics
+    - Power and contact metrics
+    - Situational hitting performance
+    - Clutch performance analysis
+  </Card>
   
-  <Accordion icon="arrows-split-up-and-left" title="Situational Hitting">
-    **Use Case**: Performance in specific game situations
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Best hitters with runners in scoring position this season",
-        "extra_context": "Include RBI opportunities, clutch performance, and pressure situations"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - RISP batting averages
-    - RBI efficiency
-    - High-pressure performance
-    - Clutch hitting metrics
-    - Situational rankings
-  </Accordion>
-</AccordionGroup>
-
-### Team & League Analysis
-
-<AccordionGroup>
-  <Accordion icon="trophy" title="Team Performance">
-    **Use Case**: Overall team evaluation and playoff chances
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Los Angeles Dodgers season performance and playoff outlook",
-        "extra_context": "Include team stats, recent performance, and remaining schedule strength"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Team record and standings
-    - Offensive and pitching stats
-    - Recent performance trends
-    - Remaining schedule analysis
-    - Playoff probability
-  </Accordion>
+  <Card
+    title="🏆 Team Performance"
+    icon="trophy"
+  >
+    **Team Analytics**
+    - Run differential analysis
+    - Playoff probability tracking
+    - Schedule strength evaluation
+    - Historical performance comparison
+  </Card>
   
-  <Accordion icon="calendar" title="Seasonal Trends">
-    **Use Case**: League-wide trends and statistical analysis
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "MLB offensive trends this season compared to previous years",
-        "extra_context": "Include home run rates, strikeout trends, and league-wide batting averages"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Year-over-year statistical comparisons
+  <Card
+    title="📊 League Trends"
+    icon="chart-mixed"
+  >
+    **Statistical Analysis**
     - League-wide offensive trends
-    - Rule changes impact
-    - Historical context
+    - Rule change impact assessment
+    - Historical context and comparisons
     - Notable statistical outliers
-  </Accordion>
-</AccordionGroup>
+  </Card>
+</CardGroup>
 
-## Fantasy Sports Examples
+## Coming Soon: Fantasy Sports Integration
 
-### Fantasy Basketball
+Fantasy sports functionality is in development and will include:
 
-<AccordionGroup>
-  <Accordion icon="star" title="Player Value Analysis">
-    **Use Case**: Fantasy basketball player evaluation and rankings
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Top fantasy basketball players for this week",
-        "extra_context": "Include game counts, matchup difficulty, and injury concerns"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Weekly game schedules
-    - Matchup difficulty ratings
-    - Recent performance trends
-    - Injury status updates
-    - Fantasy points projections
-  </Accordion>
+<CardGroup cols={2}>
+  <Card
+    title="🏀 Fantasy Basketball"
+    icon="basketball"
+  >
+    **Player Evaluation & Rankings**
+    - Weekly lineup recommendations
+    - Streaming player identification
+    - Matchup difficulty analysis
+    - Injury impact assessment
+  </Card>
   
-  <Accordion icon="chart-mixed" title="Streaming Options">
-    **Use Case**: Find viable streaming options for fantasy lineups
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Best fantasy basketball streaming options this week",
-        "extra_context": "Focus on players owned in less than 50% of leagues with good matchups"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Low-ownership players
-    - Favorable matchups
-    - Recent opportunity increases
-    - Streaming strategy recommendations
-    - Risk/reward assessment
-  </Accordion>
-</AccordionGroup>
-
-### Fantasy Baseball
-
-<AccordionGroup>
-  <Accordion icon="baseball" title="Pitcher Streaming">
-    **Use Case**: Two-start pitchers and streaming recommendations
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Two-start pitchers for next week in fantasy baseball",
-        "extra_context": "Include matchup difficulty, recent form, and injury status"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Two-start pitcher list
-    - Opponent offensive rankings
-    - Recent performance trends
-    - Ballpark factors
-    - Start/sit recommendations
-  </Accordion>
-</AccordionGroup>
+  <Card
+    title="⚾ Fantasy Baseball"
+    icon="baseball"
+  >
+    **Pitching & Hitting Analysis**
+    - Two-start pitcher identification
+    - Hitter matchup advantages
+    - Ballpark factor considerations
+    - Weather impact analysis
+  </Card>
+  
+  <Card
+    title="📊 Custom Fantasy Data"
+    icon="chart-line"
+  >
+    **Integration Capabilities**
+    - Connect your fantasy platform data
+    - Custom league scoring systems
+    - Roster construction optimization
+    - Trade analysis and recommendations
+  </Card>
+  
+  <Card
+    title="🔄 Real-time APIs"
+    icon="refresh"
+  >
+    **Live Fantasy Updates**
+    - Real-time player status
+    - Lineup change notifications
+    - Injury report integration
+    - Performance tracking
+  </Card>
+</CardGroup>
 
 ## Betting & DFS Examples
 
@@ -493,32 +362,13 @@ This page provides comprehensive examples of how to use Blitz for different type
   </Accordion>
 </AccordionGroup>
 
-### DFS (Daily Fantasy Sports)
+### Daily Fantasy Sports (DFS)
 
-<AccordionGroup>
-  <Accordion icon="coins" title="Optimal Lineups">
-    **Use Case**: DFS lineup construction and player recommendations
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "DraftKings NBA lineup recommendations for tonight",
-        "extra_context": "Include value plays, chalk plays, and tournament strategy considerations"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - High-value player recommendations
-    - Salary optimization strategies
-    - Ownership projections
-    - Stacking opportunities
-    - Tournament vs. cash game strategy
-  </Accordion>
-</AccordionGroup>
+DFS optimization tools are coming soon and will include:
+- Optimal lineup construction
+- Value play identification  
+- Ownership projection analysis
+- Tournament strategy recommendations
 
 ## Integration Examples
 
