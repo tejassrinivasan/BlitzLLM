@@ -1,11 +1,39 @@
 ---
 title: "GET /health"
 description: "Check server health and MCP connection status"
+api: "GET http://localhost:8001/health"
 ---
 
 # Health Check
 
 The `/health` endpoint provides a quick way to check if BlitzAgent is running properly and if all required services are available.
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "http://localhost:8001/health"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8001/health');
+const health = await response.json();
+console.log(`Status: ${health.status}`);
+```
+
+```python Python
+import httpx
+import asyncio
+
+async def check_health():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:8001/health")
+        return response.json()
+
+health_status = await check_health()
+print(f"Status: {health_status['status']}")
+```
+
+</RequestExample>
 
 ## Endpoint
 

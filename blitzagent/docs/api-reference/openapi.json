@@ -1,16 +1,18 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "BlitzAgent API",
+    "description": "AI-powered sports analysis API using Claude 4 Sonnet and comprehensive sports data",
+    "version": "1.0.0",
+    "contact": {
+      "name": "BlitzAgent Support",
+      "email": "support@blitzagent.com"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "http://localhost:8001",
+      "description": "Local development server"
     }
   ],
   "security": [
@@ -19,134 +21,243 @@
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+    "/analyze": {
+      "post": {
+        "summary": "Analyze Sports Query",
+        "description": "Perform comprehensive sports analysis with natural language queries using Claude 4 Sonnet",
+        "operationId": "analyzeSportsQuery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              },
+              "examples": {
+                "nba_player_stats": {
+                  "summary": "NBA Player Statistics",
+                  "value": {
+                    "query": "What are Stephen Curry's three-point shooting stats this season?",
+                    "extra_context": "Focus on recent performance trends"
+                  }
+                },
+                "mlb_team_analysis": {
+                  "summary": "MLB Team Analysis",
+                  "value": {
+                    "query": "How do the Los Angeles Dodgers perform against left-handed pitching?",
+                    "extra_context": "Include both regular season and playoff data"
+                  }
+                },
+                "comparison_query": {
+                  "summary": "Player Comparison",
+                  "value": {
+                    "query": "Compare LeBron James and Michael Jordan in playoff performances",
+                    "extra_context": "Include advanced metrics and clutch performance"
+                  }
+                }
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Successful analysis response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                },
+                "examples": {
+                  "success_response": {
+                    "summary": "Successful Analysis",
+                    "value": {
+                      "response": "Stephen Curry has been exceptional in three-point shooting this season, maintaining a 42.8% accuracy on 11.2 attempts per game. His recent 10-game stretch shows improved efficiency with 45.1% from beyond the arc, indicating strong form heading into the playoffs. Compared to his career average of 42.6%, this season represents continued elite performance at age 36.",
+                      "usage": {
+                        "requests": 1,
+                        "request_tokens": 156,
+                        "response_tokens": 487,
+                        "total_tokens": 643
+                      }
+                    }
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Unexpected error",
+            "description": "Bad request - invalid input",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - MCP server connection failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+        "security": [
+          {
+            "bearerAuth": []
           }
-        }
+        ]
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
+    "/analyze/stream": {
       "post": {
-        "description": "Information about a new plant added to the store",
+        "summary": "Stream Sports Analysis",
+        "description": "Stream real-time analysis events for complex sports queries",
+        "operationId": "streamSportsAnalysis",
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/AnalysisRequest"
+              },
+              "examples": {
+                "complex_analysis": {
+                  "summary": "Complex Analysis Query",
+                  "value": {
+                    "query": "Compare Shohei Ohtani's two-way performance to Babe Ruth's historical dominance",
+                    "extra_context": "Include both pitching and hitting metrics, era adjustments, and historical context"
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Server-sent events stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Stream of analysis events in Server-Sent Events format"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check server health and MCP connection status",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Health status response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "examples": {
+                  "healthy": {
+                    "summary": "Healthy System",
+                    "value": {
+                      "status": "healthy",
+                      "timestamp": "2024-01-15T10:30:00Z",
+                      "services": {
+                        "api": {
+                          "status": "up",
+                          "uptime": 3600
+                        },
+                        "mcp_server": {
+                          "status": "connected",
+                          "last_check": "2024-01-15T10:29:55Z",
+                          "tools_available": 12
+                        },
+                        "anthropic": {
+                          "status": "available",
+                          "model": "claude-sonnet-4-20250514"
+                        }
+                      },
+                      "version": "1.0.0"
+                    }
+                  },
+                  "unhealthy": {
+                    "summary": "Unhealthy System",
+                    "value": {
+                      "status": "unhealthy",
+                      "timestamp": "2024-01-15T10:30:00Z",
+                      "services": {
+                        "api": {
+                          "status": "up",
+                          "uptime": 3600
+                        },
+                        "mcp_server": {
+                          "status": "disconnected",
+                          "error": "Connection timeout to MCP server"
+                        },
+                        "anthropic": {
+                          "status": "unavailable",
+                          "error": "Invalid API key"
+                        }
+                      },
+                      "version": "1.0.0"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -154,55 +265,141 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "AnalysisRequest": {
         "type": "object",
+        "required": ["query"],
         "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
+          "query": {
+            "type": "string",
+            "description": "The natural language sports analysis question or request",
+            "example": "What are LeBron James' shooting stats this season?"
           },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "extra_context": {
+            "type": "string",
+            "description": "Additional context to include in the analysis",
+            "example": "Focus on playoff games only"
+          },
+          "image": {
+            "type": "string",
+            "description": "Base64 encoded image URL to provide as visual context",
+            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
+      "AnalysisResponse": {
+        "type": "object",
+        "required": ["response"],
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "The AI agent's comprehensive analysis response",
+            "example": "LeBron James is having an exceptional season, averaging 25.7 PPG, 7.3 RPG, and 8.3 APG while shooting 52.4% from the field..."
           },
-          {
-            "required": [
-              "id"
-            ],
+          "usage": {
             "type": "object",
+            "description": "Token usage information for the request",
             "properties": {
-              "id": {
-                "description": "Identification number of the plant",
+              "requests": {
                 "type": "integer",
-                "format": "int64"
+                "description": "Number of requests made to the language model"
+              },
+              "request_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the input/request"
+              },
+              "response_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the model's response"
+              },
+              "total_tokens": {
+                "type": "integer",
+                "description": "Total tokens used (request + response)"
               }
             }
           }
-        ]
+        }
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
+      "HealthResponse": {
         "type": "object",
+        "required": ["status", "timestamp", "services"],
         "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "unhealthy"],
+            "description": "Overall health status of the service"
           },
-          "message": {
-            "type": "string"
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO timestamp of when the health check was performed"
+          },
+          "services": {
+            "type": "object",
+            "description": "Status of individual service components",
+            "properties": {
+              "api": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["up", "down"]
+                  },
+                  "uptime": {
+                    "type": "integer",
+                    "description": "Server uptime in seconds"
+                  }
+                }
+              },
+              "mcp_server": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["connected", "disconnected", "error"]
+                  },
+                  "last_check": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "tools_available": {
+                    "type": "integer"
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                }
+              },
+              "anthropic": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["available", "unavailable"]
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "version": {
+            "type": "string",
+            "description": "BlitzAgent version information"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["detail"],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "example": "Invalid API key"
           }
         }
       }
@@ -210,7 +407,8 @@
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "description": "API key for authenticating requests to BlitzAgent"
       }
     }
   }

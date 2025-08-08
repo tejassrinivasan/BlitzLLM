@@ -1,11 +1,66 @@
 ---
 title: "POST /analyze"
 description: "Perform comprehensive sports analysis with natural language queries"
+api: "POST http://localhost:8001/analyze"
 ---
 
 # Analyze Sports Query
 
 The `/analyze` endpoint is the primary way to interact with BlitzAgent. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and the Blitz MCP server.
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "query": "What are Stephen Curry'\''s three-point shooting stats this season?",
+    "extra_context": "Focus on recent performance trends"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8001/analyze', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY'
+  },
+  body: JSON.stringify({
+    query: "What are Stephen Curry's three-point shooting stats this season?",
+    extra_context: "Focus on recent performance trends"
+  })
+});
+
+const result = await response.json();
+console.log(result.response);
+```
+
+```python Python
+import httpx
+import asyncio
+
+async def analyze_player():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://localhost:8001/analyze",
+            headers={
+                "Authorization": "Bearer YOUR_API_KEY",
+                "Content-Type": "application/json"
+            },
+            json={
+                "query": "What are Stephen Curry's three-point shooting stats this season?",
+                "extra_context": "Focus on recent performance trends"
+            }
+        )
+        return response.json()
+
+result = await analyze_player()
+print(result['response'])
+```
+
+</RequestExample>
 
 ## Endpoint
 
