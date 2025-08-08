@@ -3,637 +3,383 @@ title: "Examples & Use Cases"
 description: "Real-world examples and use cases for Blitz sports analysis API"
 ---
 
-This page provides comprehensive examples of how to use Blitz for different types of NBA analysis. Each example includes the query, expected response format, and practical applications.
+# Examples & Use Cases
 
-## NBA Examples
+Discover the power of Blitz through real-world examples that showcase our comprehensive NBA analysis capabilities. From simple player stats to complex multi-dimensional analysis, these examples demonstrate how to leverage our natural-language sports query agent.
 
-### Player Performance Analysis
+## 🏀 Player Analysis
 
 <AccordionGroup>
-  <Accordion icon="basketball" title="Individual Player Stats">
-    **Use Case**: Get comprehensive statistics for a specific player
+  <Accordion icon="user" title="Individual Player Performance">
+    Get detailed analysis of any NBA player's performance with natural language queries.
     
     <RequestExample>
-    ```bash cURL
+    ```bash Example Query
     curl -X POST "https://blitzagent.onrender.com/analyze" \
       -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "query": "What are Luka Dončić'\''s stats this season?",
-        "extra_context": "Include shooting splits, efficiency metrics, and recent performance trends"
+        "query": "How has Jayson Tatum performed this season?",
+        "extra_context": "Include efficiency, clutch performance, and recent trends"
       }'
-    ```
-    
-    ```python Python
-    result = await client.analyze(
-        "What are Luka Dončić's stats this season?",
-        "Include shooting splits, efficiency metrics, and recent performance trends"
-    )
     ```
     </RequestExample>
     
-    **Expected Response Elements**:
-    - Basic stats (PPG, APG, RPG, FG%)
-    - Advanced metrics (TS%, PER, BPM)
-    - Shooting splits (2PT%, 3PT%, FT%)
-    - Recent game performance trends
-    - League comparisons and rankings
+    **What you get:**
+    - Comprehensive season statistics
+    - Advanced efficiency metrics
+    - Clutch performance analysis  
+    - Recent game trends and form
+    - League rankings and context
   </Accordion>
   
-  <Accordion icon="chart-line" title="Player Comparison">
-    **Use Case**: Compare multiple players across various metrics
+  <Accordion icon="chart-line" title="Player Comparisons">
+    Compare players across multiple dimensions with intelligent analysis.
     
     <RequestExample>
-    ```bash cURL
+    ```bash Example Query
     curl -X POST "https://blitzagent.onrender.com/analyze" \
       -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "query": "Compare Jayson Tatum and Jaylen Brown'\''s performance this season",
-        "extra_context": "Focus on offensive efficiency, defensive impact, and clutch performance"
+        "query": "Compare Luka Dončić and Nikola Jokić as playmakers this season",
+        "extra_context": "Focus on assist rates, turnover ratios, and team impact"
       }'
     ```
     </RequestExample>
     
-    **Expected Response Elements**:
-    - Side-by-side statistical comparison
-    - Efficiency metrics breakdown
-    - Situational performance (clutch, playoffs)
-    - Team impact analysis
-    - Strengths and weaknesses assessment
+    **What you get:**
+    - Head-to-head statistical comparison
+    - Contextual performance analysis
+    - Strengths and weaknesses breakdown
+    - Team impact assessment
+    - Historical context
   </Accordion>
   
-  <Accordion icon="clock" title="Clutch Performance">
-    **Use Case**: Analyze player performance in high-pressure situations
+  <Accordion icon="trending-up" title="Breakout Player Analysis">
+    Identify and analyze emerging talent and performance trends.
     
     <RequestExample>
-    ```bash cURL
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Which young players are having breakout seasons?",
+        "extra_context": "Focus on players under 25 with significant improvement"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Year-over-year improvement analysis
+    - Statistical breakdowns
+    - Role expansion insights
+    - Future potential assessment
+    - Comparison to historical breakout seasons
+  </Accordion>
+</AccordionGroup>
+
+## 🏆 Team Analytics
+
+<AccordionGroup>
+  <Accordion icon="users" title="Team Performance Analysis">
+    Deep dive into team dynamics, strengths, and areas for improvement.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Analyze the Boston Celtics defensive scheme this season",
+        "extra_context": "Include defensive rating, opponent shooting, and key defensive players"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Defensive rating and rankings
+    - Opponent shooting suppression
+    - Key defensive contributors
+    - Scheme effectiveness analysis
+    - Comparison to league averages
+  </Accordion>
+  
+  <Accordion icon="chart-mixed" title="Lineup Analysis">
+    Understand which player combinations work best together.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "What are the Lakers most effective 5-man lineups this season?",
+        "extra_context": "Include plus/minus, minutes played, and offensive/defensive efficiency"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Lineup efficiency ratings
+    - Plus/minus analysis
+    - Minutes and usage patterns
+    - Offensive and defensive splits
+    - Optimal lineup recommendations
+  </Accordion>
+  
+  <Accordion icon="trophy" title="Playoff Implications">
+    Assess team positioning and playoff readiness.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Which teams are best positioned for a deep playoff run?",
+        "extra_context": "Consider regular season performance, injury concerns, and historical playoff success"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Playoff probability assessment
+    - Key performance indicators
+    - Injury impact analysis
+    - Historical playoff correlation
+    - Matchup considerations
+  </Accordion>
+</AccordionGroup>
+
+## 📊 Advanced Analytics
+
+<AccordionGroup>
+  <Accordion icon="chart-bar" title="Situational Performance">
+    Analyze performance in specific game situations and contexts.
+    
+    <RequestExample>
+    ```bash Example Query
     curl -X POST "https://blitzagent.onrender.com/analyze" \
       -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Who are the best clutch performers in the NBA this season?",
-        "extra_context": "Define clutch as last 5 minutes of games within 5 points. Include both volume and efficiency."
+        "extra_context": "Focus on final 5 minutes of close games, include shooting and decision-making"
       }'
     ```
     </RequestExample>
     
-    **Expected Response Elements**:
-    - Top clutch performers ranking
-    - Clutch shooting percentages
-    - Game-winning shots made
-    - Pressure situation metrics
-    - Historical clutch performance context
-  </Accordion>
-</AccordionGroup>
-
-### Team Analysis
-
-<AccordionGroup>
-  <Accordion icon="users" title="Team Performance Metrics">
-    **Use Case**: Comprehensive team analysis and strengths/weaknesses
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How are the Boston Celtics performing this season?",
-        "extra_context": "Include offensive and defensive ratings, recent form, and playoff positioning"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Win-loss record and standings
-    - Offensive and defensive efficiency
-    - Key player contributions
-    - Recent performance trends
-    - Playoff implications
-  </Accordion>
-  
-  <Accordion icon="shield" title="Defensive Analysis">
-    **Use Case**: Deep dive into team defensive capabilities
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Which NBA teams have the best defense against three-point shooting?",
-        "extra_context": "Include opponent 3PT%, defensive schemes, and key defensive players"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Opponent three-point percentage rankings
-    - Defensive schemes and strategies
-    - Key defensive contributors
-    - Situational defensive performance
-    - Comparison to league averages
-  </Accordion>
-  
-  <Accordion icon="arrows-left-right" title="Head-to-Head Matchups">
-    **Use Case**: Analyze upcoming game matchups and predictions
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Lakers vs Warriors matchup analysis for tonight'\''s game",
-        "extra_context": "Include recent head-to-head results, key player matchups, and injury reports"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Historical head-to-head record
-    - Key individual matchups
-    - Current injury reports
-    - Recent form analysis
-    - Betting insights and predictions
-  </Accordion>
-</AccordionGroup>
-
-### Advanced Analytics
-
-<AccordionGroup>
-  <Accordion icon="chart-bar" title="Advanced Metrics Analysis">
-    **Use Case**: Deep statistical analysis using advanced metrics
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Which players have the highest PER and BPM this season?",
-        "extra_context": "Include minimum games played threshold and explain what these metrics measure"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - PER and BPM rankings
-    - Metric explanations and significance
-    - Context and comparisons
-    - Historical perspective
+    **What you get:**
+    - Clutch time statistics
+    - High-pressure performance metrics
+    - Decision-making analysis
+    - Historical clutch comparisons
     - Impact on team success
   </Accordion>
   
-  <Accordion icon="target" title="Shooting Analytics">
-    **Use Case**: Detailed shooting analysis by zones and situations
+  <Accordion icon="target" title="Matchup Analysis">
+    Understand how players and teams perform against specific opponents.
     
     <RequestExample>
-    ```bash cURL
+    ```bash Example Query
     curl -X POST "https://blitzagent.onrender.com/analyze" \
       -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "query": "Stephen Curry'\''s three-point shooting by distance and game situation",
-        "extra_context": "Break down by corner vs above-the-break, catch-and-shoot vs off-dribble"
+        "query": "How do the Warriors perform against elite defensive teams?",
+        "extra_context": "Include offensive efficiency, turnover rates, and key player performance"
       }'
     ```
     </RequestExample>
     
-    **Expected Response Elements**:
-    - Shot distance breakdowns
-    - Situational shooting splits
-    - Catch-and-shoot vs. off-dribble
-    - Game situation performance
-    - League comparisons
+    **What you get:**
+    - Head-to-head performance history
+    - Offensive/defensive efficiency splits
+    - Key player matchup analysis
+    - Tactical adjustments insight
+    - Predictive indicators
+  </Accordion>
+  
+  <Accordion icon="pulse" title="Injury Impact Analysis">
+    Assess how injuries affect player and team performance.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "How have the Clippers performed without Kawhi Leonard this season?",
+        "extra_context": "Compare team statistics with and without him, include role player stepping up"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - With/without player comparisons
+    - Team adjustment analysis
+    - Role player impact assessment
+    - Performance trend identification
+    - Recovery timeline considerations
   </Accordion>
 </AccordionGroup>
 
-## Coming Soon: MLB Support
+## 💰 Betting & Market Analysis
 
-MLB analysis capabilities are in development and will include:
+<AccordionGroup>
+  <Accordion icon="chart-line-up" title="Player Prop Analysis">
+    Analyze betting lines and player performance trends for informed decisions.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Analyze Giannis Antetokounmpo points prop for tonight against the Heat",
+        "extra_context": "Include recent performance vs Miami, pace factors, and injury considerations"
+      }'
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Historical performance vs opponent
+    - Recent scoring trends
+    - Pace and usage considerations
+    - Injury/rest factor analysis
+    - Market value assessment
+  </Accordion>
+  
+  <Accordion icon="dollar-sign" title="Team Total Analysis">
+    Evaluate team scoring patterns and betting market efficiency.
+    
+    <RequestExample>
+    ```bash Example Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Should the Nuggets team total be over or under 115.5 points tonight?",
+        "extra_context": "Consider opponent defense, recent offensive performance, and game pace"
+      }'
+    ```
+    ```
+    </RequestExample>
+    
+    **What you get:**
+    - Offensive efficiency trends
+    - Opponent defensive analysis
+    - Pace and style considerations
+    - Recent performance patterns
+    - Line value assessment
+  </Accordion>
+</AccordionGroup>
+
+## 🚀 Coming Soon
 
 <CardGroup cols={2}>
   <Card
-    title="⚾ Pitching Analysis"
+    title="⚾ MLB Support"
     icon="baseball"
   >
-    **Comprehensive Metrics**
-    - ERA, WHIP, and strikeout rates
-    - Advanced pitching analytics
-    - Bullpen effectiveness analysis
-    - Matchup-specific performance
+    **Comprehensive Baseball Analytics**
+    - Pitching and hitting analysis
+    - Situational performance metrics
+    - Team strategy evaluation
+    - Historical comparisons
   </Card>
   
   <Card
-    title="🥎 Hitting Analysis"
-    icon="chart-bar"
+    title="🏈 NFL Integration"
+    icon="football"
   >
-    **Offensive Metrics**
-    - Slash line statistics
-    - Power and contact metrics
-    - Situational hitting performance
-    - Clutch performance analysis
+    **Football Analytics Platform**
+    - Player performance analysis
+    - Team strategy breakdown
+    - Injury impact assessment
+    - Draft and trade analysis
   </Card>
   
   <Card
-    title="🏆 Team Performance"
-    icon="trophy"
-  >
-    **Team Analytics**
-    - Run differential analysis
-    - Playoff probability tracking
-    - Schedule strength evaluation
-    - Historical performance comparison
-  </Card>
-  
-  <Card
-    title="📊 League Trends"
+    title="🎯 Fantasy Sports"
     icon="chart-mixed"
   >
-    **Statistical Analysis**
-    - League-wide offensive trends
-    - Rule change impact assessment
-    - Historical context and comparisons
-    - Notable statistical outliers
-  </Card>
-</CardGroup>
-
-## Coming Soon: Fantasy Sports Integration
-
-Fantasy sports functionality is in development and will include:
-
-<CardGroup cols={2}>
-  <Card
-    title="🏀 Fantasy Basketball"
-    icon="basketball"
-  >
-    **Player Evaluation & Rankings**
-    - Weekly lineup recommendations
-    - Streaming player identification
-    - Matchup difficulty analysis
-    - Injury impact assessment
-  </Card>
-  
-  <Card
-    title="⚾ Fantasy Baseball"
-    icon="baseball"
-  >
-    **Pitching & Hitting Analysis**
-    - Two-start pitcher identification
-    - Hitter matchup advantages
-    - Ballpark factor considerations
-    - Weather impact analysis
-  </Card>
-  
-  <Card
-    title="📊 Custom Fantasy Data"
-    icon="chart-line"
-  >
-    **Integration Capabilities**
-    - Connect your fantasy platform data
-    - Custom league scoring systems
-    - Roster construction optimization
-    - Trade analysis and recommendations
-  </Card>
-  
-  <Card
-    title="🔄 Real-time APIs"
-    icon="refresh"
-  >
-    **Live Fantasy Updates**
-    - Real-time player status
-    - Lineup change notifications
-    - Injury report integration
-    - Performance tracking
-  </Card>
-</CardGroup>
-
-## Betting & DFS Examples
-
-### Sports Betting Analysis
-
-<AccordionGroup>
-  <Accordion icon="chart-line" title="Line Movement Analysis">
-    **Use Case**: Analyze betting line movements and find value
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Analyze the Lakers vs Celtics game for betting value",
-        "extra_context": "Include line movement, injury impacts, and historical head-to-head betting trends"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Current betting lines
-    - Line movement analysis
-    - Injury impact assessment
-    - Historical betting performance
-    - Value betting opportunities
-  </Accordion>
-  
-  <Accordion icon="target" title="Prop Bet Analysis">
-    **Use Case**: Player prop betting recommendations
-    
-    <RequestExample>
-    ```bash cURL
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "LeBron James points prop bet analysis for tonight",
-        "extra_context": "Include recent scoring trends, matchup history, and pace factors"
-      }'
-    ```
-    </RequestExample>
-    
-    **Expected Response Elements**:
-    - Current prop lines
-    - Recent performance trends
+    **Fantasy Optimization Tools**
+    - Lineup recommendations
+    - Value play identification
     - Matchup analysis
-    - Pace and usage factors
-    - Betting recommendation
-  </Accordion>
-</AccordionGroup>
-
-### Daily Fantasy Sports (DFS)
-
-DFS optimization tools are coming soon and will include:
-- Optimal lineup construction
-- Value play identification  
-- Ownership projection analysis
-- Tournament strategy recommendations
-
-## Integration Examples
-
-### API Integration Patterns
-
-<CodeGroup>
-```python Python AsyncIO Client
-import asyncio
-import httpx
-from typing import List, Dict, Optional
-
-class BlitzClient:
-    def __init__(self, api_key: str, base_url: str = "https://blitzagent.onrender.com"):
-        self.api_key = api_key
-        self.base_url = base_url
-        self.headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-    
-    async def analyze_multiple(self, queries: List[Dict[str, str]]) -> List[Dict]:
-        """Analyze multiple queries concurrently"""
-        async with httpx.AsyncClient() as client:
-            tasks = [
-                client.post(
-                    f"{self.base_url}/analyze",
-                    headers=self.headers,
-                    json=query
-                )
-                for query in queries
-            ]
-            responses = await asyncio.gather(*tasks)
-            return [response.json() for response in responses]
-    
-    async def get_player_stats(self, player_name: str, context: str = None):
-        """Get player statistics with optional context"""
-        query = {
-            "query": f"What are {player_name}'s stats this season?",
-            "extra_context": context
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/analyze",
-                headers=self.headers,
-                json=query
-            )
-            return response.json()
-
-# Usage example
-async def main():
-    client = BlitzClient("your_api_key")
-    
-    # Single player analysis
-    lebron_stats = await client.get_player_stats(
-        "LeBron James", 
-        "Include advanced metrics and clutch performance"
-    )
-    
-    # Multiple concurrent queries
-    queries = [
-        {
-            "query": "Lakers vs Warriors prediction",
-            "extra_context": "Include injury reports and recent form"
-        },
-        {
-            "query": "Top NBA scorers this season",
-            "extra_context": "Minimum 50 games played"
-        }
-    ]
-    results = await client.analyze_multiple(queries)
-    
-    print(f"LeBron Stats: {lebron_stats['response'][:100]}...")
-    for i, result in enumerate(results):
-        print(f"Query {i+1}: {result['response'][:100]}...")
-
-asyncio.run(main())
-```
-
-```javascript React Integration
-import React, { useState, useEffect } from 'react';
-
-const SportsAnalyzer = ({ apiKey }) => {
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const analyzeQuery = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('https://blitzagent.onrender.com/analyze', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exampleQueries = [
-    "What are LeBron's stats this season?",
-    "Lakers vs Warriors matchup analysis",
-    "Best three-point shooters in the NBA",
-    "Yankees pitching rotation analysis"
-  ];
-
-  return (
-    <div className="sports-analyzer">
-      <h2>Sports Analysis with Blitz</h2>
-      
-      <div className="query-input">
-        <textarea
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter your sports analysis query..."
-          rows={3}
-          style={{ width: '100%', marginBottom: '10px' }}
-        />
-        <button 
-          onClick={analyzeQuery} 
-          disabled={loading || !query.trim()}
-          style={{ 
-            backgroundColor: '#2563EB', 
-            color: 'white', 
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer'
-          }}
-        >
-          {loading ? 'Analyzing...' : 'Analyze'}
-        </button>
-      </div>
-
-      <div className="example-queries">
-        <h3>Example Queries:</h3>
-        {exampleQueries.map((example, index) => (
-          <button
-            key={index}
-            onClick={() => setQuery(example)}
-            style={{
-              display: 'block',
-              margin: '5px 0',
-              padding: '5px 10px',
-              backgroundColor: '#f0f0f0',
-              border: '1px solid #ccc',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            {example}
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <div style={{ color: 'red', marginTop: '10px' }}>
-          Error: {error}
-        </div>
-      )}
-
-      {result && (
-        <div className="result" style={{ marginTop: '20px' }}>
-          <h3>Analysis Result:</h3>
-          <div style={{
-            backgroundColor: '#f9f9f9',
-            padding: '15px',
-            borderRadius: '5px',
-            whiteSpace: 'pre-wrap'
-          }}>
-            {result.response}
-          </div>
-          {result.usage && (
-            <div style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-              Tokens used: {result.usage.total_tokens}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default SportsAnalyzer;
-```
-</CodeGroup>
-
-## Best Practices for Queries
-
-<AccordionGroup>
-  <Accordion icon="target" title="Query Specificity">
-    **Good**: "Stephen Curry's three-point shooting percentage this season compared to his career average"
-    
-    **Better**: "Stephen Curry's three-point shooting percentage this season compared to his career average, including breakdown by game situation (catch-and-shoot vs off-dribble)"
-    
-    **Best**: "Stephen Curry's three-point shooting percentage this season compared to his career average, including breakdown by game situation (catch-and-shoot vs off-dribble) and distance (corner vs above-the-break), with focus on clutch time performance"
-  </Accordion>
-  
-  <Accordion icon="calendar" title="Time Specificity">
-    **Examples of good time contexts**:
-    - "this season"
-    - "last 10 games"
-    - "since the All-Star break"
-    - "playoff career"
-    - "2023-2024 season"
-    - "over the last month"
-  </Accordion>
-  
-  <Accordion icon="chart-bar" title="Metric Requests">
-    **Effective metric requests**:
-    - "Include advanced metrics like PER and BPM"
-    - "Focus on efficiency metrics"
-    - "Add clutch performance statistics"
-    - "Include defensive impact measures"
-    - "Show shooting splits and percentages"
-  </Accordion>
-</AccordionGroup>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference/introduction"
-  >
-    Complete API documentation with all endpoints
+    - Ownership projection
   </Card>
   
   <Card
-    title="Authentication"
-    icon="key"
-    href="/authentication"
+    title="📱 Mobile SDK"
+    icon="mobile"
   >
-    Set up secure authentication for your applications
-  </Card>
-  
-  <Card
-    title="Streaming Analysis"
-    icon="play"
-    href="/api-reference/stream"
-  >
-    Learn about real-time streaming for complex queries
-  </Card>
-  
-  <Card
-    title="Configuration"
-    icon="cog"
-    href="/configuration"
-  >
-    Advanced configuration and deployment options
+    **Native Mobile Integration**
+    - iOS and Android SDKs
+    - Real-time notifications
+    - Offline capability
+    - Custom UI components
   </Card>
 </CardGroup>
+
+## 💡 Integration Ideas
+
+<Tip>
+**Pro Tip**: Combine multiple queries to build comprehensive analysis workflows. For example, start with team performance analysis, then dive into individual player contributions, and finish with situational breakdowns.
+</Tip>
+
+<CardGroup cols={3}>
+  <Card
+    title="📰 Content Creation"
+    icon="pen-to-square"
+  >
+    Generate data-driven articles, social media posts, and newsletters automatically.
+  </Card>
+  
+  <Card
+    title="🤖 Chatbot Integration"
+    icon="comment"
+  >
+    Power conversational sports experiences with real-time analysis capabilities.
+  </Card>
+  
+  <Card
+    title="📊 Dashboard Building"
+    icon="chart-simple"
+  >
+    Create dynamic sports dashboards with live data and intelligent insights.
+  </Card>
+  
+  <Card
+    title="🔔 Alert Systems"
+    icon="bell"
+  >
+    Build automated notification systems for performance thresholds and market opportunities.
+  </Card>
+  
+  <Card
+    title="📈 Predictive Models"
+    icon="crystal-ball"
+  >
+    Enhance your predictive analytics with comprehensive historical context and patterns.
+  </Card>
+  
+  <Card
+    title="🎮 Fantasy Tools"
+    icon="trophy"
+  >
+    Create sophisticated fantasy sports applications with player evaluation and optimization.
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+Ready to start building with Blitz? Check out our:
+
+- **[API Reference](/api-reference/introduction)**: Complete endpoint documentation
+- **[Quickstart Guide](/quickstart)**: Get up and running in minutes  
+- **[Workflows](/workflows/overview)**: Advanced integration patterns
+- **[Authentication](/authentication)**: Security and API key setup
