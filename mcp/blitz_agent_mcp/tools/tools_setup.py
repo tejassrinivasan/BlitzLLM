@@ -343,7 +343,68 @@ def setup_tools(mcp: FastMCP):
         """
         Validate a SQL query without executing it.
         """
-        return await validate.validate(ctx, sql, league)
+        logger = logging.getLogger("blitz-agent-mcp")
+        
+        try:
+            # Basic SQL syntax validation using PostgreSQL connection
+            postgres_url = get_postgres_url(league)
+            if not postgres_url:
+                league_info = f" for league '{league}'" if league else ""
+                raise ConnectionError(f"PostgreSQL configuration{league_info} is incomplete. Please configure PostgreSQL settings.")
+            
+            connection = Connection(url=postgres_url)
+            db = await connection.connect()
+            
+            # Use EXPLAIN to validate syntax without executing
+            explain_query = f"EXPLAIN {sql}"
+            await db.query(explain_query)
+            
+            return {
+                "success": True,
+                "valid": True,
+                "message": "SQL query syntax is valid",
+                "query": sql,
+                "league": league
+            }
+            
+        except Exception as e:
+            error_message = str(e)
+            return {
+                "success": True,
+                "valid": False,
+                "error": error_message,
+                "message": f"SQL validation failed: {error_message}",
+                "query": sql,
+                "league": league
+            }
+
+    @mcp.tool()
+    async def validate_results(
+        ctx: Context,
+        query: str = Field(..., description="SQL query that was executed"),
+        results: Any = Field(..., description="The ACTUAL QUERY RESULTS DATA as JSON string (not a summary) - should be the raw data returned from the SQL query"),
+        description: str = Field(..., description="Description of what the query was supposed to do"),
+        user_question: str = Field(..., description="Original user question"),
+        context: str = Field(..., description="Additional context"),
+        league: str = Field(..., description="The league being queried (e.g., 'mlb', 'nba') - this will be used to attach the appropriate database schema for better validation")
+    ) -> Dict[str, Any]:
+        """
+        Validate and analyze query results using AI to determine if the results make sense and 
+        properly answer the user's question. This tool provides intelligent analysis of whether 
+        the query results are correct, relevant, and complete.
+
+        Validation Instructions:
+        1. Provide the executed SQL query and its ACTUAL RESULTS DATA (not a summary)
+        2. The results parameter must contain the raw JSON data returned from the query
+        3. Specify the league (mlb/nba) to include relevant database schema context
+        4. Optionally include the original user question for better context
+        5. The AI will analyze completeness, logical consistency, and sports realism using league-specific schema knowledge
+        6. Returns structured validation with issues, insights, and recommendations
+
+        IMPORTANT: The 'results' parameter should contain the actual data rows returned by the SQL query 
+        in JSON format, NOT a summary or description of the results.
+        """
+        return await validate.validate_results(ctx, query, results, description, user_question, context, league)
 
     @mcp.tool()
     async def upload(

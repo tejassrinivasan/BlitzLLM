@@ -16,7 +16,7 @@ from pydantic import Field
 from ..config import MAX_DATA_ROWS, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION
 from ..utils import get_azure_chat_client, serialize_response
 
-__all__ = ["validate"]
+__all__ = ["validate_results"]
 
 
 async def _get_context_field(field: str, ctx: Context) -> Any:
@@ -65,7 +65,7 @@ def _read_schema_file(league: str) -> Optional[str]:
         return None
 
 
-async def validate(
+async def validate_results(
     ctx: Context,
     query: str = Field(..., description="SQL query that was executed"),
     results: Any = Field(..., description="The ACTUAL QUERY RESULTS DATA as JSON string (not a summary) - should be the raw data returned from the SQL query"),
