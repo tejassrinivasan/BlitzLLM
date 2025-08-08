@@ -1,18 +1,18 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BlitzAgent API",
+    "title": "Blitz API",
     "description": "AI-powered sports analysis API using Claude 4 Sonnet and comprehensive sports data",
     "version": "1.0.0",
     "contact": {
-      "name": "BlitzAgent Support",
-      "email": "support@blitzagent.com"
+      "name": "Blitz Support",
+      "email": "support@blitz.com"
     }
   },
   "servers": [
     {
-      "url": "http://localhost:8001",
-      "description": "Local development server"
+      "url": "https://api.blitz.com",
+      "description": "Production API server"
     }
   ],
   "security": [

@@ -1,9 +1,7 @@
 ---
 title: "Examples & Use Cases"
-description: "Real-world examples and use cases for BlitzAgent sports analysis"
+description: "Real-world examples and use cases for Blitz sports analysis API"
 ---
-
-# Examples & Use Cases
 
 <img
   src="/images/blitzbot.png"
@@ -12,7 +10,7 @@ description: "Real-world examples and use cases for BlitzAgent sports analysis"
   style={{ float: "left", margin: "0 20px 20px 0" }}
 />
 
-This page provides comprehensive examples of how to use BlitzAgent for different types of sports analysis. Each example includes the query, expected response format, and practical applications.
+This page provides comprehensive examples of how to use Blitz for different types of sports analysis. Each example includes the query, expected response format, and practical applications.
 
 ## NBA Examples
 
@@ -24,8 +22,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "What are Luka Dončić'\''s stats this season?",
@@ -54,8 +52,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Compare Jayson Tatum and Jaylen Brown'\''s performance this season",
@@ -77,8 +75,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Who are the best clutch performers in the NBA this season?",
@@ -104,8 +102,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "How are the Boston Celtics performing this season?",
@@ -127,8 +125,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Which NBA teams have the best defense against three-point shooting?",
@@ -150,8 +148,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Lakers vs Warriors matchup analysis for tonight'\''s game",
@@ -177,8 +175,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Which players have the highest PER and BPM this season?",
@@ -200,8 +198,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Stephen Curry'\''s three-point shooting by distance and game situation",
@@ -229,8 +227,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "How has Gerrit Cole performed this season?",
@@ -252,8 +250,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Which teams have the best bullpens this season?",
@@ -279,8 +277,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Aaron Judge'\''s offensive numbers this season",
@@ -302,8 +300,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Best hitters with runners in scoring position this season",
@@ -329,8 +327,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Los Angeles Dodgers season performance and playoff outlook",
@@ -352,8 +350,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "MLB offensive trends this season compared to previous years",
@@ -381,8 +379,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Top fantasy basketball players for this week",
@@ -404,8 +402,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Best fantasy basketball streaming options this week",
@@ -431,8 +429,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Two-start pitchers for next week in fantasy baseball",
@@ -460,8 +458,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "Analyze the Lakers vs Celtics game for betting value",
@@ -483,8 +481,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "LeBron James points prop bet analysis for tonight",
@@ -510,8 +508,8 @@ This page provides comprehensive examples of how to use BlitzAgent for different
     
     <RequestExample>
     ```bash cURL
-    curl -X POST "http://localhost:8001/analyze" \
-      -H "Authorization: Bearer YOUR_API_KEY" \
+    curl -X POST "https://api.blitz.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "query": "DraftKings NBA lineup recommendations for tonight",
@@ -539,8 +537,8 @@ import asyncio
 import httpx
 from typing import List, Dict, Optional
 
-class BlitzAgentClient:
-    def __init__(self, api_key: str, base_url: str = "http://localhost:8001"):
+class BlitzClient:
+    def __init__(self, api_key: str, base_url: str = "https://api.blitz.com"):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -578,7 +576,7 @@ class BlitzAgentClient:
 
 # Usage example
 async def main():
-    client = BlitzAgentClient("your_api_key")
+    client = BlitzClient("your_api_key")
     
     # Single player analysis
     lebron_stats = await client.get_player_stats(
@@ -620,7 +618,7 @@ const SportsAnalyzer = ({ apiKey }) => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8001/analyze', {
+      const response = await fetch('https://api.blitz.com/analyze', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -651,7 +649,7 @@ const SportsAnalyzer = ({ apiKey }) => {
 
   return (
     <div className="sports-analyzer">
-      <h2>Sports Analysis with BlitzAgent</h2>
+      <h2>Sports Analysis with Blitz</h2>
       
       <div className="query-input">
         <textarea

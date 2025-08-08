@@ -7,7 +7,7 @@
     "light": "#EF4444",
     "dark": "#991B1B"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/blitzbot.png",
   "navigation": {
     "tabs": [
       {

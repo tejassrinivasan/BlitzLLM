@@ -5,7 +5,7 @@ description: "Stream real-time analysis events for sports queries"
 
 # Stream Sports Analysis
 
-The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see BlitzAgent's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
+The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see Blitz's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
 
 <Warning>
   **Interactive Testing Limitation**: This endpoint uses Server-Sent Events (SSE) streaming, which cannot be tested in standard API playgrounds. Use the code examples below or the [Stream Viewer Tool](#stream-viewer-tool) for testing.
@@ -24,7 +24,7 @@ POST /analyze/stream
 <ParamField header="Authorization" type="string" required>
   Bearer token for API authentication
   ```
-  Authorization: Bearer YOUR_API_KEY
+  Authorization: Bearer YOUR_BLITZ_API_KEY
   ```
 </ParamField>
 
@@ -95,9 +95,9 @@ The response is a **Server-Sent Events (SSE)** stream where each event contains:
 
 <RequestExample>
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze/stream" \
+curl -X POST "https://api.blitz.com/analyze/stream" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "Compare LeBron James and Michael Jordan in playoff performances",
     "extra_context": "Include advanced metrics and clutch performance"
@@ -113,9 +113,9 @@ async def stream_analysis():
     async with httpx.AsyncClient() as client:
         async with client.stream(
             "POST", 
-            "http://localhost:8001/analyze/stream",
+            "https://api.blitz.com/analyze/stream",
             headers={
-                "Authorization": "Bearer YOUR_API_KEY",
+                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
                 "Content-Type": "application/json"
             },
             json={
@@ -141,11 +141,11 @@ await stream_analysis()
 
 ```javascript JavaScript with EventSource
 const streamAnalysis = () => {
-  fetch('http://localhost:8001/analyze/stream', {
+  fetch('https://api.blitz.com/analyze/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_API_KEY'
+      'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
     },
     body: JSON.stringify({
       query: "Compare LeBron James and Michael Jordan in playoff performances",
@@ -217,9 +217,9 @@ data: {"event_type": "analysis_complete", "message": "Analysis completed success
 
 <RequestExample>
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze/stream" \
+curl -X POST "https://api.blitz.com/analyze/stream" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "Which pitcher has the best ERA in high-leverage situations this season?",
     "extra_context": "Focus on relievers with at least 30 innings pitched"
@@ -241,7 +241,7 @@ curl -X POST "http://localhost:8001/analyze/stream" \
   </Accordion>
   
   <Accordion icon="target" title="league_detection">
-    Shows when BlitzAgent has automatically detected the sport/league.
+    Shows when Blitz has automatically detected the sport/league.
     
     **Typical data:**
     - `league`: Detected league (nba, mlb)
@@ -401,7 +401,7 @@ import httpx
 from typing import AsyncGenerator, Dict, Any
 
 class StreamingAnalysisClient:
-    def __init__(self, api_key: str, base_url: str = "http://localhost:8001"):
+    def __init__(self, api_key: str, base_url: str = "https://api.blitz.com"):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -498,11 +498,11 @@ Stream errors are sent as regular events with `event_type: "error"`:
 
 ## Stream Viewer Tool
 
-BlitzAgent includes a built-in stream viewer for testing the streaming endpoint interactively:
+Blitz includes a built-in stream viewer for testing the streaming endpoint interactively:
 
 <Steps>
-  <Step title="Start BlitzAgent Server">
-    Make sure your BlitzAgent server is running:
+  <Step title="Start Blitz Server">
+    Make sure your Blitz server is running:
     ```bash
     python main.py
     ```
@@ -511,10 +511,10 @@ BlitzAgent includes a built-in stream viewer for testing the streaming endpoint 
   <Step title="Open Stream Viewer">
     Navigate to the stream viewer in your browser:
     ```
-    http://localhost:8001/stream_viewer.html
+    https://api.blitz.com/stream_viewer.html
     ```
     
-    Or open the `stream_viewer.html` file directly from your BlitzAgent installation directory.
+    Or open the `stream_viewer.html` file directly from your Blitz installation directory.
   </Step>
   
   <Step title="Test Streaming Analysis">

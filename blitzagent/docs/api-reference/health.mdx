@@ -1,21 +1,21 @@
 ---
 title: "GET /health"
 description: "Check server health and MCP connection status"
-api: "GET http://localhost:8001/health"
+api: "GET https://api.blitz.com/health"
 ---
 
 # Health Check
 
-The `/health` endpoint provides a quick way to check if BlitzAgent is running properly and if all required services are available.
+The `/health` endpoint provides a quick way to check if the Blitz API is running properly and if all required services are available.
 
 <RequestExample>
 
 ```bash cURL
-curl -X GET "http://localhost:8001/health"
+curl -X GET "https://api.blitz.com/health"
 ```
 
 ```javascript JavaScript
-const response = await fetch('http://localhost:8001/health');
+const response = await fetch('https://api.blitz.com/health');
 const health = await response.json();
 console.log(`Status: ${health.status}`);
 ```
@@ -26,7 +26,7 @@ import asyncio
 
 async def check_health():
     async with httpx.AsyncClient() as client:
-        response = await client.get("http://localhost:8001/health")
+        response = await client.get("https://api.blitz.com/health")
         return response.json()
 
 health_status = await check_health()
@@ -111,7 +111,7 @@ GET /health
 </ResponseField>
 
 <ResponseField name="version" type="string" optional>
-  BlitzAgent version information
+  Blitz version information
 </ResponseField>
 
 ## Examples
@@ -120,7 +120,7 @@ GET /health
 
 <RequestExample>
 ```bash cURL
-curl -X GET "http://localhost:8001/health"
+curl -X GET "https://api.blitz.com/health"
 ```
 
 ```python Python
@@ -129,7 +129,7 @@ import asyncio
 
 async def check_health():
     async with httpx.AsyncClient() as client:
-        response = await client.get("http://localhost:8001/health")
+        response = await client.get("https://api.blitz.com/health")
         return response.json()
 
 health_status = await check_health()
@@ -138,7 +138,7 @@ print(f"Status: {health_status['status']}")
 
 ```javascript JavaScript
 const checkHealth = async () => {
-  const response = await fetch('http://localhost:8001/health');
+  const response = await fetch('https://api.blitz.com/health');
   const health = await response.json();
   console.log(`Status: ${health.status}`);
   return health;
@@ -339,7 +339,7 @@ services:
     ports:
       - "8001:8001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "https://api.blitz.com/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -359,13 +359,13 @@ import asyncio
 import logging
 from datetime import datetime
 
-class BlitzAgentMonitor:
-    def __init__(self, base_url: str = "http://localhost:8001"):
+class BlitzMonitor:
+    def __init__(self, base_url: str = "https://api.blitz.com"):
         self.base_url = base_url
         self.logger = logging.getLogger(__name__)
     
     async def check_health(self) -> dict:
-        """Check BlitzAgent health status"""
+        """Check Blitz health status"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -384,11 +384,11 @@ class BlitzAgentMonitor:
             status = health.get("status", "unknown")
             
             if status == "healthy":
-                self.logger.info("✅ BlitzAgent is healthy")
+                self.logger.info("✅ Blitz is healthy")
             elif status == "degraded":
-                self.logger.warning("⚠️ BlitzAgent is degraded")
+                self.logger.warning("⚠️ Blitz is degraded")
             else:
-                self.logger.error("❌ BlitzAgent is unhealthy")
+                self.logger.error("❌ Blitz is unhealthy")
                 # Send alert to monitoring system
                 await self.send_alert(health)
             
@@ -400,13 +400,13 @@ class BlitzAgentMonitor:
         pass
 
 # Usage
-monitor = BlitzAgentMonitor()
+monitor = BlitzMonitor()
 await monitor.monitor_continuously(interval=30)
 ```
 
 ```javascript JavaScript Monitoring
-class BlitzAgentMonitor {
-  constructor(baseUrl = 'http://localhost:8001') {
+class BlitzMonitor {
+  constructor(baseUrl = 'https://api.blitz.com') {
     this.baseUrl = baseUrl;
   }
 
@@ -429,13 +429,13 @@ class BlitzAgentMonitor {
 
       switch (status) {
         case 'healthy':
-          console.log('✅ BlitzAgent is healthy');
+          console.log('✅ Blitz is healthy');
           break;
         case 'degraded':
-          console.warn('⚠️ BlitzAgent is degraded');
+          console.warn('⚠️ Blitz is degraded');
           break;
         default:
-          console.error('❌ BlitzAgent is unhealthy');
+          console.error('❌ Blitz is unhealthy');
           // Send alert
           await this.sendAlert(health);
       }
@@ -448,7 +448,7 @@ class BlitzAgentMonitor {
 }
 
 // Usage
-const monitor = new BlitzAgentMonitor();
+const monitor = new BlitzMonitor();
 monitor.monitorContinuously(30000); // Check every 30 seconds
 ```
 </CodeGroup>
@@ -464,7 +464,7 @@ monitor.monitorContinuously(30000); // Check every 30 seconds
     **Solutions:**
     1. Check internet connectivity
     2. Verify MCP server credentials in environment variables
-    3. Restart BlitzAgent service
+    3. Restart Blitz service
     4. Check MCP server logs for connection issues
   </Accordion>
   
@@ -486,7 +486,7 @@ monitor.monitorContinuously(30000); // Check every 30 seconds
     - Connection timeouts or errors
     
     **Solutions:**
-    1. Check if BlitzAgent process is running
+    1. Check if Blitz process is running
     2. Verify port 8001 is not blocked by firewall
     3. Check server logs for startup errors
     4. Verify environment variables are set correctly
@@ -526,7 +526,7 @@ monitor.monitorContinuously(30000); // Check every 30 seconds
     icon="cog"
     href="/configuration"
   >
-    Learn how to configure BlitzAgent for optimal health
+    Learn how to configure Blitz for optimal health
   </Card>
   
   <Card

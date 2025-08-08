@@ -1,19 +1,19 @@
 ---
 title: "POST /analyze"
 description: "Perform comprehensive sports analysis with natural language queries"
-api: "POST http://localhost:8001/analyze"
+api: "POST https://api.blitz.com/analyze"
 ---
 
 # Analyze Sports Query
 
-The `/analyze` endpoint is the primary way to interact with BlitzAgent. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and the Blitz MCP server.
+The `/analyze` endpoint is the primary way to interact with Blitz. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and comprehensive sports data.
 
 <RequestExample>
 
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "What are Stephen Curry'\''s three-point shooting stats this season?",
     "extra_context": "Focus on recent performance trends"
@@ -21,11 +21,11 @@ curl -X POST "http://localhost:8001/analyze" \
 ```
 
 ```javascript JavaScript
-const response = await fetch('http://localhost:8001/analyze', {
+const response = await fetch('https://api.blitz.com/analyze', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_API_KEY'
+    'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
   },
   body: JSON.stringify({
     query: "What are Stephen Curry's three-point shooting stats this season?",
@@ -44,9 +44,9 @@ import asyncio
 async def analyze_player():
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8001/analyze",
+            "https://api.blitz.com/analyze",
             headers={
-                "Authorization": "Bearer YOUR_API_KEY",
+                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
                 "Content-Type": "application/json"
             },
             json={
@@ -75,14 +75,14 @@ POST /analyze
 <ParamField header="Authorization" type="string" required>
   Bearer token for API authentication
   ```
-  Authorization: Bearer YOUR_API_KEY
+  Authorization: Bearer YOUR_BLITZ_API_KEY
   ```
 </ParamField>
 
 ## Request Body
 
 <ParamField body="query" type="string" required>
-  The natural language sports analysis question or request. This is the main query that BlitzAgent will analyze.
+  The natural language sports analysis question or request. This is the main query that Blitz will analyze.
   
   **Examples:**
   - "What are LeBron James' shooting stats this season?"
@@ -106,7 +106,7 @@ POST /analyze
 ## Response
 
 <ResponseField name="response" type="string" required>
-  Comprehensive analysis response from BlitzAgent. This contains the natural language answer to your sports query with detailed insights, statistics, and context.
+  Comprehensive analysis response from Blitz. This contains the natural language answer to your sports query with detailed insights, statistics, and context.
 </ResponseField>
 
 <ResponseField name="usage" type="object" optional>
@@ -137,9 +137,9 @@ POST /analyze
 
 <RequestExample>
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "How has Stephen Curry performed in clutch situations this season?",
     "extra_context": "Focus on games in the last 5 minutes with score within 5 points"
@@ -153,9 +153,9 @@ import asyncio
 async def analyze_curry_clutch():
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8001/analyze",
+            "https://api.blitz.com/analyze",
             headers={
-                "Authorization": "Bearer YOUR_API_KEY",
+                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
                 "Content-Type": "application/json"
             },
             json={
@@ -171,11 +171,11 @@ print(result['response'])
 
 ```javascript JavaScript
 const analyzePlayer = async () => {
-  const response = await fetch('http://localhost:8001/analyze', {
+  const response = await fetch('https://api.blitz.com/analyze', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_API_KEY'
+      'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
     },
     body: JSON.stringify({
       query: "How has Stephen Curry performed in clutch situations this season?",
@@ -207,9 +207,9 @@ const analyzePlayer = async () => {
 
 <RequestExample>
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "How do the Los Angeles Dodgers perform against left-handed starting pitchers?",
     "extra_context": "Include both regular season and playoff data from the last two seasons"
@@ -235,9 +235,9 @@ curl -X POST "http://localhost:8001/analyze" \
 
 <RequestExample>
 ```bash cURL
-curl -X POST "http://localhost:8001/analyze" \
+curl -X POST "https://api.blitz.com/analyze" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
   -d '{
     "query": "Compare the defensive efficiency of the top 5 NBA teams this season",
     "extra_context": "Include advanced metrics like defensive rating, opponent field goal percentage, and transition defense"
@@ -247,7 +247,7 @@ curl -X POST "http://localhost:8001/analyze" \
 
 ## League Detection
 
-BlitzAgent automatically detects which league (NBA or MLB) your query refers to based on:
+Blitz automatically detects which league (NBA or MLB) your query refers to based on:
 
 - **Team names**: "Lakers" → NBA, "Yankees" → MLB
 - **Player names**: "LeBron James" → NBA, "Mike Trout" → MLB  
@@ -255,7 +255,7 @@ BlitzAgent automatically detects which league (NBA or MLB) your query refers to 
 - **Context clues**: Season timing, terminology, etc.
 
 <Note>
-  If the league cannot be automatically detected, BlitzAgent will analyze the context and make the best determination, or ask for clarification in the response.
+  If the league cannot be automatically detected, Blitz will analyze the context and make the best determination, or ask for clarification in the response.
 </Note>
 
 ## Best Practices
