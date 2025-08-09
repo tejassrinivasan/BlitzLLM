@@ -14,12 +14,9 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 # Create wheel directory
 WORKDIR /wheels
 
-# Copy requirements and install wheels
+# Copy requirements and install wheels (includes MCP package)
 COPY requirements.txt .
-RUN pip wheel --no-deps --wheel-dir . -r requirements.txt
-
-# Install MCP package as wheel
-RUN pip wheel --no-deps --wheel-dir . git+https://github.com/tejassrinivasan/BlitzLLM.git#subdirectory=mcp || echo "Failed to build MCP wheel"
+RUN pip wheel --wheel-dir . -r requirements.txt
 
 # Final stage
 FROM python:3.11-slim

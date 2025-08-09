@@ -242,26 +242,60 @@ class SportsAnalysisAgent:
         mcp_env.pop("POSTGRES_DATABASE", None)  # Don't hardcode database name
         
         try:
-            # MCP package is now installed directly in container - run it directly
-            logger.info("Initializing MCP server from installed package (no downloads needed)")
+            # Try to use installed package command first
+            logger.info("Attempting to initialize MCP server from installed package")
             
-            # Run the installed blitz-agent-mcp directly instead of using uvx
+            # Try different command approaches
+            import shutil
+            mcp_command = None
+            mcp_args = []
+            
+            # Check if blitz-agent-mcp command exists
+            if shutil.which("blitz-agent-mcp"):
+                mcp_command = "blitz-agent-mcp"
+                mcp_args = []
+                logger.info("Found blitz-agent-mcp command")
+            elif shutil.which("python"):
+                # Fallback: run as Python module
+                mcp_command = "python"
+                mcp_args = ["-m", "blitz_agent_mcp.main"]
+                logger.info("Using Python module execution as fallback")
+            else:
+                raise Exception("Neither blitz-agent-mcp nor python command found")
+            
+            # Run the MCP server
             self.mcp_server = MCPServerStdio(
-                command=Config.MCP_COMMAND,  # Use installed package directly
-                args=[],  # No args - blitz-agent-mcp doesn't support --quiet
-                env=mcp_env  # Pass environment with correct credentials and no hardcoded database
+                command=mcp_command,
+                args=mcp_args,
+                env=mcp_env  # Pass environment with correct credentials
             )
-            logger.info("MCP server initialized successfully from installed package")
+            logger.info("MCP server initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize MCP server: {str(e)}")
-            logger.error(f"Command: {Config.MCP_COMMAND} --quiet")
+            logger.error(f"Attempted command: {mcp_command if 'mcp_command' in locals() else Config.MCP_COMMAND}")
             logger.error(f"Environment variables: {list(mcp_env.keys())}")
-            logger.error(f"Full traceback: {str(e)}")
-            # For now, set to None and we'll handle this in the agent creation
-            self.mcp_server = None
+            
+            # Try absolute fallback - run with direct file path if needed
+            try:
+                import sys
+                python_path = sys.executable
+                logger.info(f"Attempting fallback with Python executable: {python_path}")
+                
+                self.mcp_server = MCPServerStdio(
+                    command=python_path,
+                    args=["-c", "import blitz_agent_mcp.main; blitz_agent_mcp.main.main()"],
+                    env=mcp_env
+                )
+                logger.info("MCP server initialized with Python fallback")
+            except Exception as fallback_e:
+                logger.error(f"Fallback MCP initialization also failed: {str(fallback_e)}")
+                logger.error(f"Full traceback: {str(fallback_e)}")
+                # Set to None - we'll handle this gracefully
+                self.mcp_server = None
         
         # Create the Pydantic AI agent with structured workflow and thinking enabled
         if self.mcp_server:
+            logger.info("Creating agent with MCP tools")
             self.agent = Agent(
                 model=self.model,
                 model_settings=self.model_settings,  # Enable anthropic thinking
@@ -558,7 +592,7 @@ class SportsAnalysisAgent:
                 )
 
 # Global agent instance
-sports_agent = SportsAnalysisAgent()
+# Sports agent is now initialized in the startup event and stored in app.state
 
 # Authentication setup
 import json
@@ -667,10 +701,83 @@ app = FastAPI(
 
 async def event_stream(request: AnalysisRequest) -> AsyncGenerator[str, None]:
     """Convert analysis events to Server-Sent Events format."""
-    async for event in sports_agent.stream_analyze(request):
+    # Get the agent from app state
+    if not hasattr(app.state, 'agent') or not app.state.agent:
+        error_event = {
+            "event_type": "error",
+            "message": "Sports analysis service is not initialized",
+            "timestamp": datetime.now().isoformat()
+        }
+        yield f"data: {json.dumps(error_event)}\n\n"
+        return
+    
+    async for event in app.state.agent.stream_analyze(request):
         # Format as SSE
         event_data = json.dumps(event.model_dump())
         yield f"data: {event_data}\n\n"
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the sports agent on startup."""
+    import time
+    app.state.start_time = time.time()
+    
+    logger.info("Starting Pydantic AI Sports Agent")
+    try:
+        app.state.agent = SportsAnalysisAgent()
+        logger.info("Sports agent initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize sports agent: {e}")
+        app.state.agent = None
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up on shutdown."""
+    logger.info("Shutting down Pydantic AI Sports Agent")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify system status."""
+    import time
+    from datetime import datetime
+    
+    # Check if agent is available
+    agent_status = "up" if hasattr(app.state, 'agent') and app.state.agent else "down"
+    
+    # Check MCP server status
+    mcp_status = "connected" if hasattr(app.state, 'agent') and app.state.agent and app.state.agent.mcp_available else "disconnected"
+    
+    # Check Anthropic API (basic check)
+    anthropic_status = "available" if Config.ANTHROPIC_API_KEY else "unavailable"
+    
+    # Determine overall status
+    if agent_status == "up" and mcp_status == "connected" and anthropic_status == "available":
+        overall_status = "healthy"
+    elif agent_status == "up" and anthropic_status == "available":
+        overall_status = "degraded"  # MCP might be down but basic functionality works
+    else:
+        overall_status = "unhealthy"
+    
+    return {
+        "status": overall_status,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "services": {
+            "api": {
+                "status": agent_status,
+                "uptime": int(time.time() - app.state.start_time) if hasattr(app.state, 'start_time') else 0
+            },
+            "mcp_server": {
+                "status": mcp_status,
+                "last_check": datetime.utcnow().isoformat() + "Z",
+                "tools_available": 12 if mcp_status == "connected" else 0
+            },
+            "anthropic": {
+                "status": anthropic_status,
+                "model": "claude-sonnet-4-20250514" if anthropic_status == "available" else None
+            }
+        },
+        "version": "1.0.0"
+    }
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_sports_query(
@@ -688,7 +795,12 @@ async def analyze_sports_query(
     - **image**: Optional base64 encoded image URL to provide as visual context
     """
     logger.info(f"Analysis request from {client_info['name']} ({client_info['client_id']}): {request.query[:100]}...")
-    return await sports_agent.analyze(request)
+    
+    # Get the agent from app state
+    if not hasattr(app.state, 'agent') or not app.state.agent:
+        raise HTTPException(status_code=503, detail="Sports analysis service is not initialized")
+    
+    return await app.state.agent.analyze(request)
 
 @app.post("/analyze/stream")
 async def stream_sports_analysis(
