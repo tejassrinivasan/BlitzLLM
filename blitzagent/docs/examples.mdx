@@ -44,30 +44,6 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
         - **Statistical thresholds**: Performance above/below career averages, milestone games
         - **Team contexts**: With/without specific teammates, coaching changes, roster composition
         
-        <RequestExample>
-        ```bash Complex Multi-Filter Analysis
-        curl -X POST "https://blitzagent.onrender.com/analyze" \
-          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "query": "Show me LeBron James stats in playoff games vs teams with winning records when he scored 25+ points in the 4th quarter",
-            "extra_context": "Include career totals, per-game averages, and compare to his overall playoff performance"
-          }'
-        ```
-        </RequestExample>
-        
-        <RequestExample>
-        ```bash Career Progression with Conditions
-        curl -X POST "https://blitzagent.onrender.com/analyze" \
-          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "query": "How has Stephen Curry three-point shooting evolved by season when shooting 10+ attempts vs elite defenses?",
-            "extra_context": "Define elite defenses as top 10 in defensive rating, show progression from rookie year to present"
-          }'
-        ```
-        </RequestExample>
-        
         **Period and timeframe analysis:**
         - **Game periods**: By quarter, half, overtime performance splits
         - **Season segments**: First/second half, pre/post All-Star break, final month
@@ -192,7 +168,7 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
         - **Schedule analysis**: Back-to-back impact, rest day advantages
       </Accordion>
 
-      <Accordion icon="clock-arrow-up" title="Cross-Era Comparisons">
+      <Accordion icon="timeline" title="Cross-Era Comparisons">
         Compare players, teams, and strategies across different eras from BAA (1946) through modern NBA with proper context.
         
         <RequestExample>
@@ -589,26 +565,11 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
 
 ## Try These Advanced Queries
 
-<AccordionGroup>
-  <Accordion icon="fire" title="Challenge Level: Expert">
-    **Complex Multi-Dimensional Analysis:**
-    - "Analyze the correlation between Nikola Jokić triple-double frequency and Denver's net rating, broken down by opponent defensive ranking"
-    - "How do referees with different experience levels call games? Compare foul rates and pace."
-    - "When certain officials work Lakers games, how does LeBron's foul-drawing rate change?"
-    
-    **Historical Deep Dives:**
-    - "How did the introduction of the three-point line change shot selection patterns in the 1980s using play-by-play data?"
-    - "Compare coaching timeout usage patterns between championship teams vs non-champions"
-    
-    **Real-time Integration:**
-    - "What recent news stories are affecting player performance? Include injury updates and trade rumors."
-    - "Which current hot streaks are sustainable based on underlying metrics and competition quality?"
-    
-    **Betting Market Analysis:**
-    - "Find systematic edges in player prop markets by identifying which sportsbooks consistently misprice certain bet types"
-    - "When do line movements indicate sharp money vs public betting? Analyze betting market efficiency."
-  </Accordion>
-</AccordionGroup>
+Test Blitz's analytical power with these complex questions that showcase our multi-conditional analysis capabilities:
+
+- **"What is the Warriors record in games they had 2+ more rest days than their opponent?"**
+- **"What was Butler's average shot distance in the last 3 minutes of the 4th quarter last season?"**  
+- **"What percent of shots did Steph take for the Warriors when Draymond was also on the court vs when he wasn't?"**
 
 ## Getting Started with Advanced Analysis
 

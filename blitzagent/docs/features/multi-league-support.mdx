@@ -1,156 +1,350 @@
 ---
 title: "League Support"
-description: "Comprehensive NBA analysis with automatic detection, more leagues coming soon"
+description: "Comprehensive NBA analysis with 79 years of historical data, automatic detection, and advanced analytics capabilities"
 ---
 
-Blitz provides comprehensive sports analysis for professional basketball, with automatic player and team detection and sport-specific insights.
+Blitz provides the most comprehensive professional basketball analysis platform available, featuring complete BAA and NBA coverage from 1946-2025 with automatic league detection and sport-specific insights.
 
-## Current Support
+**Current Coverage**: Complete professional basketball history spanning 79 years, from BAA (1946-1949) through NBA (1949-2025), with comprehensive player stats, team performance, play-by-play events, betting lines, and advanced metrics.
+
+## Current League Support
 
 <CardGroup cols={2}>
   <Card
-    title="NBA"
+    title="NBA - Full Support"
     icon="basketball"
   >
-    **National Basketball Association**
+    **Complete Basketball Analytics Platform**
     
-    Complete player stats, team analysis, game predictions, and historical data dating back multiple seasons with automatic detection.
+    79 years of comprehensive data from BAA (1946) through NBA (2025) with real-time updates, advanced analytics, and natural language query processing.
   </Card>
   
   <Card
-    title="MLB"
+    title="MLB - Coming Soon"
     icon="baseball"
   >
     **Major League Baseball**
     
-    Coming soon - comprehensive baseball analytics and player performance data.
+    Comprehensive baseball analytics and player performance data with the same advanced reasoning capabilities.
   </Card>
 </CardGroup>
-
-## Automatic Detection
-
-Blitz automatically detects NBA queries through:
-
-<AccordionGroup>
-  <Accordion icon="basketball" title="NBA Recognition">
-    **Team Names**: Lakers, Warriors, Celtics, Bulls, Heat, etc.
-    
-    **Player Names**: LeBron James, Stephen Curry, Kevin Durant, etc.
-    
-    **Basketball Terms**: three-pointer, assists, rebounds, blocks, PER, usage rate, etc.
-    
-    **Example Queries**:
-    - "How many three-pointers did Steph Curry make last game?"
-    - "Lakers vs Warriors prediction for tonight"
-    - "Which team has the best defensive rating?"
-  </Accordion>
-  
-  <Accordion icon="brain" title="Contextual Intelligence">
-    **Seasonal Context**: Understands when NBA season is active
-    
-    **Ambiguous Queries**: Asks for clarification when league cannot be determined
-    
-    **Player Context**: Recognizes current and former NBA players automatically
-  </Accordion>
-</AccordionGroup>
 
 ## NBA Analysis Capabilities
 
+<AccordionGroup>
+  <Accordion icon="calculator" title="Statistical Analysis">
+    From basic stats to advanced multi-conditional queries with unlimited filters and combinations.
+    
+    **Traditional Statistics:**
+    - **Scoring**: PPG, FG%, 2PT%, 3PT%, FT%, TS%, eFG%
+    - **Playmaking**: APG, AST%, assist-to-turnover ratio
+    - **Rebounding**: RPG, ORB%, DRB%, total rebound percentage
+    - **Defense**: SPG, BPG, steal percentage, block percentage
+    - **Efficiency**: PER, usage rate, plus/minus, net rating
+    
+    **Advanced Metrics:**
+    - **Impact metrics**: BPM, VORP, Win Shares, RPM
+    - **Shooting analytics**: Shot distance, action area mapping, efficiency by zone
+    - **Pace analysis**: Possessions per game, pace factor adjustments
+    - **Lineup analytics**: Plus/minus by combination, minutes together
+    
+    <RequestExample>
+    ```bash Advanced Statistical Query
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "What are Jayson Tatum shooting percentages, usage rate, and efficiency metrics this season?",
+        "extra_context": "Include FG%, 3P%, FT%, eFG%, TS%, PER, and compare to league averages"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+
+  <Accordion icon="play" title="Play-by-Play Analysis">
+    Granular game-level analysis with shot locations, player tracking, and real-time event analysis.
+    
+    **Detailed Game Events:**
+    - **Shot tracking**: Original X/Y coordinates, converted court positions, action areas
+    - **Player lineups**: All 10 players on court for every play, substitution tracking
+    - **Event sequences**: Assists, blocks, steals, turnovers with precise timing
+    - **Game flow**: Momentum shifts, scoring runs, timeout impact analysis
+    - **Clutch breakdowns**: Final minutes analysis with pressure context
+    
+    **Situational Performance:**
+    - **Quarter-by-quarter**: Performance splits across all four quarters and overtime
+    - **Clutch time**: Last 5 minutes, within 5 points analysis
+    - **Game situation**: Winning/losing, close games, blowouts
+    - **Rest factors**: Back-to-back games, days of rest impact
+    
+    <RequestExample>
+    ```bash Play-by-Play Analysis
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Analyze LeBron James performance in the last 3 minutes of 4th quarter when the game is within 5 points",
+        "extra_context": "Include shot selection, efficiency, and historical clutch performance comparison"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+
+  <Accordion icon="clock-rotate-left" title="Historical Analysis">
+    Complete basketball history analysis from BAA (1946) through modern NBA with era-adjusted comparisons.
+    
+    **Era Coverage:**
+    - **BAA Era (1946-1949)**: Foundation years with early pioneers
+    - **Early NBA (1950s-1960s)**: Wilt, Russell, dominant big men era
+    - **ABA Merger (1970s)**: Style evolution, three-point introduction
+    - **Magic/Bird Era (1980s)**: Showtime basketball, national popularity
+    - **Jordan Era (1990s)**: Global expansion, championship dynasties
+    - **Modern Era (2000s-2010s)**: Analytics revolution, pace-and-space
+    - **Current Era (2020s)**: Player empowerment, three-point explosion
+    
+    **Cross-Era Capabilities:**
+    - **Adjusted comparisons**: Account for pace, rule changes, competition level
+    - **Rule impact analysis**: Shot clock, three-point line, defensive rules
+    - **Strategic evolution**: How coaching and tactics affected statistical production
+    - **Championship context**: Success relative to era and competition
+    
+    <RequestExample>
+    ```bash Historical Comparison
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Compare George Mikan BAA dominance (1946-1949) with Shaq 2000s impact, adjusted for era",
+        "extra_context": "Account for rule differences, competition level, and strategic evolution"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+
+  <Accordion icon="users" title="Team & Lineup Analysis">
+    Comprehensive team performance analysis with lineup combinations and strategic insights.
+    
+    **Team Metrics:**
+    - **Offensive efficiency**: Points per possession, effective field goal percentage
+    - **Defensive ratings**: Points allowed per possession, defensive rebounds
+    - **Pace analysis**: Possessions per game, tempo control
+    - **Four factors**: eFG%, TOV%, ORB%, FTR for both offense and defense
+    
+    **Lineup Analytics:**
+    - **Combination analysis**: Plus/minus for specific player combinations
+    - **Minutes tracking**: Time played together, rotation patterns
+    - **Matchup analysis**: How lineups perform against different opponent styles
+    - **Substitution impact**: Before/after player substitutions
+    
+    <RequestExample>
+    ```bash Team Analysis
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Which 5-man lineup combinations have the best net rating for the Celtics this season?",
+        "extra_context": "Include minutes played together, offensive/defensive splits, and opponent strength"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+
+  <Accordion icon="trophy" title="Awards & Achievements">
+    Complete awards database with voting patterns, achievement tracking, and historical context.
+    
+    **Awards Coverage:**
+    - **Individual awards**: MVP, DPOY, ROY, Sixth Man, MIP, All-Star selections
+    - **Team achievements**: Championships, division titles, playoff appearances
+    - **Historical voting**: Voting patterns, statistical thresholds, narrative factors
+    - **Milestone tracking**: Career achievements, record progressions
+    
+    **Achievement Analysis:**
+    - **Voting prediction**: Current season award race analysis
+    - **Historical patterns**: What statistics typically win each award
+    - **Narrative impact**: How storylines affect voting outcomes
+    - **Snub analysis**: Players who deserved recognition but didn't receive it
+    
+    <RequestExample>
+    ```bash Awards Analysis
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "Who are the current MVP frontrunners and what statistical patterns predict MVP winners?",
+        "extra_context": "Include historical voting trends, team success correlation, and narrative factors"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+
+  <Accordion icon="dollar-sign" title="Betting & Market Analysis">
+    Comprehensive betting market analysis with prop tracking, line movement, and value identification.
+    
+    **Betting Capabilities:**
+    - **Multi-sportsbook data**: Opening vs closing lines across major sportsbooks
+    - **Player props**: Points, rebounds, assists, three-pointers, performance analysis
+    - **Game totals**: Over/under analysis with pace and efficiency factors
+    - **Spread analysis**: Point spread accuracy and situational factors
+    - **Line movement**: Sharp vs public money identification
+    
+    **Market Efficiency:**
+    - **Value identification**: Misaligned lines and market inefficiencies
+    - **Correlation analysis**: How individual performances affect team outcomes
+    - **Historical accuracy**: Which markets and sportsbooks are most accurate
+    - **Situational edges**: Rest advantages, matchup-specific opportunities
+    
+    <RequestExample>
+    ```bash Betting Analysis
+    curl -X POST "https://blitzagent.onrender.com/analyze" \
+      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "How accurate are Giannis Antetokounmpo point props? Analyze over/under rates by situation.",
+        "extra_context": "Include matchup factors, rest days, and line movement patterns"
+      }'
+    ```
+    </RequestExample>
+  </Accordion>
+</AccordionGroup>
+
+## Automatic League Detection
+
+Blitz intelligently detects NBA queries through multiple contextual signals:
+
+<AccordionGroup>
+  <Accordion icon="basketball" title="Entity Recognition">
+    **Team Detection:**
+    - **Current teams**: Lakers, Warriors, Celtics, Bulls, Heat, Nets, etc.
+    - **Historical teams**: SuperSonics, Bullets, Hornets (Charlotte/New Orleans)
+    - **Franchise tracking**: Team relocations and name changes
+    
+    **Player Recognition:**
+    - **Current players**: LeBron James, Stephen Curry, Kevin Durant, Giannis Antetokounmpo
+    - **Historical legends**: Michael Jordan, Magic Johnson, Larry Bird, Kareem Abdul-Jabbar
+    - **All-time database**: Every player from BAA (1946) through current NBA
+    
+    **Basketball Terminology:**
+    - **Basic stats**: points, rebounds, assists, steals, blocks, field goal percentage
+    - **Advanced metrics**: PER, usage rate, true shooting, effective field goal percentage
+    - **Situational terms**: clutch time, playoff performance, home/away splits
+  </Accordion>
+  
+  <Accordion icon="brain" title="Contextual Intelligence">
+    **Seasonal Awareness:**
+    - **NBA calendar**: Regular season (October-April), playoffs (April-June)
+    - **Historical context**: Recognizes past seasons and specific date ranges
+    - **Current events**: Injury reports, trades, roster changes
+    
+    **Query Disambiguation:**
+    - **Ambiguous players**: Asks for clarification when multiple players share names
+    - **Context clues**: Uses surrounding information to determine intent
+    - **Follow-up questions**: Requests additional details when needed
+    
+    **Smart Defaults:**
+    - **Current season**: Assumes current year unless specified otherwise
+    - **Regular season**: Defaults to regular season stats unless playoffs specified
+    - **Recent performance**: Prioritizes recent games for current analysis
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Query Examples
+
+Test Blitz's NBA analysis capabilities with these sophisticated queries:
+
+**Multi-Conditional Analysis:**
+- "What is the Warriors record in games they had 2+ more rest days than their opponent?"
+- "What was Butler's average shot distance in the last 3 minutes of the 4th quarter last season?"
+- "What percent of shots did Steph take for the Warriors when Draymond was also on the court vs when he wasn't?"
+
+**Historical Deep Dives:**
+- "Compare Wilt Chamberlain's 1960s dominance with Shaq's 2000s impact, adjusted for era"
+- "How did the introduction of the three-point line change shot selection patterns in the 1980s?"
+- "Rank the greatest clutch performers in NBA history using play-by-play data"
+
+**Advanced Analytics:**
+- "Analyze the correlation between LeBron James assists and his overall PRA performance"
+- "Which players have the best shooting efficiency from different court zones this season?"
+- "How do lineup combinations affect team defensive rating for playoff teams?"
+
+## Future League Expansion
+
+Blitz's architecture supports seamless expansion to additional sports:
+
 <CardGroup cols={2}>
   <Card
-    title="Player Statistics"
-    icon="user"
-  >
-    - Traditional stats (PPG, APG, RPG)
-    - Advanced metrics (PER, BPM, VORP)
-    - Shooting efficiency (TS%, eFG%)
-    - Defensive metrics (steals, blocks)
-  </Card>
-  
-  <Card
-    title="Team Analytics"
-    icon="users"
-  >
-    - Offensive/Defensive ratings
-    - Pace and efficiency metrics
-    - Team performance trends
-    - Lineup analysis
-  </Card>
-  
-  <Card
-    title="Situational Analysis"
-    icon="clock"
-  >
-    - Clutch performance (last 5 minutes)
-    - Playoff vs regular season splits
-    - Home/away performance
-    - Recent form analysis
-  </Card>
-  
-  <Card
-    title="Advanced Insights"
-    icon="chart-line"
-  >
-    - Shot selection analysis
-    - Plus/minus impact
-    - Usage rate and efficiency
-    - Matchup advantages
-  </Card>
-</CardGroup>
-
-## Example Queries
-
-<CodeGroup>
-```bash Player Analysis
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "How many three-pointers did Stephen Curry make this season?"
-  }'
-```
-
-```bash Team Comparison
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "Compare Lakers and Warriors offensive efficiency this season"
-  }'
-```
-</CodeGroup>
-
-## Future League Support
-
-Blitz's architecture is designed to support additional leagues:
-
-<CardGroup cols={2}>
-  <Card
-    title="MLB Support"
+    title="MLB Implementation"
     icon="baseball"
   >
-    Baseball analytics including pitching stats, batting analysis, and team performance metrics.
+    **Coming Soon**
+    
+    Same advanced reasoning capabilities applied to baseball with comprehensive pitching, batting, and fielding analytics.
   </Card>
   
   <Card
-    title="NFL Support"
+    title="NFL Potential"
     icon="football"
   >
-    Planned support for NFL analysis including player stats and team performance.
-  </Card>
-  
-  <Card
-    title="NHL Support"
-    icon="hockey-puck"
-  >
-    Future NHL capabilities for hockey analytics and playoff analysis.
+    **Future Development**
+    
+    Planned support for NFL analysis including player stats, team performance, and advanced football metrics.
   </Card>
   
   <Card
     title="International Sports"
     icon="globe"
   >
-    Potential expansion to soccer and other international sports leagues.
+    **Global Expansion**
+    
+    Potential expansion to soccer leagues, hockey, and other international sports with similar analytical depth.
+  </Card>
+  
+  <Card
+    title="College Sports"
+    icon="graduation-cap"
+  >
+    **Educational Athletics**
+    
+    Future support for college basketball and football with recruiting, tournament, and seasonal analysis.
+  </Card>
+</CardGroup>
+
+## Integration Benefits
+
+<CardGroup cols={2}>
+  <Card
+    title="Seamless Experience"
+    icon="wand-magic-sparkles"
+  >
+    **Automatic Detection**
+    
+    No need to specify leagues - Blitz automatically understands your query context and provides sport-specific insights.
+  </Card>
+  
+  <Card
+    title="Unified API"
+    icon="code"
+  >
+    **Single Endpoint**
+    
+    One API endpoint handles all leagues with consistent response formats and error handling across sports.
+  </Card>
+  
+  <Card
+    title="Cross-Sport Analysis"
+    icon="arrows-left-right"
+  >
+    **Future Capabilities**
+    
+    When multiple leagues are supported, enable cross-sport athlete comparisons and analytical insights.
+  </Card>
+  
+  <Card
+    title="Scalable Architecture"
+    icon="chart-line"
+  >
+    **Built to Grow**
+    
+    Architecture designed for rapid league expansion while maintaining performance and analytical depth.
   </Card>
 </CardGroup>
 
@@ -158,18 +352,40 @@ Blitz's architecture is designed to support additional leagues:
 
 <CardGroup cols={2}>
   <Card
+    title="Comprehensive Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    Explore detailed NBA analysis examples showcasing all platform capabilities
+  </Card>
+  
+  <Card
     title="Data Sources"
     icon="database"
     href="/features/data-sources"
   >
-    Learn about the comprehensive data sources for NBA analysis
+    Learn about the comprehensive data sources powering NBA analysis
   </Card>
   
   <Card
-    title="Examples"
-    icon="lightbulb"
-    href="/examples"
+    title="API Reference"
+    icon="code"
+    href="/api-reference/analyze"
   >
-    See real-world examples for NBA analysis
+    Technical documentation for implementing league-aware queries
+  </Card>
+  
+  <Card
+    title="Streaming Analysis"
+    icon="play"
+    href="/features/streaming-analysis"
+  >
+    Real-time analysis capabilities for live game data and events
   </Card>
 </CardGroup>
+
+---
+
+<Note>
+  **NBA Coverage**: Complete professional basketball analysis from BAA (1946-1949) through NBA (1949-2025), totaling 79 years of comprehensive data with play-by-play events, player statistics, team performance, betting lines, injury tracking, and advanced metrics. Analysis automatically adapts to data availability across different eras.
+</Note>
