@@ -9,6 +9,409 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
 
 **Data Coverage**: Historical NBA data from 1952-2025, including player stats, team performance, play-by-play events, betting lines, and advanced metrics across 70+ years of basketball history.
 
+## 🏀 NBA Analysis Examples
+
+<AccordionGroup>
+  <Accordion icon="history" title="Historical Analysis">
+    Deep dive into historical NBA data spanning 70+ years of basketball history with comprehensive contextual analysis.
+    
+    <AccordionGroup>
+      <Accordion icon="play" title="Play-by-Play Deep Dives">
+        Granular analysis using detailed play-by-play data with shot locations, player tracking, and game flow insights.
+        
+        <RequestExample>
+        ```bash Shot Chart Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Analyze Jayson Tatum shot selection by court location and defensive pressure",
+            "extra_context": "Include shot distance, action area mapping, and efficiency by zone"
+          }'
+        ```
+        </RequestExample>
+        
+        **Play-by-play capabilities:**
+        - **Shot location mapping**: Original X/Y coordinates, converted court positions, action areas
+        - **Lineup tracking**: All 10 players on court for every play, substitution patterns
+        - **Event sequencing**: Assists, blocks, steals, turnovers with precise timing
+        - **Game flow analysis**: Momentum shifts, scoring runs, timeout impact
+        - **Clutch moment breakdown**: Final minutes play-by-play with pressure context
+        
+        <RequestExample>
+        ```bash Lineup Effectiveness Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Which 5-man lineup combinations have the best plus/minus for the Celtics?",
+            "extra_context": "Include minutes played together and offensive/defensive efficiency splits"
+          }'
+        ```
+        </RequestExample>
+        
+        <RequestExample>
+        ```bash Game Flow & Momentum Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Analyze the biggest comeback wins this season - what happened during the momentum shift?",
+            "extra_context": "Include play-by-play of key moments, timeouts called, and substitution patterns"
+          }'
+        ```
+        </RequestExample>
+      </Accordion>
+
+      <Accordion icon="user" title="Career & Legacy Analysis">
+        Comprehensive historical player analysis across careers, eras, and statistical evolution.
+        
+        <RequestExample>
+        ```bash Career Evolution Tracking
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "How has LeBron James shooting efficiency evolved by quarter over his entire career?",
+            "extra_context": "Compare early career vs recent seasons, identify adaptation patterns and age-related changes"
+          }'
+        ```
+        </RequestExample>
+        
+        **Historical performance capabilities:**
+        - **Multi-decade tracking**: Career arcs from 1952-2025
+        - **Era-adjusted comparisons**: Account for rule changes, pace, competition level
+        - **Peak identification**: Prime years, decline patterns, resurgence periods
+        - **Milestone analysis**: Record progressions, achievement timelines
+        - **Legacy positioning**: All-time rankings with statistical context
+      </Accordion>
+
+      <Accordion icon="trophy" title="Awards & Achievements">
+        Deep analysis of NBA awards, championships, and milestone achievements with historical context.
+        
+        <RequestExample>
+        ```bash Award Race Historical Patterns
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "What statistical patterns predict MVP winners? Compare historical voting trends.",
+            "extra_context": "Include team success thresholds, advanced metrics evolution, and narrative factors"
+          }'
+        ```
+        </RequestExample>
+        
+        **Awards analysis features:**
+        - **Complete awards database**: MVP, DPOY, ROY, Sixth Man, All-Star selections
+        - **Voting pattern analysis**: Historical trends, statistical thresholds
+        - **Championship correlation**: Award winners vs championship success
+        - **Breakthrough identification**: First-time award winners patterns
+        - **Snub analysis**: Players who deserved recognition but didn't receive it
+      </Accordion>
+
+      <Accordion icon="whistle" title="Officials & Game Context">
+        Analyze referee patterns, coaching impacts, and contextual game factors affecting performance.
+        
+        <RequestExample>
+        ```bash Referee Impact Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Do certain referees call games differently? Analyze foul patterns and pace impact.",
+            "extra_context": "Include referee experience, consistency metrics, and team-specific patterns"
+          }'
+        ```
+        </RequestExample>
+        
+        **Contextual analysis capabilities:**
+        - **Referee database**: Official assignments, experience levels, calling patterns
+        - **Coaching impact**: Coach win rates, timeout usage, strategic adjustments
+        - **Venue effects**: Home court advantages, arena-specific performance
+        - **Broadcast correlation**: National TV game performance differences
+        - **Schedule analysis**: Back-to-back impact, rest day advantages
+      </Accordion>
+
+      <Accordion icon="scale" title="Cross-Era Comparisons">
+        Compare players, teams, and strategies across different NBA eras with proper context.
+        
+        <RequestExample>
+        ```bash Era-Adjusted Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Compare Wilt Chamberlain 1960s dominance with Shaq 2000s impact, adjusted for era",
+            "extra_context": "Account for pace, competition level, rule differences, and strategic context"
+          }'
+        ```
+        </RequestExample>
+        
+        **Cross-era features:**
+        - **70+ years of data**: From early NBA through modern analytics era
+        - **Rule change impact**: Three-point line, shot clock, defensive rules
+        - **Competition adjustments**: League expansion, talent dilution/concentration
+        - **Pace normalization**: Per-possession and per-minute comparisons
+        - **Strategic evolution**: Tactical changes and their impact on statistics
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+
+  <Accordion icon="clock" title="Real-time Analysis">
+    Current season tracking with real-time data integration, news analysis, and live insights.
+    
+    <AccordionGroup>
+      <Accordion icon="heart-pulse" title="Injury Tracking & Impact">
+        Real-time injury monitoring with performance impact analysis and recovery projections.
+        
+        <RequestExample>
+        ```bash Injury Impact Assessment
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "How have the Clippers performed without Kawhi Leonard this season?",
+            "extra_context": "Include injury timeline, team adjustments, role player stepping up, and playoff implications"
+          }'
+        ```
+        </RequestExample>
+        
+        **Injury analysis capabilities:**
+        - **Real-time injury database**: Status updates, descriptions, timelines
+        - **Impact quantification**: With/without player performance splits
+        - **Recovery tracking**: Return timelines, performance upon return
+        - **Team adaptation**: Rotation changes, role expansions
+        - **Fantasy implications**: Pickup recommendations, lineup adjustments
+        
+        <RequestExample>
+        ```bash Load Management Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Which players use load management most effectively? Analyze rest day impact on performance.",
+            "extra_context": "Include playoff performance correlation and optimal rest patterns"
+          }'
+        ```
+        </RequestExample>
+      </Accordion>
+
+      <Accordion icon="newspaper" title="Latest News & Trends">
+        Real-time news analysis with performance impact assessment and trend identification.
+        
+        <RequestExample>
+        ```bash Breaking News Impact
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "What are the latest NBA storylines and how are they affecting team performance?",
+            "extra_context": "Include recent trades, coaching changes, and emerging storylines with statistical backing"
+          }'
+        ```
+        </RequestExample>
+        
+        **Real-time news capabilities:**
+        - **Web scraping integration**: Latest sports news, trade rumors, injury updates
+        - **Trend identification**: Emerging storylines, social media sentiment
+        - **Performance correlation**: News impact on player/team statistics
+        - **Market movement**: How news affects betting lines and public perception
+        - **Social media analysis**: Player interactions, team chemistry indicators
+      </Accordion>
+
+      <Accordion icon="fire" title="Hot Streaks & Form Analysis">
+        Current performance trend analysis with streak identification and sustainability projections.
+        
+        <RequestExample>
+        ```bash Hot Streak Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Which players are currently on the longest scoring streaks and how sustainable are they?",
+            "extra_context": "Include historical context, quality of competition, and regression analysis"
+          }'
+        ```
+        </RequestExample>
+        
+        **Form analysis features:**
+        - **Streak detection**: Scoring, shooting, rebounding, assists streaks
+        - **Quality assessment**: Efficiency during streaks, competition level
+        - **Sustainability modeling**: Regression to mean predictions
+        - **Breakout identification**: Players exceeding career norms
+        - **Team chemistry**: How individual form affects team performance
+      </Accordion>
+
+      <Accordion icon="chart-line" title="Live Game Integration">
+        Real-time game analysis with live data feeds and in-game insights.
+        
+        <RequestExample>
+        ```bash Live Game Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Analyze tonight Lakers vs Warriors game - key matchups and predictions",
+            "extra_context": "Include recent form, injury reports, historical head-to-head, and betting implications"
+          }'
+        ```
+        </RequestExample>
+        
+        **Live game capabilities:**
+        - **Pre-game analysis**: Matchup breakdowns, key player battles
+        - **In-game tracking**: Real-time performance updates, momentum shifts
+        - **Post-game insights**: Performance analysis, key moment identification
+        - **Schedule optimization**: Rest advantages, travel factors
+        - **Betting correlation**: Live line movements vs performance
+      </Accordion>
+
+      <Accordion icon="trophy" title="Current Season Awards & Rankings">
+        Real-time award race tracking with statistical projections and voting analysis.
+        
+        <RequestExample>
+        ```bash Award Race Tracking
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Who are the current MVP frontrunners and what would push them over the top?",
+            "extra_context": "Include voter tendencies, remaining schedule impact, and historical precedents"
+          }'
+        ```
+        </RequestExample>
+        
+        **Current season tracking:**
+        - **Live award races**: MVP, DPOY, ROY, Sixth Man, Coach of Year
+        - **Voting projections**: Historical patterns, narrative factors
+        - **Statistical thresholds**: What stats typically win each award
+        - **Schedule impact**: Remaining games influence on chances
+        - **Dark horse candidates**: Under-the-radar performers
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+
+  <Accordion icon="dollar-sign" title="Betting Analysis">
+    Comprehensive betting market analysis with prop tracking, line movement, and value identification.
+    
+    <AccordionGroup>
+      <Accordion icon="chart-mixed" title="Player Props Analysis">
+        Advanced prop bet analysis with market efficiency tracking and value identification.
+        
+        <RequestExample>
+        ```bash Player Prop Market Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "How accurate are Giannis Antetokounmpo point props? Analyze sportsbook performance.",
+            "extra_context": "Include line movement patterns, sharp vs public betting, and situational factors"
+          }'
+        ```
+        </RequestExample>
+        
+        **Prop betting analytics:**
+        - **Multi-sportsbook tracking**: Opening vs closing lines across all major books
+        - **Player tendency analysis**: Over/under rates by situation and matchup
+        - **Line accuracy assessment**: Which books and bet types are most accurate
+        - **Sharp money identification**: Professional vs public betting patterns
+        - **Value opportunity detection**: Misaligned lines and market inefficiencies
+      </Accordion>
+
+      <Accordion icon="arrows-up-down" title="Line Movement Analysis">
+        Track betting line movements with market sentiment and professional betting patterns.
+        
+        <RequestExample>
+        ```bash Line Movement Tracking
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Why did the Lakers spread move from -3.5 to -6? Analyze the betting action.",
+            "extra_context": "Include public betting percentages, injury news impact, and sharp money indicators"
+          }'
+        ```
+        </RequestExample>
+        
+        **Line movement capabilities:**
+        - **Real-time tracking**: Opening lines through close across all major sportsbooks
+        - **Movement triggers**: News events, injury reports, weather, public betting
+        - **Market sentiment**: Public vs sharp money identification
+        - **Historical patterns**: How similar movements have performed
+        - **Closing line value**: CLV analysis for long-term profitability
+      </Accordion>
+
+      <Accordion icon="target" title="Game Totals & Spread Analysis">
+        Deep analysis of game totals, spreads, and moneylines with situational factors.
+        
+        <RequestExample>
+        ```bash Total Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Should tonight Warriors vs Nuggets game go over 230? Analyze pace and defensive factors.",
+            "extra_context": "Include recent scoring trends, defensive improvements, and pace correlation"
+          }'
+        ```
+        </RequestExample>
+        
+        **Game betting features:**
+        - **Pace factor analysis**: Team tempo correlation with totals
+        - **Matchup efficiency**: Offensive vs defensive ratings impact
+        - **Situational trends**: Home/away, rest days, back-to-backs
+        - **Key number analysis**: How games land relative to 3, 7, 10 point spreads
+        - **Steam moves**: Identifying and following sharp action
+      </Accordion>
+
+      <Accordion icon="brain" title="Market Efficiency & Value">
+        Identify betting market inefficiencies and long-term profitable opportunities.
+        
+        <RequestExample>
+        ```bash Market Inefficiency Detection
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Which player prop markets are consistently mispriced? Find systematic edges.",
+            "extra_context": "Include variance analysis, sample size requirements, and risk management factors"
+          }'
+        ```
+        </RequestExample>
+        
+        **Market efficiency analysis:**
+        - **Historical edge identification**: Systematic profit opportunities
+        - **Variance considerations**: Sample size requirements, bankroll management
+        - **Sportsbook comparison**: Which books offer the best lines by bet type
+        - **Public bias exploitation**: Fading overvalued popular players/teams
+        - **Closing line value tracking**: Long-term profitability measurement
+      </Accordion>
+
+      <Accordion icon="calculator" title="Advanced Betting Metrics">
+        Sophisticated betting analysis with correlation studies and portfolio optimization.
+        
+        <RequestExample>
+        ```bash Correlation Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "When LeBron goes over points, how often does the Lakers team total go over?",
+            "extra_context": "Include correlation strength, sample sizes, and practical betting applications"
+          }'
+        ```
+        </RequestExample>
+        
+        **Advanced betting capabilities:**
+        - **Prop correlation analysis**: How individual performances affect team outcomes
+        - **Parlay optimization**: Identifying positive correlation for combo bets
+        - **Hedge opportunities**: When and how to hedge positions
+        - **Arbitrage detection**: Risk-free profit opportunities across books
+        - **Portfolio management**: Diversification and risk assessment across bets
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
 ## 🧠 Advanced Statistical Analysis
 
 <AccordionGroup>
@@ -27,260 +430,14 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
     ```
     </RequestExample>
     
-    **Advanced capabilities:**
+    **Advanced correlation capabilities:**
     - Statistical correlation analysis with percentile thresholds
     - Outlier detection using 90th/10th percentile boundaries
     - Multi-dimensional performance relationship mapping
-    - Historical context across multiple seasons
+    - Causation vs correlation identification
+    - Predictive modeling based on correlations
   </Accordion>
 
-  <Accordion icon="users" title="Team Chemistry Analysis">
-    Examine how multiple players' performances interact within team dynamics.
-    
-    <RequestExample>
-    ```bash Player Combination Success Rates
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "In what percentage of games does Luka Dončić score 30+ points while another Mavericks player also scores 20+?",
-        "extra_context": "Show specific examples and identify which teammates most often achieve this combination"
-      }'
-    ```
-    </RequestExample>
-    
-    **What you get:**
-    - Conditional probability analysis across multiple players
-    - Team scoring distribution patterns
-    - Complementary performance identification
-    - Game-by-game breakdown with specific examples
-    - Historical success rate trends
-  </Accordion>
-
-  <Accordion icon="calculator" title="Complex Performance Metrics">
-    Calculate advanced metrics like PRA (Points + Rebounds + Assists) rankings and correlations.
-    
-    <RequestExample>
-    ```bash Advanced Metric Rankings
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Rank Lakers players by average PRA this season and show where LeBron James ranks",
-        "extra_context": "Include games played threshold and breakdown by points, rebounds, assists"
-      }'
-    ```
-    </RequestExample>
-    
-    **Advanced features:**
-    - Custom metric calculation (PRA, efficiency ratings, usage rates)
-    - Multi-season comparison and trending
-    - Minimum games played filtering
-    - Ranked performance hierarchies
-    - Detailed statistical breakdowns
-  </Accordion>
-
-  <Accordion icon="target" title="Situational Performance Deep Dives">
-    Analyze how players perform in specific game situations and contexts.
-    
-    <RequestExample>
-    ```bash Context-Dependent Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How does Stephen Curry perform in clutch time (final 5 minutes, game within 5 points) compared to his overall averages?",
-        "extra_context": "Include shooting splits, decision-making metrics, and historical clutch moments"
-      }'
-    ```
-    </RequestExample>
-    
-    **Situational contexts available:**
-    - Clutch time performance (final 5 minutes, close games)
-    - Rest days impact (back-to-back vs. rested)
-    - Opponent-specific matchups and trends
-    - Home vs. away performance splits
-    - Playoff vs. regular season analysis
-  </Accordion>
-</AccordionGroup>
-
-## 🎯 Play-by-Play & Real-Time Analysis
-
-<AccordionGroup>
-  <Accordion icon="clock" title="In-Game Momentum Analysis">
-    Analyze specific moments and sequences within games using play-by-play data.
-    
-    <RequestExample>
-    ```bash Granular Game Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Who scored the most points in the final 2 minutes of the 4th quarter in recent games?",
-        "extra_context": "Include shot types, assists, and game context for clutch scoring"
-      }'
-    ```
-    </RequestExample>
-    
-    **Play-by-play capabilities:**
-    - Shot location and distance analysis
-    - Time-specific performance (quarters, final minutes)
-    - Sequential event analysis (assists to scores)
-    - Lineup and rotation impact
-    - Momentum shift identification
-  </Accordion>
-
-  <Accordion icon="chart-bar" title="Shot Quality & Location Analytics">
-    Deep dive into shooting patterns, locations, and efficiency.
-    
-    <RequestExample>
-    ```bash Shooting Pattern Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Analyze Jayson Tatum shot selection and efficiency by court location and game situation",
-        "extra_context": "Include three-point range, mid-range, and paint efficiency with defensive context"
-      }'
-    ```
-    </RequestExample>
-    
-    **Shot analytics include:**
-    - Court location mapping (paint, mid-range, three-point)
-    - Shot distance and angle analysis
-    - Contested vs. open shot efficiency
-    - Situational shooting (clutch, transition, set plays)
-    - Historical shooting trend evolution
-  </Accordion>
-</AccordionGroup>
-
-## 📈 Historical Trends & Longitudinal Analysis
-
-<AccordionGroup>
-  <Accordion icon="timeline" title="Career Arc Analysis">
-    Track player development and decline patterns across multiple seasons.
-    
-    <RequestExample>
-    ```bash Career Evolution Tracking
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How has LeBron James shooting efficiency evolved by quarter over his career?",
-        "extra_context": "Compare early career vs. recent seasons and identify adaptation patterns"
-      }'
-    ```
-    </RequestExample>
-    
-    **Career analysis features:**
-    - Multi-season trend identification
-    - Performance evolution by age/experience
-    - Adaptation to rule changes and meta shifts
-    - Peak performance period identification
-    - Decline pattern recognition
-  </Accordion>
-
-  <Accordion icon="arrows-turn-right" title="Team Strategy Evolution">
-    Analyze how team strategies and performance patterns change over time.
-    
-    <RequestExample>
-    ```bash Team Strategy Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How has the Golden State Warriors three-point attempt rate and efficiency changed since Stephen Curry joined?",
-        "extra_context": "Include league-wide impact and era-defining moments"
-      }'
-    ```
-    ```
-    </RequestExample>
-    
-    **Team evolution tracking:**
-    - Strategic philosophy changes
-    - Pace and style evolution
-    - Personnel impact on team identity
-    - League trend influence
-    - Championship window analysis
-  </Accordion>
-
-  <Accordion icon="scale" title="Cross-Era Comparisons">
-    Compare players and teams across different NBA eras with contextual adjustments.
-    
-    <RequestExample>
-    ```bash Era-Adjusted Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Compare Michael Jordan 1990s dominance with LeBron James 2010s performance",
-        "extra_context": "Account for pace, defensive rules, and era-specific factors"
-      }'
-    ```
-    </RequestExample>
-    
-    **Cross-era capabilities:**
-    - 70+ years of NBA historical data
-    - Era-specific context and rule changes
-    - Pace and style adjustments
-    - Competition level normalization
-    - GOAT debate analytical framework
-  </Accordion>
-</AccordionGroup>
-
-## 💰 Betting & Market Analysis
-
-<AccordionGroup>
-  <Accordion icon="chart-mixed" title="Prop Bet Performance Analysis">
-    Analyze how players perform relative to betting lines and market expectations.
-    
-    <RequestExample>
-    ```bash Market Performance Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How often does Giannis Antetokounmpo go over his points prop when the line is set above 30?",
-        "extra_context": "Include opponent defensive rankings and recent form factors"
-      }'
-    ```
-    </RequestExample>
-    
-    **Betting analytics include:**
-    - Prop line accuracy and player tendencies
-    - Market inefficiency identification
-    - Situational betting value
-    - Line movement correlation with performance
-    - Historical closing line value
-  </Accordion>
-
-  <Accordion icon="trophy" title="Game Total & Spread Analysis">
-    Examine team performance relative to betting markets and expectations.
-    
-    <RequestExample>
-    ```bash Team Market Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "When Anthony Edwards goes over his PRA prop, how often does the Timberwolves game go over the total?",
-        "extra_context": "Include pace factors and defensive matchup considerations"
-      }'
-    ```
-    </RequestExample>
-    
-    **Market correlation features:**
-    - Player performance impact on team totals
-    - Spread performance in different scenarios
-    - Pace and style factor analysis
-    - Market sentiment vs. actual outcomes
-    - Value betting opportunity identification
-  </Accordion>
-</AccordionGroup>
-
-## 🔬 Specialized Research & Analytics
-
-<AccordionGroup>
   <Accordion icon="dna" title="Performance Anomaly Detection">
     Identify unusual patterns and outlier performances in player and team data.
     
@@ -304,30 +461,6 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
     - Strategic adjustment recognition
   </Accordion>
 
-  <Accordion icon="microscope" title="Rest & Recovery Impact Analysis">
-    Analyze how rest days, travel, and schedule impact player performance.
-    
-    <RequestExample>
-    ```bash Recovery Pattern Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Compare team turnover rates on zero days rest versus 2+ days rest",
-        "extra_context": "Include travel distance and opponent strength factors"
-      }'
-    ```
-    ```
-    </RequestExample>
-    
-    **Recovery analysis features:**
-    - Rest day impact quantification
-    - Back-to-back performance degradation
-    - Travel fatigue measurement
-    - Load management effectiveness
-    - Optimal rest pattern identification
-  </Accordion>
-
   <Accordion icon="brain" title="Predictive Pattern Recognition">
     Identify patterns that predict future performance or outcomes.
     
@@ -349,57 +482,6 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
     - Decline trajectory identification
     - Team chemistry development markers
     - Championship contender characteristics
-  </Accordion>
-</AccordionGroup>
-
-## 🚀 Advanced Integration Examples
-
-<AccordionGroup>
-  <Accordion icon="code" title="Multi-Query Workflow Analysis">
-    Combine multiple related queries for comprehensive analysis workflows.
-    
-    <RequestExample>
-    ```bash Comprehensive Player Evaluation
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "Provide a complete scouting report on Paolo Banchero including development trajectory, efficiency trends, clutch performance, and comparison to similar players at his age",
-        "extra_context": "Include both strengths and areas for improvement with statistical backing"
-      }'
-    ```
-    </RequestExample>
-    
-    **Comprehensive analysis includes:**
-    - Multi-dimensional player evaluation
-    - Historical player comparison frameworks
-    - Development trajectory mapping
-    - Strength and weakness quantification
-    - Future potential projection
-  </Accordion>
-
-  <Accordion icon="network" title="League-Wide Trend Analysis">
-    Analyze broader patterns and shifts across the entire NBA landscape.
-    
-    <RequestExample>
-    ```bash League Evolution Analysis
-    curl -X POST "https://blitzagent.onrender.com/analyze" \
-      -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "query": "How has the NBA evolved tactically over the past decade? Include pace, shot selection, player roles, and strategic innovations",
-        "extra_context": "Identify key inflection points and teams that drove major changes"
-      }'
-    ```
-    ```
-    </RequestExample>
-    
-    **League-wide analysis features:**
-    - Strategic evolution tracking
-    - Rule change impact assessment
-    - Innovation diffusion patterns
-    - Competitive balance analysis
-    - Future trend projection
   </Accordion>
 </AccordionGroup>
 
@@ -437,7 +519,7 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
     title="🧠 Intelligent Synthesis"
     icon="brain"
   >
-    **Context-Aware Insights"
+    **Context-Aware Insights**
     
     Combines multiple data sources and analytical approaches to provide comprehensive, actionable insights rather than just raw statistics.
   </Card>
@@ -449,16 +531,20 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
   <Accordion icon="fire" title="Challenge Level: Expert">
     **Complex Multi-Dimensional Analysis:**
     - "Analyze the correlation between Nikola Jokić triple-double frequency and Denver's net rating, broken down by opponent defensive ranking"
-    - "Compare shooting efficiency in clutch time for players who improved most from rookie to sophomore seasons"
-    - "Identify teams that perform significantly better on zero days rest and determine what makes them unique"
+    - "How do referees with different experience levels call games? Compare foul rates and pace."
+    - "When certain officials work Lakers games, how does LeBron's foul-drawing rate change?"
     
     **Historical Deep Dives:**
-    - "How did the introduction of the three-point line change offensive strategies in the 1980s?"
-    - "Compare the dominant big men of different eras: Chamberlain, Kareem, Shaq, and modern centers"
+    - "How did the introduction of the three-point line change shot selection patterns in the 1980s using play-by-play data?"
+    - "Compare coaching timeout usage patterns between championship teams vs non-champions"
     
-    **Predictive Pattern Recognition:**
-    - "What statistical indicators in a player's first 20 games best predict All-Star selection?"
-    - "Identify teams whose early season performance doesn't match their true championship potential"
+    **Real-time Integration:**
+    - "What recent news stories are affecting player performance? Include injury updates and trade rumors."
+    - "Which current hot streaks are sustainable based on underlying metrics and competition quality?"
+    
+    **Betting Market Analysis:**
+    - "Find systematic edges in player prop markets by identifying which sportsbooks consistently misprice certain bet types"
+    - "When do line movements indicate sharp money vs public betting? Analyze betting market efficiency."
   </Accordion>
 </AccordionGroup>
 
@@ -492,5 +578,5 @@ Ready to explore these capabilities? Here's how to maximize your analysis:
 ---
 
 <Note>
-  **Data Coverage**: Our analysis covers NBA games from 1952-2025, including regular season and playoffs, with comprehensive player stats, team performance, play-by-play events, and betting lines. Analysis automatically adapts to data availability across different eras.
+  **Data Coverage**: Our analysis covers NBA games from 1952-2025, including regular season and playoffs, with comprehensive player stats, team performance, play-by-play events, betting lines, injury tracking, referee assignments, coaching data, and awards. Analysis automatically adapts to data availability across different eras.
 </Note>
