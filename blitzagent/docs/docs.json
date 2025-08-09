@@ -79,7 +79,8 @@
   },
   "logo": {
     "light": "/logo/blitz.png",
-    "dark": "/logo/blitz.png"
+    "dark": "/logo/blitz.png",
+    "height": 40
   },
   "navbar": {
             "links": [
