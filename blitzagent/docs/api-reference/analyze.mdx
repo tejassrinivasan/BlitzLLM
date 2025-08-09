@@ -1,249 +1,106 @@
 ---
 title: "POST /analyze"
 description: "Perform comprehensive sports analysis with natural language queries"
-api: "POST https://blitzagent.onrender.com/analyze"
+openapi: "POST /analyze"
 ---
 
-# Analyze Sports Query
+<Note>
+  The `/analyze` endpoint is the primary way to interact with Blitz. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and comprehensive sports data.
+</Note>
 
-The `/analyze` endpoint is the primary way to interact with Blitz. It accepts natural language sports queries and returns comprehensive analysis powered by advanced reasoning LLM models and comprehensive sports data.
+## Key Features
 
-<RequestExample>
-
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "What are Stephen Curry'\''s three-point shooting stats this season?",
-    "extra_context": "Focus on recent performance trends"
-  }'
-```
-
-```javascript JavaScript
-const response = await fetch('https://blitzagent.onrender.com/analyze', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
-  },
-  body: JSON.stringify({
-    query: "What are Stephen Curry's three-point shooting stats this season?",
-    extra_context: "Focus on recent performance trends"
-  })
-});
-
-const result = await response.json();
-console.log(result.response);
-```
-
-```python Python
-import httpx
-import asyncio
-
-async def analyze_player():
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://blitzagent.onrender.com/analyze",
-            headers={
-                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
-                "Content-Type": "application/json"
-            },
-            json={
-                "query": "What are Stephen Curry's three-point shooting stats this season?",
-                "extra_context": "Focus on recent performance trends"
-            }
-        )
-        return response.json()
-
-result = await analyze_player()
-print(result['response'])
-```
-
-</RequestExample>
-
-## Endpoint
-
-<CodeGroup>
-```bash Endpoint
-POST /analyze
-```
-</CodeGroup>
-
-## Authentication
-
-<ParamField header="Authorization" type="string" required>
-  Bearer token for API authentication
-  ```
-  Authorization: Bearer YOUR_BLITZ_API_KEY
-  ```
-</ParamField>
-
-## Request Body
-
-<ParamField body="query" type="string" required>
-  The natural language sports analysis question or request. This is the main query that Blitz will analyze.
-  
-  **Examples:**
-  - "What are LeBron James' shooting stats this season?"
-  - "Which teams have the best defense in the NBA?"
-  - "How do the Dodgers perform against left-handed pitching?"
-</ParamField>
-
-<ParamField body="extra_context" type="string" optional>
-  Additional context to include in the analysis. This helps provide more focused or specific analysis.
-  
-  **Examples:**
-  - "Focus on playoff games only"
-  - "Include weather conditions and ballpark factors"
-  - "Compare to last season's performance"
-</ParamField>
-
-<ParamField body="image" type="string" optional>
-  Base64 encoded image URL to provide as visual context for the analysis. Useful for chart analysis or visual data interpretation.
-</ParamField>
-
-## Response
-
-<ResponseField name="response" type="string" required>
-  Comprehensive analysis response from Blitz. This contains the natural language answer to your sports query with detailed insights, statistics, and context.
-</ResponseField>
-
-<ResponseField name="usage" type="object" optional>
-  Token usage information for the request
-  
-  <Expandable title="usage">
-    <ResponseField name="requests" type="number">
-      Number of requests made to the language model
-    </ResponseField>
+<CardGroup cols={2}>
+  <Card
+    title="🤖 Advanced AI Reasoning"
+    icon="brain"
+  >
+    **Claude 4 Sonnet Integration**
     
-    <ResponseField name="request_tokens" type="number">
-      Number of tokens in the input/request
-    </ResponseField>
-    
-    <ResponseField name="response_tokens" type="number">
-      Number of tokens in the model's response
-    </ResponseField>
-    
-    <ResponseField name="total_tokens" type="number">
-      Total tokens used (request + response)
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-## Examples
-
-### NBA Player Analysis
-
-<RequestExample>
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "How has Stephen Curry performed in clutch situations this season?",
-    "extra_context": "Focus on games in the last 5 minutes with score within 5 points"
-  }'
-```
-
-```python Python
-import httpx
-import asyncio
-
-async def analyze_curry_clutch():
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://blitzagent.onrender.com/analyze",
-            headers={
-                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
-                "Content-Type": "application/json"
-            },
-            json={
-                "query": "How has Stephen Curry performed in clutch situations this season?",
-                "extra_context": "Focus on games in the last 5 minutes with score within 5 points"
-            }
-        )
-        return response.json()
-
-result = await analyze_curry_clutch()
-print(result['response'])
-```
-
-```javascript JavaScript
-const analyzePlayer = async () => {
-  const response = await fetch('https://blitzagent.onrender.com/analyze', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
-    },
-    body: JSON.stringify({
-      query: "How has Stephen Curry performed in clutch situations this season?",
-      extra_context: "Focus on games in the last 5 minutes with score within 5 points"
-    })
-  });
+    Powered by Anthropic's most advanced reasoning model with superior intelligence and 200K context window.
+  </Card>
   
-  const result = await response.json();
-  console.log(result.response);
-};
-```
-</RequestExample>
+  <Card
+    title="🏀 Multi-League Support"
+    icon="trophy"
+  >
+    **Automatic League Detection**
+    
+    Automatically detects NBA or MLB queries based on team names, player names, and sport-specific terminology.
+  </Card>
+  
+  <Card
+    title="📊 Comprehensive Data"
+    icon="chart-line"
+  >
+    **Historical & Real-time**
+    
+    Access to 70+ years of NBA history, real-time data, and advanced statistical analysis capabilities.
+  </Card>
+  
+  <Card
+    title="🎯 Natural Language"
+    icon="comment"
+  >
+    **Intuitive Queries**
+    
+    Ask questions in plain English - no need to learn complex query syntax or database schemas.
+  </Card>
+</CardGroup>
 
-<ResponseExample>
-```json
-{
-  "response": "Stephen Curry has been exceptional in clutch situations this season, demonstrating why he's considered one of the greatest clutch performers in NBA history.\n\n**Clutch Performance Stats (Last 5 minutes, within 5 points):**\n- **Field Goal Percentage**: 47.8% (league average: 42.1%)\n- **Three-Point Percentage**: 43.2% on 4.1 attempts per clutch situation\n- **Free Throw Percentage**: 91.7% (crucial for late-game scenarios)\n- **Points per clutch situation**: 6.8 points\n- **Plus/Minus**: +8.4 in clutch minutes\n\n**Key Insights:**\n1. **Shot Selection**: Curry has maintained excellent shot selection, taking high-quality looks even under pressure\n2. **Volume**: He's averaging 4.1 three-point attempts in clutch time, showing his willingness to take big shots\n3. **Efficiency**: His 43.2% three-point percentage in clutch time is significantly above his season average of 40.8%\n4. **Impact**: The Warriors are 18-7 in games where Curry plays clutch minutes\n\n**Comparison to Previous Seasons:**\nThis season's clutch performance represents a slight improvement from last season (45.1% FG, 39.8% 3PT in clutch time), showing that at age 36, Curry continues to elevate his game when it matters most.\n\n**Notable Clutch Moments:**\n- Game-winning three against the Lakers (March 15)\n- 11 points in final 3 minutes vs. Celtics (February 28)\n- Perfect 4/4 three-point shooting in clutch time vs. Nuggets (January 12)\n\nCurry's clutch performance this season reinforces his reputation as one of the most reliable late-game performers in the league.",
-  "usage": {
-    "requests": 1,
-    "request_tokens": 156,
-    "response_tokens": 847,
-    "total_tokens": 1003
-  }
-}
-```
-</ResponseExample>
+## Example Queries
 
-### MLB Team Analysis
+Here are some examples of what you can ask Blitz:
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "How do the Los Angeles Dodgers perform against left-handed starting pitchers?",
-    "extra_context": "Include both regular season and playoff data from the last two seasons"
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json
-{
-  "response": "The Los Angeles Dodgers have shown interesting patterns when facing left-handed starting pitchers over the last two seasons, with notable strengths and some areas of concern.\n\n**Overall Performance vs LHP (2023-2024):**\n- **Record**: 47-23 (.671 winning percentage)\n- **Team Batting Average**: .267 vs LHP (compared to .251 vs RHP)\n- **OPS**: .789 vs LHP (.742 vs RHP)\n- **Runs per game**: 5.8 vs LHP (5.2 vs RHP)\n\n**Key Performance Indicators:**\n1. **Better offensive production**: The Dodgers actually perform better against lefties, which is unusual for most teams\n2. **Power numbers**: 1.42 HR per game vs LHP (1.23 vs RHP)\n3. **On-base percentage**: .341 vs LHP shows excellent plate discipline\n\n**Individual Standouts vs LHP:**\n- **Mookie Betts**: .312 BA, .987 OPS vs lefties\n- **Freddie Freeman**: .289 BA, 18 HRs vs LHP in sample period\n- **Will Smith**: .278 BA with exceptional power (.591 SLG vs LHP)\n\n**Pitching Performance when facing LHP:**\n- **Team ERA**: 3.42 (slightly better than their 3.58 overall ERA)\n- **Quality starts**: 62% vs LHP-led teams\n\n**Playoff Context:**\nIn playoff games vs LHP starters (8 games), the Dodgers are 6-2 with a .789 team OPS, including their dominant performance against Framber Valdez in the 2022 World Series.\n\n**Strategic Advantages:**\nThe Dodgers' success vs LHP stems from their right-handed heavy lineup (Betts, Freeman, Smith) and their ability to work deep counts, leading to earlier bullpen usage by opponents.",
-  "usage": {
-    "requests": 1,
-    "request_tokens": 142,
-    "response_tokens": 756,
-    "total_tokens": 898
-  }
-}
-```
-</ResponseExample>
-
-### Comparative Analysis
-
-<RequestExample>
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "Compare the defensive efficiency of the top 5 NBA teams this season",
-    "extra_context": "Include advanced metrics like defensive rating, opponent field goal percentage, and transition defense"
-  }'
-```
-</RequestExample>
+<AccordionGroup>
+  <Accordion icon="user" title="Player Analysis">
+    **Simple Performance Questions:**
+    - "How has Stephen Curry performed this season?"
+    - "What are LeBron James' clutch time statistics?"
+    - "Compare Luka Dončić and Nikola Jokić as playmakers"
+    
+    **Advanced Statistical Analysis:**
+    - "What is the correlation between LeBron James assists and his overall PRA performance?"
+    - "In what percentage of games does Curry score 30+ points while another Warriors player scores 20+?"
+    - "Show me games where a player had high assists but low overall production"
+  </Accordion>
+  
+  <Accordion icon="users" title="Team Analysis">
+    **Team Performance:**
+    - "Which NBA teams have the best three-point defense this season?"
+    - "How do the Lakers perform in back-to-back games?"
+    - "Compare Warriors offensive efficiency at home vs away"
+    
+    **Advanced Team Analytics:**
+    - "Analyze team turnover rates with 0 days rest vs 2+ days rest"
+    - "What are the most effective 5-man lineups for the Celtics?"
+    - "How does pace affect the Nuggets' win rate?"
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Historical & Comparative">
+    **Cross-Era Analysis:**
+    - "Compare Michael Jordan 1990s dominance with LeBron James 2010s performance"
+    - "How has the NBA evolved tactically over the past decade?"
+    - "Rank the greatest clutch performers in NBA history"
+    
+    **Development Tracking:**
+    - "What early-season indicators predict breakout seasons?"
+    - "Track Paolo Banchero's development trajectory"
+    - "Which young players are having breakout seasons?"
+  </Accordion>
+  
+  <Accordion icon="dollar-sign" title="Betting & Market Analysis">
+    **Prop Bet Analysis:**
+    - "How often does Giannis go over his points prop when the line is above 30?"
+    - "Analyze the correlation between player prop results and team totals"
+    - "What situational factors affect prop bet accuracy?"
+    
+    **Market Insights:**
+    - "When Anthony Edwards goes over PRA, how often does the game go over total?"
+    - "Identify value betting opportunities based on historical performance"
+    - "Compare closing line value vs actual game outcomes"
+  </Accordion>
+</AccordionGroup>
 
 ## League Detection
 
@@ -265,52 +122,42 @@ Blitz automatically detects which league (NBA or MLB) your query refers to based
     - **Be specific**: Instead of "How is LeBron?", ask "How has LeBron James performed this season?"
     - **Include timeframes**: "this season", "last 10 games", "playoff career"
     - **Specify metrics**: "shooting percentage", "defensive rating", "clutch performance"
+    - **Add context**: Use the `extra_context` field for focused analysis
   </Accordion>
   
   <Accordion icon="context" title="Using Extra Context">
     - **Focus areas**: "Focus on three-point shooting", "Emphasize defensive impact"
     - **Comparisons**: "Compare to last season", "Benchmark against league average"
     - **Situational**: "Include only playoff games", "Home vs away splits"
+    - **Advanced**: "Include statistical correlations", "Show outlier games"
   </Accordion>
   
   <Accordion icon="clock" title="Response Times">
     - **Simple queries**: 2-5 seconds
     - **Complex analysis**: 10-15 seconds
-    - **Multi-league comparisons**: 15-30 seconds
+    - **Multi-dimensional analysis**: 15-30 seconds
     - Use `/analyze/stream` for real-time progress on longer queries
   </Accordion>
 </AccordionGroup>
 
-## Error Handling
+## Data Sources
 
-<AccordionGroup>
-  <Accordion icon="exclamation-triangle" title="400 - Bad Request">
-    ```json
-    {
-      "detail": "Field 'query' is required"
-    }
-    ```
-    **Solution**: Ensure the `query` field is included in your request body.
-  </Accordion>
-  
-  <Accordion icon="lock" title="401 - Unauthorized">
-    ```json
-    {
-      "detail": "Invalid API key"
-    }
-    ```
-    **Solution**: Check that your API key is valid and properly formatted in the Authorization header.
-  </Accordion>
-  
-  <Accordion icon="exclamation-circle" title="500 - Internal Server Error">
-    ```json
-    {
-      "detail": "Analysis failed: Unable to process query"
-    }
-    ```
-    **Solution**: Try rephrasing your query or check if the MCP server is accessible.
-  </Accordion>
-</AccordionGroup>
+Blitz leverages comprehensive sports data through multiple sources:
+
+<Steps>
+  <Step title="Historical Database">
+    Comprehensive NBA data from 1952-2025, including player statistics, team records, play-by-play events, and advanced metrics spanning 70+ years of basketball history.
+  </Step>
+  <Step title="Real-time Integration">
+    Current season data, recent games, injury reports, and up-to-date performance statistics.
+  </Step>
+  <Step title="Betting Markets">
+    Prop lines, game totals, spreads, and market data for comprehensive betting analysis.
+  </Step>
+  <Step title="Advanced Analytics">
+    Statistical correlations, percentile analysis, trend identification, and predictive modeling capabilities.
+  </Step>
+</Steps>
 
 ## Related Endpoints
 

@@ -90,6 +90,12 @@
         ]
   },
   "openapi": "/api-reference/openapi.json",
+  "api": {
+    "baseUrl": "https://blitzagent.onrender.com",
+    "auth": {
+      "method": "bearer"
+    }
+  },
   "contextual": {
     "options": [
      "copy",

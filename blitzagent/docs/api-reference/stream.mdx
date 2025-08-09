@@ -1,400 +1,110 @@
 ---
 title: "POST /analyze/stream"
 description: "Stream real-time analysis events for sports queries"
+openapi: "POST /analyze/stream"
 ---
-
-# Stream Sports Analysis
-
-The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see Blitz's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
 
 <Warning>
   **Interactive Testing Limitation**: This endpoint uses Server-Sent Events (SSE) streaming, which cannot be tested in standard API playgrounds. Use the code examples below or the [Stream Viewer Tool](#stream-viewer-tool) for testing.
 </Warning>
 
-## Endpoint
+## Overview
 
-<CodeGroup>
-```bash Endpoint
-POST /analyze/stream
-```
-</CodeGroup>
+The `/analyze/stream` endpoint provides real-time streaming of analysis events, allowing you to see Blitz's reasoning process as it happens. This is particularly useful for complex queries that may take time to process.
 
-## Authentication
+## Key Features
 
-<ParamField header="Authorization" type="string" required>
-  Bearer token for API authentication
-  ```
-  Authorization: Bearer YOUR_BLITZ_API_KEY
-  ```
-</ParamField>
-
-## Request Body
-
-The request body is identical to the `/analyze` endpoint:
-
-<ParamField body="query" type="string" required>
-  The natural language sports analysis question or request.
-</ParamField>
-
-<ParamField body="extra_context" type="string" optional>
-  Additional context to include in the analysis.
-</ParamField>
-
-<ParamField body="image" type="string" optional>
-  Base64 encoded image URL to provide as visual context.
-</ParamField>
-
-## Response Format
-
-The response is a **Server-Sent Events (SSE)** stream where each event contains:
-
-<ResponseField name="event_type" type="string" required>
-  Type of event being streamed. Common types include:
-  - `analysis_start` - Analysis has begun
-  - `league_detection` - League automatically detected
-  - `tool_call` - MCP tool is being called
-  - `reasoning` - advanced reasoning LLM models is processing/reasoning
-  - `data_retrieval` - Fetching data from sources
-  - `analysis_complete` - Final analysis ready
-  - `error` - An error occurred
-</ResponseField>
-
-<ResponseField name="message" type="string" required>
-  Human-readable description of what's happening at this stage of the analysis.
-</ResponseField>
-
-<ResponseField name="data" type="object" optional>
-  Additional structured data related to the current event.
+<CardGroup cols={2}>
+  <Card
+    title="🔄 Real-time Events"
+    icon="stream"
+  >
+    **Live Analysis Progress**
+    
+    See each step of the analysis process as it happens, from league detection to final results.
+  </Card>
   
-  <Expandable title="data">
-    <ResponseField name="query" type="string">
-      The original query being processed
-    </ResponseField>
+  <Card
+    title="🧠 Reasoning Transparency"
+    icon="brain"
+  >
+    **Claude 4 Sonnet Thinking**
     
-    <ResponseField name="league" type="string">
-      Detected league (nba, mlb)
-    </ResponseField>
+    Watch advanced reasoning in action with thinking capabilities and step-by-step analysis.
+  </Card>
+  
+  <Card
+    title="⚡ Tool Execution"
+    icon="wrench"
+  >
+    **MCP Tool Calls**
     
-    <ResponseField name="tool_name" type="string">
-      Name of the MCP tool being called
-    </ResponseField>
+    Monitor database queries, statistical calculations, and data retrieval in real-time.
+  </Card>
+  
+  <Card
+    title="📊 Progress Tracking"
+    icon="chart-line"
+  >
+    **Visual Progress**
     
-    <ResponseField name="progress" type="number">
-      Progress percentage (0-100) when available
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+    Progress indicators and status updates for long-running analyses.
+  </Card>
+</CardGroup>
 
-<ResponseField name="timestamp" type="string" required>
-  ISO timestamp of when this event occurred.
-</ResponseField>
+## Event Types
 
-## Examples
-
-### Streaming NBA Analysis
-
-<RequestExample>
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "Compare LeBron James and Michael Jordan in playoff performances",
-    "extra_context": "Include advanced metrics and clutch performance"
-  }' \
-  --no-buffer
-```
-
-```python Python with SSE
-import httpx
-import json
-
-async def stream_analysis():
-    async with httpx.AsyncClient() as client:
-        async with client.stream(
-            "POST", 
-            "https://blitzagent.onrender.com/analyze/stream",
-            headers={
-                "Authorization": "Bearer YOUR_BLITZ_API_KEY",
-                "Content-Type": "application/json"
-            },
-            json={
-                "query": "Compare LeBron James and Michael Jordan in playoff performances",
-                "extra_context": "Include advanced metrics and clutch performance"
-            }
-        ) as response:
-            async for line in response.aiter_lines():
-                if line.startswith("data: "):
-                    try:
-                        event_data = json.loads(line[6:])  # Remove "data: " prefix
-                        print(f"[{event_data['event_type']}] {event_data['message']}")
-                        
-                        if event_data['event_type'] == 'analysis_complete':
-                            print(f"Final result: {event_data['data']['response']}")
-                            break
-                    except json.JSONDecodeError:
-                        continue
-
-# Run the streaming analysis
-await stream_analysis()
-```
-
-```javascript JavaScript with EventSource
-const streamAnalysis = () => {
-  fetch('https://blitzagent.onrender.com/analyze/stream', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_BLITZ_API_KEY'
-    },
-    body: JSON.stringify({
-      query: "Compare LeBron James and Michael Jordan in playoff performances",
-      extra_context: "Include advanced metrics and clutch performance"
-    })
-  }).then(response => {
-    const reader = response.body.getReader();
-    
-    const readStream = () => {
-      reader.read().then(({ done, value }) => {
-        if (done) return;
-        
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
-        
-        lines.forEach(line => {
-          if (line.startsWith('data: ')) {
-            try {
-              const event = JSON.parse(line.slice(6));
-              console.log(`[${event.event_type}] ${event.message}`);
-              
-              if (event.event_type === 'analysis_complete') {
-                console.log('Final result:', event.data.response);
-                return;
-              }
-            } catch (e) {
-              // Skip invalid JSON lines
-            }
-          }
-        });
-        
-        readStream(); // Continue reading
-      });
-    };
-    
-    readStream();
-  });
-};
-
-streamAnalysis();
-```
-</RequestExample>
-
-<ResponseExample>
-```
-data: {"event_type": "analysis_start", "message": "Starting analysis of query: 'Compare LeBron James and Michael Jordan in playoff performances'", "data": {"query": "Compare LeBron James and Michael Jordan in playoff performances", "extra_context": "Include advanced metrics and clutch performance"}, "timestamp": "2024-01-15T10:30:00Z"}
-
-data: {"event_type": "league_detection", "message": "Detected league: NBA", "data": {"league": "nba", "confidence": 0.95}, "timestamp": "2024-01-15T10:30:01Z"}
-
-data: {"event_type": "tool_call", "message": "Searching NBA database for LeBron James playoff statistics", "data": {"tool_name": "query_database", "table": "playoff_stats"}, "timestamp": "2024-01-15T10:30:02Z"}
-
-data: {"event_type": "data_retrieval", "message": "Retrieved 284 playoff games for LeBron James", "data": {"records_found": 284, "years_covered": "2006-2024"}, "timestamp": "2024-01-15T10:30:04Z"}
-
-data: {"event_type": "tool_call", "message": "Searching NBA database for Michael Jordan playoff statistics", "data": {"tool_name": "query_database", "table": "playoff_stats"}, "timestamp": "2024-01-15T10:30:05Z"}
-
-data: {"event_type": "data_retrieval", "message": "Retrieved 179 playoff games for Michael Jordan", "data": {"records_found": 179, "years_covered": "1985-1998"}, "timestamp": "2024-01-15T10:30:07Z"}
-
-data: {"event_type": "reasoning", "message": "Analyzing clutch performance metrics and advanced statistics", "data": {"progress": 60}, "timestamp": "2024-01-15T10:30:09Z"}
-
-data: {"event_type": "tool_call", "message": "Calculating advanced playoff metrics for comparison", "data": {"tool_name": "calculate_advanced_stats", "metrics": ["PER", "BPM", "VORP"]}, "timestamp": "2024-01-15T10:30:11Z"}
-
-data: {"event_type": "reasoning", "message": "Synthesizing comprehensive comparison analysis", "data": {"progress": 90}, "timestamp": "2024-01-15T10:30:13Z"}
-
-data: {"event_type": "analysis_complete", "message": "Analysis completed successfully", "data": {"response": "**LeBron James vs Michael Jordan: Playoff Performance Comparison**\n\nThis comparison examines two of the greatest players in NBA history through their playoff performances...", "usage": {"total_tokens": 1247}}, "timestamp": "2024-01-15T10:30:15Z"}
-```
-</ResponseExample>
-
-### Streaming MLB Query
-
-<RequestExample>
-```bash cURL
-curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-  -d '{
-    "query": "Which pitcher has the best ERA in high-leverage situations this season?",
-    "extra_context": "Focus on relievers with at least 30 innings pitched"
-  }' \
-  --no-buffer
-```
-</RequestExample>
-
-## Event Types Reference
+The stream emits various event types throughout the analysis:
 
 <AccordionGroup>
   <Accordion icon="play" title="analysis_start">
-    Indicates the beginning of the analysis process.
+    **Analysis Initialization**
     
-    **Typical data:**
-    - `query`: The original user query
-    - `extra_context`: Additional context provided
-    - `image`: Image data if provided
+    Indicates the beginning of the analysis process with query details.
   </Accordion>
   
   <Accordion icon="target" title="league_detection">
-    Shows when Blitz has automatically detected the sport/league.
+    **Automatic League Detection**
     
-    **Typical data:**
-    - `league`: Detected league (nba, mlb)
-    - `confidence`: Detection confidence score (0-1)
-    - `reasoning`: Why this league was chosen
+    Shows when Blitz has automatically detected the sport/league from context clues.
   </Accordion>
   
   <Accordion icon="database" title="tool_call">
-    Indicates that an MCP tool is being called to retrieve or process data.
+    **MCP Tool Execution**
     
-    **Typical data:**
-    - `tool_name`: Name of the tool being called
-    - `parameters`: Parameters passed to the tool
-    - `table`: Database table being queried (if applicable)
+    Real-time updates when MCP tools are being called for data retrieval or analysis.
   </Accordion>
   
-  <Accordion icon="download" title="data_retrieval">
-    Shows successful data retrieval from various sources.
+  <Accordion icon="brain" title="model_reasoning">
+    **Claude 4 Sonnet Reasoning**
     
-    **Typical data:**
-    - `records_found`: Number of records retrieved
-    - `source`: Data source (database, web, betting)
-    - `years_covered`: Time range of data
+    Advanced reasoning and thinking process with context analysis.
   </Accordion>
   
-  <Accordion icon="brain" title="reasoning">
-    Indicates advanced reasoning LLM models is processing and reasoning about the data.
+  <Accordion icon="download" title="tool_result">
+    **Data Retrieval Results**
     
-    **Typical data:**
-    - `progress`: Analysis progress percentage
-    - `stage`: Current reasoning stage
-    - `focus`: What aspect is being analyzed
+    Successful data retrieval from various sources with record counts and metadata.
   </Accordion>
   
   <Accordion icon="check" title="analysis_complete">
-    Final event containing the complete analysis result.
+    **Final Results**
     
-    **Typical data:**
-    - `response`: Complete analysis response
-    - `usage`: Token usage information
-    - `duration`: Total analysis time
+    Complete analysis response with usage statistics and final insights.
   </Accordion>
   
   <Accordion icon="exclamation-triangle" title="error">
-    Indicates an error occurred during analysis.
+    **Error Handling**
     
-    **Typical data:**
-    - `error_type`: Type of error
-    - `error_message`: Detailed error description
-    - `retry_possible`: Whether the request can be retried
+    Error events with detailed messages and retry suggestions.
   </Accordion>
 </AccordionGroup>
 
 ## Implementation Examples
 
-### React Component with Streaming
+### Python AsyncIO Streaming
 
-```javascript React Hook
-import { useState, useEffect } from 'react';
-
-const useStreamingAnalysis = (apiKey) => {
-  const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [finalResult, setFinalResult] = useState(null);
-
-  const streamAnalysis = async (query, extraContext = null) => {
-    setIsLoading(true);
-    setEvents([]);
-    setFinalResult(null);
-
-    try {
-      const response = await fetch('/analyze/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ query, extra_context: extraContext })
-      });
-
-      const reader = response.body.getReader();
-      
-      const readStream = async () => {
-        const { done, value } = await reader.read();
-        if (done) return;
-
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
-
-        lines.forEach(line => {
-          if (line.startsWith('data: ')) {
-            try {
-              const event = JSON.parse(line.slice(6));
-              setEvents(prev => [...prev, event]);
-              
-              if (event.event_type === 'analysis_complete') {
-                setFinalResult(event.data.response);
-                setIsLoading(false);
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
-          }
-        });
-
-        if (!done) readStream();
-      };
-
-      readStream();
-    } catch (error) {
-      console.error('Streaming error:', error);
-      setIsLoading(false);
-    }
-  };
-
-  return { events, isLoading, finalResult, streamAnalysis };
-};
-
-// Usage in component
-const SportsAnalysis = () => {
-  const { events, isLoading, finalResult, streamAnalysis } = useStreamingAnalysis('your_api_key');
-
-  return (
-    <div>
-      <button 
-        onClick={() => streamAnalysis("What are LeBron's stats this season?")}
-        disabled={isLoading}
-      >
-        Analyze
-      </button>
-      
-      <div className="events">
-        {events.map((event, index) => (
-          <div key={index} className={`event ${event.event_type}`}>
-            <strong>[{event.event_type}]</strong> {event.message}
-          </div>
-        ))}
-      </div>
-      
-      {finalResult && (
-        <div className="final-result">
-          <h3>Analysis Complete</h3>
-          <p>{finalResult}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-### Python AsyncIO with Real-time Processing
-
-```python Python AsyncIO
+```python Python AsyncIO Client
 import asyncio
 import json
 import httpx
@@ -442,10 +152,10 @@ async def main():
     client = StreamingAnalysisClient("your_api_key")
     
     async for event in client.stream_analysis(
-        "Compare Shohei Ohtani's pitching and hitting stats",
-        "Focus on his two-way player uniqueness"
+        "Compare LeBron James and Michael Jordan in playoff performances",
+        "Include advanced metrics and clutch performance"
     ):
-        print(f"[{event['timestamp']}] {event['event_type']}: {event['message']}")
+        print(f"[{event['event_type']}] {event['message']}")
         
         if event['event_type'] == 'analysis_complete':
             print("\nFinal Analysis:")
@@ -454,74 +164,172 @@ async def main():
 asyncio.run(main())
 ```
 
-## Best Practices
+### React Hook for Streaming
 
-<AccordionGroup>
-  <Accordion icon="zap" title="When to Use Streaming">
-    - **Complex queries** that may take 10+ seconds
-    - **User interfaces** where you want to show progress
-    - **Debugging** to understand the analysis process
-    - **Real-time dashboards** with live updates
-  </Accordion>
-  
-  <Accordion icon="code" title="Implementation Tips">
-    - Always handle JSON parsing errors gracefully
-    - Buffer events for smooth UI updates
-    - Show progress indicators based on event types
-    - Implement proper error handling for stream interruptions
-  </Accordion>
-  
-  <Accordion icon="performance" title="Performance Considerations">
-    - Streaming has slight overhead compared to `/analyze`
-    - Use connection pooling for multiple requests
-    - Consider caching for repeated similar queries
-    - Handle client disconnections properly
-  </Accordion>
-</AccordionGroup>
+```javascript React Streaming Hook
+import { useState, useCallback } from 'react';
 
-## Error Handling
+const useStreamingAnalysis = (apiKey) => {
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [finalResult, setFinalResult] = useState(null);
+  const [error, setError] = useState(null);
 
-Stream errors are sent as regular events with `event_type: "error"`:
+  const streamAnalysis = useCallback(async (query, extraContext = null) => {
+    setIsLoading(true);
+    setEvents([]);
+    setFinalResult(null);
+    setError(null);
 
-```json
-{
-  "event_type": "error",
-  "message": "MCP server connection failed",
-  "data": {
-    "error_type": "connection_error",
-    "error_code": "MCP_UNAVAILABLE",
-    "retry_possible": true
-  },
-  "timestamp": "2024-01-15T10:30:10Z"
-}
+    try {
+      const response = await fetch('https://blitzagent.onrender.com/analyze/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ 
+          query, 
+          extra_context: extraContext 
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body.getReader();
+      
+      const readStream = async () => {
+        const { done, value } = await reader.read();
+        if (done) {
+          setIsLoading(false);
+          return;
+        }
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+              setEvents(prev => [...prev, event]);
+              
+              if (event.event_type === 'analysis_complete') {
+                setFinalResult(event.data.response);
+                setIsLoading(false);
+              } else if (event.event_type === 'error') {
+                setError(event.message);
+                setIsLoading(false);
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        });
+
+        if (!done) readStream();
+      };
+
+      readStream();
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+    }
+  }, [apiKey]);
+
+  return { events, isLoading, finalResult, error, streamAnalysis };
+};
+
+// Usage in component
+const SportsAnalysis = () => {
+  const { events, isLoading, finalResult, error, streamAnalysis } = 
+    useStreamingAnalysis('your_api_key');
+
+  return (
+    <div className="analysis-container">
+      <button 
+        onClick={() => streamAnalysis(
+          "What are the best clutch performers in NBA history?",
+          "Include statistical analysis and memorable moments"
+        )}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Analyzing...' : 'Start Analysis'}
+      </button>
+      
+      {error && (
+        <div className="error">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+      
+      <div className="events-stream">
+        {events.map((event, index) => (
+          <div key={index} className={`event ${event.event_type}`}>
+            <span className="timestamp">
+              {new Date(event.timestamp).toLocaleTimeString()}
+            </span>
+            <span className="type">[{event.event_type}]</span>
+            <span className="message">{event.message}</span>
+          </div>
+        ))}
+      </div>
+      
+      {finalResult && (
+        <div className="final-result">
+          <h3>Analysis Complete</h3>
+          <div className="result-content">
+            {finalResult}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### cURL with Real-time Output
+
+```bash cURL Streaming
+curl -X POST "https://blitzagent.onrender.com/analyze/stream" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+  -d '{
+    "query": "Analyze the evolution of three-point shooting in the NBA",
+    "extra_context": "Include historical trends and impact on strategy"
+  }' \
+  --no-buffer -s | while read line; do
+    if [[ $line == data:* ]]; then
+      echo $line | sed 's/^data: //' | jq -r '"[\(.event_type)] \(.message)"'
+    fi
+  done
 ```
 
 ## Stream Viewer Tool
 
-Blitz includes a built-in stream viewer for testing the streaming endpoint interactively:
+Blitz includes a built-in interactive stream viewer for testing:
 
 <Steps>
-  <Step title="Start Blitz Server">
-    Make sure your Blitz server is running:
-    ```bash
-    python main.py
-    ```
-  </Step>
-  
-  <Step title="Open Stream Viewer">
-    Navigate to the stream viewer in your browser:
+  <Step title="Access Stream Viewer">
+    Navigate to the stream viewer:
     ```
     https://blitzagent.onrender.com/stream_viewer.html
     ```
-    
-    Or open the `stream_viewer.html` file directly from your Blitz installation directory.
+  </Step>
+  
+  <Step title="Configure Settings">
+    - Enter your Blitz API key
+    - Optionally filter event types
+    - Set up progress tracking preferences
   </Step>
   
   <Step title="Test Streaming Analysis">
-    - Enter your API key
-    - Type a sports analysis query
-    - Watch real-time events as they stream
-    - See the final analysis result
+    - Enter a sports analysis query
+    - Add optional context
+    - Watch real-time events stream
+    - View final analysis results
   </Step>
 </Steps>
 
@@ -530,11 +338,91 @@ Blitz includes a built-in stream viewer for testing the streaming endpoint inter
   icon="play"
 >
   - **Real-time Event Display**: See each analysis step as it happens
-  - **Event Filtering**: Choose which event types to display
-  - **Progress Tracking**: Visual progress bars for long analyses
-  - **Error Handling**: Clear error messages and retry options
-  - **Export Results**: Save analysis results and event logs
+  - **Event Filtering**: Choose which event types to display  
+  - **Progress Visualization**: Visual progress bars and status indicators
+  - **Error Handling**: Clear error messages with retry options
+  - **Result Export**: Save analysis results and event logs
+  - **Performance Metrics**: Track response times and token usage
 </Card>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion icon="zap" title="When to Use Streaming">
+    **Ideal Use Cases:**
+    - Complex multi-dimensional analyses (15+ seconds)
+    - User interfaces requiring progress feedback
+    - Debugging analysis workflows
+    - Real-time dashboards and monitoring
+    - Educational tools showing AI reasoning
+  </Accordion>
+  
+  <Accordion icon="code" title="Implementation Guidelines">
+    **Technical Best Practices:**
+    - Always handle JSON parsing errors gracefully
+    - Implement proper connection management
+    - Buffer events for smooth UI updates
+    - Show progress indicators based on event types
+    - Handle stream interruptions and reconnection
+    - Use connection pooling for multiple requests
+  </Accordion>
+  
+  <Accordion icon="performance" title="Performance Optimization">
+    **Efficiency Considerations:**
+    - Streaming has slight overhead vs `/analyze`
+    - Cache repeated similar queries when possible
+    - Use appropriate timeout values
+    - Monitor client-side memory usage for long streams
+    - Implement proper cleanup for interrupted streams
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+Stream errors are sent as regular events with detailed information:
+
+```json Example Error Event
+{
+  "event_type": "error",
+  "message": "Database connection timeout - retrying with backup",
+  "data": {
+    "error_type": "connection_timeout",
+    "error_code": "DB_TIMEOUT",
+    "retry_possible": true,
+    "retry_delay": 2000,
+    "fallback_available": true
+  },
+  "timestamp": "2024-01-15T10:30:10Z"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion icon="chart-line" title="Real-time Dashboards">
+    **Sports Analytics Dashboards**
+    
+    Stream live analysis updates for dynamic sports dashboards with real-time insights.
+  </Accordion>
+  
+  <Accordion icon="graduation-cap" title="Educational Applications">
+    **AI Reasoning Education**
+    
+    Show students and researchers how advanced AI systems approach complex sports analysis problems.
+  </Accordion>
+  
+  <Accordion icon="bug" title="Development & Debugging">
+    **Analysis Workflow Debugging**
+    
+    Monitor the analysis process to optimize queries and understand performance characteristics.
+  </Accordion>
+  
+  <Accordion icon="mobile" title="Mobile Applications">
+    **Progressive Loading**
+    
+    Provide immediate feedback in mobile apps while complex analyses complete in the background.
+  </Accordion>
+</AccordionGroup>
 
 ## Related Endpoints
 

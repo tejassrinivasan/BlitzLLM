@@ -1,243 +1,67 @@
 ---
 title: "GET /health"
 description: "Check server health and MCP connection status"
-api: "GET https://blitzagent.onrender.com/health"
+openapi: "GET /health"
 ---
-
-# Health Check
-
-The `/health` endpoint provides a quick way to check if the Blitz API is running properly and if all required services are available.
-
-<RequestExample>
-
-```bash cURL
-curl -X GET "https://blitzagent.onrender.com/health"
-```
-
-```javascript JavaScript
-const response = await fetch('https://blitzagent.onrender.com/health');
-const health = await response.json();
-console.log(`Status: ${health.status}`);
-```
-
-```python Python
-import httpx
-import asyncio
-
-async def check_health():
-    async with httpx.AsyncClient() as client:
-        response = await client.get("https://blitzagent.onrender.com/health")
-        return response.json()
-
-health_status = await check_health()
-print(f"Status: {health_status['status']}")
-```
-
-</RequestExample>
-
-## Endpoint
-
-<CodeGroup>
-```bash Endpoint
-GET /health
-```
-</CodeGroup>
-
-## Authentication
 
 <Note>
   The health check endpoint does not require authentication and can be called without an API key.
 </Note>
 
-## Response
+## Overview
 
-<ResponseField name="status" type="string" required>
-  Overall health status of the service. Possible values:
-  - `healthy` - All systems operational
-  - `degraded` - Some non-critical issues
-  - `unhealthy` - Critical issues present
-</ResponseField>
+The `/health` endpoint provides a comprehensive health check for the Blitz API, including the status of all critical services required for sports analysis.
 
-<ResponseField name="timestamp" type="string" required>
-  ISO timestamp of when the health check was performed.
-</ResponseField>
+## Service Components
 
-<ResponseField name="services" type="object" required>
-  Status of individual service components.
+<CardGroup cols={2}>
+  <Card
+    title="🚀 API Server"
+    icon="server"
+  >
+    **FastAPI Application**
+    
+    Main API server status and uptime information.
+  </Card>
   
-  <Expandable title="services">
-    <ResponseField name="api" type="object">
-      FastAPI server status
-      
-      <Expandable title="api">
-        <ResponseField name="status" type="string">
-          API server status (`up` or `down`)
-        </ResponseField>
-        <ResponseField name="uptime" type="number">
-          Server uptime in seconds
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
+  <Card
+    title="🔗 MCP Server"
+    icon="database"
+  >
+    **Model Context Protocol**
     
-    <ResponseField name="mcp_server" type="object">
-      MCP server connection status
-      
-      <Expandable title="mcp_server">
-        <ResponseField name="status" type="string">
-          MCP connection status (`connected`, `disconnected`, or `error`)
-        </ResponseField>
-        <ResponseField name="last_check" type="string">
-          Timestamp of last successful MCP operation
-        </ResponseField>
-        <ResponseField name="tools_available" type="number">
-          Number of MCP tools available
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
+    Connection to the Blitz MCP server with available tools and database connectivity.
+  </Card>
+  
+  <Card
+    title="🧠 Anthropic API"
+    icon="brain"
+  >
+    **Claude 4 Sonnet**
     
-    <ResponseField name="anthropic" type="object">
-      advanced reasoning LLM models API connection status
-      
-      <Expandable title="anthropic">
-        <ResponseField name="status" type="string">
-          Anthropic API status (`available` or `unavailable`)
-        </ResponseField>
-        <ResponseField name="model" type="string">
-          Current advanced reasoning LLM models model being used
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+    Advanced reasoning LLM models API connection and model availability.
+  </Card>
+  
+  <Card
+    title="📊 Data Sources"
+    icon="chart-line"
+  >
+    **Sports Databases**
+    
+    Historical NBA data, real-time feeds, and betting market connections.
+  </Card>
+</CardGroup>
 
-<ResponseField name="version" type="string" optional>
-  Blitz version information
-</ResponseField>
-
-## Examples
-
-### Healthy System
-
-<RequestExample>
-```bash cURL
-curl -X GET "https://blitzagent.onrender.com/health"
-```
-
-```python Python
-import httpx
-import asyncio
-
-async def check_health():
-    async with httpx.AsyncClient() as client:
-        response = await client.get("https://blitzagent.onrender.com/health")
-        return response.json()
-
-health_status = await check_health()
-print(f"Status: {health_status['status']}")
-```
-
-```javascript JavaScript
-const checkHealth = async () => {
-  const response = await fetch('https://blitzagent.onrender.com/health');
-  const health = await response.json();
-  console.log(`Status: ${health.status}`);
-  return health;
-};
-
-const health = await checkHealth();
-```
-</RequestExample>
-
-<ResponseExample>
-```json
-{
-  "status": "healthy",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "services": {
-    "api": {
-      "status": "up",
-      "uptime": 3600
-    },
-    "mcp_server": {
-      "status": "connected",
-      "last_check": "2024-01-15T10:29:55Z",
-      "tools_available": 12
-    },
-    "anthropic": {
-      "status": "available",
-      "model": "claude-sonnet-4-20250514"
-    }
-  },
-  "version": "1.0.0"
-}
-```
-</ResponseExample>
-
-### Degraded System
-
-<ResponseExample>
-```json
-{
-  "status": "degraded",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "services": {
-    "api": {
-      "status": "up",
-      "uptime": 3600
-    },
-    "mcp_server": {
-      "status": "connected",
-      "last_check": "2024-01-15T10:25:00Z",
-      "tools_available": 8,
-      "warning": "Some database tools unavailable"
-    },
-    "anthropic": {
-      "status": "available",
-      "model": "claude-sonnet-4-20250514"
-    }
-  },
-  "version": "1.0.0"
-}
-```
-</ResponseExample>
-
-### Unhealthy System
-
-<ResponseExample>
-```json
-{
-  "status": "unhealthy",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "services": {
-    "api": {
-      "status": "up",
-      "uptime": 3600
-    },
-    "mcp_server": {
-      "status": "disconnected",
-      "last_check": "2024-01-15T10:20:00Z",
-      "tools_available": 0,
-      "error": "Connection timeout to MCP server"
-    },
-    "anthropic": {
-      "status": "unavailable",
-      "error": "Invalid API key"
-    }
-  },
-  "version": "1.0.0"
-}
-```
-</ResponseExample>
-
-## Status Interpretation
+## Health Status Levels
 
 <AccordionGroup>
   <Accordion icon="check-circle" title="healthy">
     **All systems operational**
-    - API server is running
+    - API server is running normally
     - MCP server is connected with all tools available
-    - Anthropic API is accessible
-    - Sports analysis requests will work normally
+    - Anthropic API is accessible and responsive
+    - Sports analysis requests will work optimally
+    - All data sources are available
   </Accordion>
   
   <Accordion icon="exclamation-triangle" title="degraded">
@@ -245,23 +69,23 @@ const health = await checkHealth();
     - API server is running
     - MCP server may have limited functionality
     - Some data sources might be temporarily unavailable
-    - Most analysis requests will still work, but some features may be limited
+    - Most analysis requests will still work
+    - Some advanced features may be limited
   </Accordion>
   
   <Accordion icon="x-circle" title="unhealthy">
     **Critical issues prevent normal operation**
     - MCP server is disconnected, or
     - Anthropic API is unavailable, or
-    - Other critical services are down
+    - Database connections are down, or
+    - Other critical services are failing
     - Analysis requests will likely fail
   </Accordion>
 </AccordionGroup>
 
-## Using Health Checks
+## Monitoring Integration
 
-### Load Balancer Health Checks
-
-Configure your load balancer to use the health endpoint:
+### Load Balancer Configuration
 
 <CodeGroup>
 ```yaml NGINX
@@ -273,31 +97,23 @@ server {
     location /health {
         proxy_pass http://blitzagent/health;
         access_log off;
+        proxy_cache off;
     }
     
     location / {
         proxy_pass http://blitzagent;
         
-        # Only route if healthy
-        if ($upstream_status != 200) {
-            return 503;
-        }
+        # Health check-based routing
+        error_page 502 503 504 @maintenance;
+    }
+    
+    location @maintenance {
+        return 503 "Service temporarily unavailable";
     }
 }
 ```
 
-```yaml Kubernetes
-apiVersion: v1
-kind: Service
-metadata:
-  name: blitzagent-service
-spec:
-  selector:
-    app: blitzagent
-  ports:
-  - port: 8001
-    targetPort: 8001
----
+```yaml Kubernetes Health Probes
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -323,12 +139,17 @@ spec:
             port: 8001
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /health
             port: 8001
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
 ```
 
 ```yaml Docker Compose
@@ -339,7 +160,7 @@ services:
     ports:
       - "8001:8001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://blitzagent.onrender.com/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -347,193 +168,406 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - API_KEY=${API_KEY}
+    restart: unless-stopped
 ```
 </CodeGroup>
 
-### Application Health Monitoring
+### Application Monitoring
 
 <CodeGroup>
-```python Python Monitoring
-import httpx
+```python Python Health Monitor
 import asyncio
+import httpx
 import logging
 from datetime import datetime
+from typing import Dict, Optional
 
-class BlitzMonitor:
+class BlitzHealthMonitor:
     def __init__(self, base_url: str = "https://blitzagent.onrender.com"):
         self.base_url = base_url
         self.logger = logging.getLogger(__name__)
+        self.alert_callback = None
     
-    async def check_health(self) -> dict:
-        """Check Blitz health status"""
+    async def check_health(self) -> Dict:
+        """Perform a single health check"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     f"{self.base_url}/health",
                     timeout=10.0
                 )
+                response.raise_for_status()
                 return response.json()
         except Exception as e:
             self.logger.error(f"Health check failed: {e}")
-            return {"status": "unhealthy", "error": str(e)}
+            return {
+                "status": "unhealthy", 
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
     
     async def monitor_continuously(self, interval: int = 60):
-        """Continuously monitor health status"""
+        """Continuously monitor health with alerting"""
+        consecutive_failures = 0
+        
         while True:
             health = await self.check_health()
             status = health.get("status", "unknown")
             
             if status == "healthy":
+                consecutive_failures = 0
                 self.logger.info("✅ Blitz is healthy")
             elif status == "degraded":
+                consecutive_failures = 0
                 self.logger.warning("⚠️ Blitz is degraded")
+                if self.alert_callback:
+                    await self.alert_callback("degraded", health)
             else:
-                self.logger.error("❌ Blitz is unhealthy")
-                # Send alert to monitoring system
-                await self.send_alert(health)
+                consecutive_failures += 1
+                self.logger.error(f"❌ Blitz is unhealthy (failure #{consecutive_failures})")
+                if self.alert_callback:
+                    await self.alert_callback("unhealthy", health)
+            
+            # Log detailed service status
+            if "services" in health:
+                services = health["services"]
+                self.logger.debug(f"Service status: {services}")
+                
+                # Check individual services
+                for service_name, service_data in services.items():
+                    service_status = service_data.get("status", "unknown")
+                    if service_status not in ["up", "connected", "available"]:
+                        self.logger.warning(f"Service {service_name} is {service_status}")
             
             await asyncio.sleep(interval)
     
-    async def send_alert(self, health_data: dict):
-        """Send alert when service is unhealthy"""
-        # Implement your alerting logic here
-        pass
+    def set_alert_callback(self, callback):
+        """Set callback function for health alerts"""
+        self.alert_callback = callback
 
-# Usage
-monitor = BlitzMonitor()
+# Example usage
+async def health_alert_handler(status: str, health_data: Dict):
+    """Handle health alerts"""
+    if status == "unhealthy":
+        # Send critical alert
+        print(f"CRITICAL: Blitz is unhealthy - {health_data}")
+        # Integration with alerting systems (Slack, PagerDuty, etc.)
+    elif status == "degraded":
+        # Send warning alert
+        print(f"WARNING: Blitz is degraded - {health_data}")
+
+# Start monitoring
+monitor = BlitzHealthMonitor()
+monitor.set_alert_callback(health_alert_handler)
 await monitor.monitor_continuously(interval=30)
 ```
 
-```javascript JavaScript Monitoring
-class BlitzMonitor {
+```javascript JavaScript Health Monitor
+class BlitzHealthMonitor {
   constructor(baseUrl = 'https://blitzagent.onrender.com') {
     this.baseUrl = baseUrl;
+    this.alertCallback = null;
+    this.consecutiveFailures = 0;
   }
 
   async checkHealth() {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
         timeout: 10000
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       return await response.json();
     } catch (error) {
       console.error('Health check failed:', error);
-      return { status: 'unhealthy', error: error.message };
+      return {
+        status: 'unhealthy',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
     }
   }
 
   async monitorContinuously(interval = 60000) {
-    setInterval(async () => {
+    const monitor = async () => {
       const health = await this.checkHealth();
       const status = health.status || 'unknown';
 
       switch (status) {
         case 'healthy':
+          this.consecutiveFailures = 0;
           console.log('✅ Blitz is healthy');
           break;
         case 'degraded':
+          this.consecutiveFailures = 0;
           console.warn('⚠️ Blitz is degraded');
+          if (this.alertCallback) {
+            this.alertCallback('degraded', health);
+          }
           break;
         default:
-          console.error('❌ Blitz is unhealthy');
-          // Send alert
-          await this.sendAlert(health);
+          this.consecutiveFailures++;
+          console.error(`❌ Blitz is unhealthy (failure #${this.consecutiveFailures})`);
+          if (this.alertCallback) {
+            this.alertCallback('unhealthy', health);
+          }
       }
-    }, interval);
+
+      // Log service details
+      if (health.services) {
+        Object.entries(health.services).forEach(([serviceName, serviceData]) => {
+          const serviceStatus = serviceData.status || 'unknown';
+          if (!['up', 'connected', 'available'].includes(serviceStatus)) {
+            console.warn(`Service ${serviceName} is ${serviceStatus}`);
+          }
+        });
+      }
+    };
+
+    // Initial check
+    await monitor();
+    
+    // Set up recurring monitoring
+    setInterval(monitor, interval);
   }
 
-  async sendAlert(healthData) {
-    // Implement your alerting logic here
+  setAlertCallback(callback) {
+    this.alertCallback = callback;
   }
 }
 
-// Usage
-const monitor = new BlitzMonitor();
+// Example alert handler
+const handleHealthAlert = (status, healthData) => {
+  if (status === 'unhealthy') {
+    // Send critical alert (integrate with your alerting system)
+    console.error('CRITICAL: Blitz is unhealthy', healthData);
+  } else if (status === 'degraded') {
+    // Send warning alert
+    console.warn('WARNING: Blitz is degraded', healthData);
+  }
+};
+
+// Start monitoring
+const monitor = new BlitzHealthMonitor();
+monitor.setAlertCallback(handleHealthAlert);
 monitor.monitorContinuously(30000); // Check every 30 seconds
 ```
 </CodeGroup>
 
-## Common Issues and Solutions
+## Troubleshooting Common Issues
 
 <AccordionGroup>
-  <Accordion icon="database" title="MCP Server Disconnected">
+  <Accordion icon="database" title="MCP Server Connection Issues">
     **Symptoms:**
-    - `mcp_server.status` is `disconnected` or `error`
-    - `tools_available` is 0
+    - `mcp_server.status` shows `disconnected` or `error`
+    - `tools_available` is 0 or very low
+    - Analysis requests fail with database errors
     
     **Solutions:**
-    1. Check internet connectivity
-    2. Verify MCP server credentials in environment variables
-    3. Restart Blitz service
-    4. Check MCP server logs for connection issues
+    1. **Check Network Connectivity**: Verify internet access from server
+    2. **Validate Environment Variables**: Ensure MCP credentials are correct
+    3. **Restart Services**: Restart Blitz application
+    4. **Check MCP Server Logs**: Look for connection timeout or auth errors
+    5. **Verify Database Access**: Test direct database connectivity
   </Accordion>
   
-  <Accordion icon="key" title="Anthropic API Unavailable">
+  <Accordion icon="key" title="Anthropic API Issues">
     **Symptoms:**
-    - `anthropic.status` is `unavailable`
-    - Error mentions API key issues
+    - `anthropic.status` shows `unavailable`
+    - Error messages mention API key problems
+    - Analysis requests return authentication errors
     
     **Solutions:**
-    1. Verify `ANTHROPIC_API_KEY` environment variable
-    2. Check API key validity at [Anthropic Console](https://console.anthropic.com/)
-    3. Ensure sufficient API credits/quota
-    4. Check for API rate limiting
+    1. **Verify API Key**: Check `ANTHROPIC_API_KEY` environment variable
+    2. **Test API Key**: Validate at [Anthropic Console](https://console.anthropic.com/)
+    3. **Check Credits**: Ensure sufficient API credits/quota
+    4. **Rate Limiting**: Wait if you've hit rate limits
+    5. **Model Access**: Verify access to Claude 4 Sonnet model
   </Accordion>
   
-  <Accordion icon="server" title="API Server Issues">
+  <Accordion icon="server" title="API Server Problems">
     **Symptoms:**
     - Cannot reach `/health` endpoint
-    - Connection timeouts or errors
+    - Connection timeouts or HTTP errors
+    - Server returns 5xx status codes
     
     **Solutions:**
-    1. Check if Blitz process is running
-    2. Verify port 8001 is not blocked by firewall
-    3. Check server logs for startup errors
-    4. Verify environment variables are set correctly
+    1. **Process Status**: Check if Blitz process is running
+    2. **Port Access**: Verify port 8001 is accessible
+    3. **Firewall Rules**: Check firewall configurations
+    4. **Server Logs**: Review application logs for errors
+    5. **Resource Usage**: Monitor CPU, memory, and disk usage
+    6. **Environment Setup**: Verify all required environment variables
+  </Accordion>
+  
+  <Accordion icon="chart-line" title="Performance Degradation">
+    **Symptoms:**
+    - Health checks take longer than usual
+    - `degraded` status appears frequently
+    - Slow response times for analysis
+    
+    **Solutions:**
+    1. **Resource Monitoring**: Check CPU, memory, and network usage
+    2. **Database Performance**: Monitor query execution times
+    3. **API Rate Limits**: Verify not hitting external API limits
+    4. **Concurrent Requests**: Monitor concurrent analysis requests
+    5. **Service Scaling**: Consider horizontal or vertical scaling
   </Accordion>
 </AccordionGroup>
 
 ## Monitoring Best Practices
 
 <AccordionGroup>
-  <Accordion icon="chart-line" title="Monitoring Frequency">
-    - **Production**: Check every 30-60 seconds
-    - **Development**: Check every 2-5 minutes
-    - **Load balancers**: Check every 5-10 seconds
+  <Accordion icon="clock" title="Check Frequency">
+    **Recommended Intervals:**
+    - **Production Load Balancers**: 5-10 seconds
+    - **Application Monitoring**: 30-60 seconds  
+    - **Development Environment**: 2-5 minutes
+    - **User Interface Health**: 10-30 seconds
+    
+    **Considerations:**
     - Implement exponential backoff for failed checks
+    - Use different intervals for different components
+    - Adjust frequency based on system load
   </Accordion>
   
   <Accordion icon="bell" title="Alerting Strategy">
-    - Alert immediately on `unhealthy` status
-    - Alert after 5 minutes of `degraded` status
-    - Include health check response in alerts
-    - Set up escalation for persistent issues
+    **Alert Thresholds:**
+    - **Immediate Alert**: `unhealthy` status
+    - **Warning Alert**: `degraded` status for 5+ minutes
+    - **Critical Alert**: 3+ consecutive health check failures
+    - **Recovery Alert**: Return to `healthy` status
+    
+    **Alert Content:**
+    - Include full health check response
+    - Provide troubleshooting links
+    - Set up escalation paths
+    - Include system metrics and logs
   </Accordion>
   
-  <Accordion icon="history" title="Health History">
-    - Log all health check responses
-    - Track uptime and downtime periods
-    - Monitor performance trends over time
-    - Set up dashboards for health metrics
+  <Accordion icon="chart-bar" title="Metrics and Dashboards">
+    **Key Metrics to Track:**
+    - Health check response time trends
+    - Service availability percentages
+    - Error rate by service component
+    - Recovery time from incidents
+    
+    **Dashboard Components:**
+    - Real-time health status overview
+    - Historical uptime charts
+    - Service dependency mapping
+    - Alert frequency and patterns
   </Accordion>
 </AccordionGroup>
+
+## Integration Examples
+
+### Uptime Monitoring Services
+
+<CodeGroup>
+```yaml Uptime Robot Configuration
+# Monitor URL: https://blitzagent.onrender.com/health
+# Check Type: HTTP(s)
+# Interval: 5 minutes
+# Timeout: 30 seconds
+# HTTP Method: GET
+# Expected Status Code: 200
+# Expected Content: "healthy"
+```
+
+```javascript Pingdom Integration
+// Custom Pingdom check script
+const response = http.get('https://blitzagent.onrender.com/health');
+
+if (response.status === 200) {
+  const health = JSON.parse(response.body);
+  
+  if (health.status === 'healthy') {
+    console.log('OK: All services healthy');
+  } else if (health.status === 'degraded') {
+    console.log('WARNING: Service degraded');
+  } else {
+    console.log('CRITICAL: Service unhealthy');
+    throw new Error('Health check failed');
+  }
+} else {
+  throw new Error(`HTTP ${response.status}: Health endpoint unreachable`);
+}
+```
+
+```python Datadog Integration
+import httpx
+from datadog import initialize, statsd
+
+# Initialize Datadog
+initialize()
+
+async def datadog_health_check():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get('https://blitzagent.onrender.com/health')
+            health = response.json()
+        
+        # Send metrics to Datadog
+        status_value = {
+            'healthy': 1,
+            'degraded': 0.5, 
+            'unhealthy': 0
+        }.get(health['status'], 0)
+        
+        statsd.gauge('blitz.health.overall', status_value)
+        
+        # Service-specific metrics
+        if 'services' in health:
+            for service, data in health['services'].items():
+                service_value = 1 if data.get('status') in ['up', 'connected', 'available'] else 0
+                statsd.gauge(f'blitz.health.{service}', service_value)
+        
+        # Response time
+        statsd.timing('blitz.health.response_time', response.elapsed.total_seconds() * 1000)
+        
+    except Exception as e:
+        statsd.gauge('blitz.health.overall', 0)
+        statsd.increment('blitz.health.errors')
+```
+</CodeGroup>
 
 ## Related Information
 
 <CardGroup cols={2}>
   <Card
-    title="Configuration Guide"
-    icon="cog"
-    href="/configuration"
-  >
-    Learn how to configure Blitz for optimal health
-  </Card>
-  
-  <Card
-    title="Troubleshooting"
+    title="🔧 Troubleshooting Guide"
     icon="wrench"
     href="/troubleshooting"
   >
-    Detailed troubleshooting guide for common issues
+    Detailed troubleshooting for common Blitz issues
+  </Card>
+  
+  <Card
+    title="⚙️ Configuration Guide"
+    icon="cog"
+    href="/configuration"
+  >
+    Learn how to configure Blitz for optimal performance
+  </Card>
+  
+  <Card
+    title="📊 API Reference"
+    icon="code"
+    href="/api-reference/analyze"
+  >
+    Main analysis endpoint documentation
+  </Card>
+  
+  <Card
+    title="🚀 Deployment Guide"
+    icon="rocket"
+    href="/development"
+  >
+    Production deployment best practices
   </Card>
 </CardGroup>
