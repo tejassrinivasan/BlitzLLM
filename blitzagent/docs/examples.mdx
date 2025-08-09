@@ -7,13 +7,13 @@ description: "Advanced sports analysis examples showcasing Blitz's comprehensive
 
 Discover the full power of Blitz through comprehensive examples that showcase our advanced NBA analysis capabilities. From simple player queries to complex multi-dimensional statistical analysis, these examples demonstrate the sophisticated insights possible with our natural-language sports query agent.
 
-**Data Coverage**: Historical NBA data from 1952-2025, including player stats, team performance, play-by-play events, betting lines, and advanced metrics across 70+ years of basketball history.
+**Data Coverage**: Complete professional basketball history from 1946-2025, including BAA (1946-1949) and all NBA seasons. Comprehensive player stats, team performance, play-by-play events, betting lines, and advanced metrics across 79 years of basketball history.
 
 ## 🏀 NBA Analysis Examples
 
 <AccordionGroup>
-  <Accordion icon="history" title="Historical Analysis">
-    Deep dive into historical NBA data spanning 70+ years of basketball history with comprehensive contextual analysis.
+  <Accordion icon="clock-rotate-left" title="Historical Analysis">
+    Deep dive into complete professional basketball history from 1946-2025 (BAA + NBA) with unlimited conditional analysis capabilities. Query any player or team statistic with multiple filters across games, seasons, careers, periods, and custom timeframes.
     
     <AccordionGroup>
       <Accordion icon="play" title="Play-by-Play Deep Dives">
@@ -132,27 +132,72 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
         - **Schedule analysis**: Back-to-back impact, rest day advantages
       </Accordion>
 
-      <Accordion icon="scale" title="Cross-Era Comparisons">
-        Compare players, teams, and strategies across different NBA eras with proper context.
+      <Accordion icon="filter" title="Multi-Conditional Statistical Analysis">
+        Advanced conditional queries with unlimited filters across any combination of player, team, game, and situational variables.
         
         <RequestExample>
-        ```bash Era-Adjusted Analysis
+        ```bash Complex Multi-Filter Analysis
         curl -X POST "https://blitzagent.onrender.com/analyze" \
           -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{
-            "query": "Compare Wilt Chamberlain 1960s dominance with Shaq 2000s impact, adjusted for era",
-            "extra_context": "Account for pace, competition level, rule differences, and strategic context"
+            "query": "Show me LeBron James stats in playoff games vs teams with winning records when he scored 25+ points in the 4th quarter",
+            "extra_context": "Include career totals, per-game averages, and compare to his overall playoff performance"
           }'
         ```
         </RequestExample>
         
-        **Cross-era features:**
-        - **70+ years of data**: From early NBA through modern analytics era
-        - **Rule change impact**: Three-point line, shot clock, defensive rules
-        - **Competition adjustments**: League expansion, talent dilution/concentration
-        - **Pace normalization**: Per-possession and per-minute comparisons
-        - **Strategic evolution**: Tactical changes and their impact on statistics
+        **Unlimited conditional analysis capabilities:**
+        - **Player conditionals**: Age, team, position, injury status, rest days
+        - **Game filters**: Home/away, playoff/regular season, opponent record, score margin
+        - **Time periods**: Quarters, halves, clutch time, overtime, specific date ranges
+        - **Situational factors**: Back-to-back games, nationally televised, referee assignments
+        - **Statistical thresholds**: Performance above/below career averages, milestone games
+        - **Team contexts**: With/without specific teammates, coaching changes, roster composition
+        
+        <RequestExample>
+        ```bash Career Progression with Conditions
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "How has Stephen Curry three-point shooting evolved by season when shooting 10+ attempts vs elite defenses?",
+            "extra_context": "Define elite defenses as top 10 in defensive rating, show progression from rookie year to present"
+          }'
+        ```
+        </RequestExample>
+        
+        **Period and timeframe analysis:**
+        - **Game periods**: By quarter, half, overtime performance splits
+        - **Season segments**: First/second half, pre/post All-Star break, final month
+        - **Career phases**: Rookie seasons, prime years, veteran performance
+        - **Custom date ranges**: Specific months, years, or arbitrary timeframes
+        - **Milestone contexts**: Before/after major achievements, contract years
+      </Accordion>
+
+      <Accordion icon="scale" title="Cross-Era Comparisons">
+        Compare players, teams, and strategies across different eras from BAA (1946) through modern NBA with proper context.
+        
+        <RequestExample>
+        ```bash Complete Basketball History Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Compare George Mikan BAA dominance (1946-1949) with Wilt Chamberlain 1960s and Shaq 2000s impact",
+            "extra_context": "Account for era differences, rule changes, competition level, and strategic evolution"
+          }'
+        ```
+        </RequestExample>
+        
+        **Complete basketball history features:**
+        - **79 years of data**: From BAA inception (1946) through modern NBA (2025)
+        - **Era-specific contexts**: BAA vs NBA transitions, rule evolution, strategic changes
+        - **League expansion impact**: Competition level adjustments across different eras
+        - **Rule change analysis**: Shot clock, three-point line, defensive rules, pace evolution
+        - **Competition adjustments**: Talent pool changes, international player integration
+        - **Pace normalization**: Per-possession and per-minute comparisons across eras
+        - **Strategic evolution**: How coaching and tactical changes affected statistical production
       </Accordion>
     </AccordionGroup>
   </Accordion>
@@ -340,7 +385,7 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
         - **Closing line value**: CLV analysis for long-term profitability
       </Accordion>
 
-      <Accordion icon="target" title="Game Totals & Spread Analysis">
+      <Accordion icon="chart-scatter" title="Game Totals & Spread Analysis">
         Deep analysis of game totals, spreads, and moneylines with situational factors.
         
         <RequestExample>
@@ -510,9 +555,9 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
     title="🕒 Historical Depth"
     icon="clock"
   >
-    **70+ Years of Data**
+    **79 Years of Complete Data**
     
-    Access to comprehensive NBA history from 1952-2025, enabling era comparisons, career trajectory analysis, and historical context.
+    Access to complete professional basketball history from BAA (1946) through NBA (2025), enabling era comparisons, career trajectory analysis, and comprehensive historical context.
   </Card>
   
   <Card
@@ -578,5 +623,5 @@ Ready to explore these capabilities? Here's how to maximize your analysis:
 ---
 
 <Note>
-  **Data Coverage**: Our analysis covers NBA games from 1952-2025, including regular season and playoffs, with comprehensive player stats, team performance, play-by-play events, betting lines, injury tracking, referee assignments, coaching data, and awards. Analysis automatically adapts to data availability across different eras.
+  **Data Coverage**: Our analysis covers complete professional basketball history from BAA (1946-1949) through NBA (1949-2025), including regular season and playoffs, with comprehensive player stats, team performance, play-by-play events, betting lines, injury tracking, referee assignments, coaching data, and awards. Analysis automatically adapts to data availability across different eras spanning 79 years of basketball history.
 </Note>

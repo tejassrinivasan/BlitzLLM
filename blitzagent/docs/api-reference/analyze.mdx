@@ -5,176 +5,45 @@ openapi: "POST /analyze"
 ---
 
 <Note>
-  The `/analyze` endpoint is the primary way to interact with Blitz. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and comprehensive sports data.
+  **Try It Out**: Use the interactive form below to test the `/analyze` endpoint with your own API key and queries. The form will automatically populate the cURL command with your inputs.
 </Note>
 
-## Key Features
+## What is the /analyze endpoint?
 
-<CardGroup cols={2}>
-  <Card
-    title="🤖 Advanced AI Reasoning"
-    icon="brain"
-  >
-    **Claude 4 Sonnet Integration**
-    
-    Powered by Anthropic's most advanced reasoning model with superior intelligence and 200K context window.
-  </Card>
-  
-  <Card
-    title="🏀 Multi-League Support"
-    icon="trophy"
-  >
-    **Automatic League Detection**
-    
-    Automatically detects NBA or MLB queries based on team names, player names, and sport-specific terminology.
-  </Card>
-  
-  <Card
-    title="📊 Comprehensive Data"
-    icon="chart-line"
-  >
-    **Historical & Real-time**
-    
-    Access to 70+ years of NBA history, real-time data, and advanced statistical analysis capabilities.
-  </Card>
-  
-  <Card
-    title="🎯 Natural Language"
-    icon="comment"
-  >
-    **Intuitive Queries**
-    
-    Ask questions in plain English - no need to learn complex query syntax or database schemas.
-  </Card>
-</CardGroup>
+The `/analyze` endpoint is the primary way to interact with Blitz. It accepts natural language sports queries and returns comprehensive analysis powered by Claude 4 Sonnet and comprehensive sports data.
 
-## Example Queries
+### Key Features
 
-Here are some examples of what you can ask Blitz:
+- 🤖 **Advanced AI Reasoning** - Powered by Claude 4 Sonnet with 200K context window
+- 🏀 **Multi-League Support** - Automatic NBA/MLB detection based on query context  
+- 📊 **Comprehensive Data** - 79 years of basketball history (BAA 1946 + NBA 1949-2025)
+- 🎯 **Natural Language** - Ask questions in plain English, no complex syntax needed
 
-<AccordionGroup>
-  <Accordion icon="user" title="Player Analysis">
-    **Simple Performance Questions:**
-    - "How has Stephen Curry performed this season?"
-    - "What are LeBron James' clutch time statistics?"
-    - "Compare Luka Dončić and Nikola Jokić as playmakers"
-    
-    **Advanced Statistical Analysis:**
-    - "What is the correlation between LeBron James assists and his overall PRA performance?"
-    - "In what percentage of games does Curry score 30+ points while another Warriors player scores 20+?"
-    - "Show me games where a player had high assists but low overall production"
-  </Accordion>
-  
-  <Accordion icon="users" title="Team Analysis">
-    **Team Performance:**
-    - "Which NBA teams have the best three-point defense this season?"
-    - "How do the Lakers perform in back-to-back games?"
-    - "Compare Warriors offensive efficiency at home vs away"
-    
-    **Advanced Team Analytics:**
-    - "Analyze team turnover rates with 0 days rest vs 2+ days rest"
-    - "What are the most effective 5-man lineups for the Celtics?"
-    - "How does pace affect the Nuggets' win rate?"
-  </Accordion>
-  
-  <Accordion icon="chart-line" title="Historical & Comparative">
-    **Cross-Era Analysis:**
-    - "Compare Michael Jordan 1990s dominance with LeBron James 2010s performance"
-    - "How has the NBA evolved tactically over the past decade?"
-    - "Rank the greatest clutch performers in NBA history"
-    
-    **Development Tracking:**
-    - "What early-season indicators predict breakout seasons?"
-    - "Track Paolo Banchero's development trajectory"
-    - "Which young players are having breakout seasons?"
-  </Accordion>
-  
-  <Accordion icon="dollar-sign" title="Betting & Market Analysis">
-    **Prop Bet Analysis:**
-    - "How often does Giannis go over his points prop when the line is above 30?"
-    - "Analyze the correlation between player prop results and team totals"
-    - "What situational factors affect prop bet accuracy?"
-    
-    **Market Insights:**
-    - "When Anthony Edwards goes over PRA, how often does the game go over total?"
-    - "Identify value betting opportunities based on historical performance"
-    - "Compare closing line value vs actual game outcomes"
-  </Accordion>
-</AccordionGroup>
+### Quick Examples
 
-## League Detection
+**Simple Queries:**
+- "How has Stephen Curry performed this season?"
+- "What are LeBron James' clutch time statistics?"
+- "Which teams have the best defense in the NBA?"
 
-Blitz automatically detects which league (NBA or MLB) your query refers to based on:
+**Advanced Analysis:**
+- "What is the correlation between LeBron James assists and his overall PRA performance?"
+- "Show me games where Curry scored 30+ points while another Warriors player scored 20+"
+- "Compare Wilt Chamberlain 1960s dominance with Shaq 2000s impact, adjusted for era"
 
-- **Team names**: "Lakers" → NBA, "Yankees" → MLB
-- **Player names**: "LeBron James" → NBA, "Mike Trout" → MLB  
-- **Sport-specific terms**: "three-pointer" → NBA, "ERA" → MLB
-- **Context clues**: Season timing, terminology, etc.
+### Response Format
+
+The endpoint returns a JSON object with:
+- `response`: Comprehensive analysis text
+- `usage`: Token usage statistics for transparency
+
+### Authentication
+
+Include your API key in the `Authorization` header as a Bearer token:
+```
+Authorization: Bearer YOUR_BLITZ_API_KEY
+```
 
 <Note>
-  If the league cannot be automatically detected, Blitz will analyze the context and make the best determination, or ask for clarification in the response.
+  **Need an API Key?** Contact [tejas@blitzanalytics.co](mailto:tejas@blitzanalytics.co) to get access to the Blitz API.
 </Note>
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion icon="target" title="Crafting Effective Queries">
-    - **Be specific**: Instead of "How is LeBron?", ask "How has LeBron James performed this season?"
-    - **Include timeframes**: "this season", "last 10 games", "playoff career"
-    - **Specify metrics**: "shooting percentage", "defensive rating", "clutch performance"
-    - **Add context**: Use the `extra_context` field for focused analysis
-  </Accordion>
-  
-  <Accordion icon="context" title="Using Extra Context">
-    - **Focus areas**: "Focus on three-point shooting", "Emphasize defensive impact"
-    - **Comparisons**: "Compare to last season", "Benchmark against league average"
-    - **Situational**: "Include only playoff games", "Home vs away splits"
-    - **Advanced**: "Include statistical correlations", "Show outlier games"
-  </Accordion>
-  
-  <Accordion icon="clock" title="Response Times">
-    - **Simple queries**: 2-5 seconds
-    - **Complex analysis**: 10-15 seconds
-    - **Multi-dimensional analysis**: 15-30 seconds
-    - Use `/analyze/stream` for real-time progress on longer queries
-  </Accordion>
-</AccordionGroup>
-
-## Data Sources
-
-Blitz leverages comprehensive sports data through multiple sources:
-
-<Steps>
-  <Step title="Historical Database">
-    Comprehensive NBA data from 1952-2025, including player statistics, team records, play-by-play events, and advanced metrics spanning 70+ years of basketball history.
-  </Step>
-  <Step title="Real-time Integration">
-    Current season data, recent games, injury reports, and up-to-date performance statistics.
-  </Step>
-  <Step title="Betting Markets">
-    Prop lines, game totals, spreads, and market data for comprehensive betting analysis.
-  </Step>
-  <Step title="Advanced Analytics">
-    Statistical correlations, percentile analysis, trend identification, and predictive modeling capabilities.
-  </Step>
-</Steps>
-
-## Related Endpoints
-
-<CardGroup cols={2}>
-  <Card
-    title="POST /analyze/stream"
-    icon="play"
-    href="/api-reference/stream"
-  >
-    Stream real-time analysis events for complex queries
-  </Card>
-  
-  <Card
-    title="GET /health"
-    icon="heart"
-    href="/api-reference/health"
-  >
-    Check server health before making analysis requests
-  </Card>
-</CardGroup>
