@@ -9,13 +9,75 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
 
 **Data Coverage**: Complete professional basketball history from 1946-2025, including BAA (1946-1949) and all NBA seasons. Comprehensive player stats, team performance, play-by-play events, betting lines, and advanced metrics across 79 years of basketball history.
 
-## 🏀 NBA Analysis Examples
+## NBA Analysis Examples
 
 <AccordionGroup>
   <Accordion icon="clock-rotate-left" title="Historical Analysis">
     Deep dive into complete professional basketball history from 1946-2025 (BAA + NBA) with unlimited conditional analysis capabilities. Query any player or team statistic with multiple filters across games, seasons, careers, periods, and custom timeframes.
     
     <AccordionGroup>
+      <Accordion icon="calculator" title="Simple and Multi-Conditional Analysis">
+        Comprehensive statistical analysis from basic metrics to advanced conditional queries with unlimited filters across any combination of variables.
+        
+        **Basic statistical analysis:**
+        - **Traditional stats**: FG%, 2PTA, 3PA, FTA, rebounds, assists, steals, blocks
+        - **Advanced metrics**: Usage rate, PER, TS%, eFG%, AST%, TOV%, ORB%, DRB%
+        - **Efficiency measures**: Points per possession, assist-to-turnover ratio, shooting splits
+        - **Per-game/per-minute analysis**: Rate stats, pace-adjusted metrics
+        - **Season totals and averages**: Career highs, season progressions, milestone tracking
+        
+        <RequestExample>
+        ```bash Basic Statistical Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "What are Jayson Tatum shooting percentages and usage rate this season?",
+            "extra_context": "Include FG%, 3P%, FT%, eFG%, TS%, and compare to league averages"
+          }'
+        ```
+        </RequestExample>
+        
+        **Advanced conditional analysis capabilities:**
+        - **Player conditionals**: Age, team, position, injury status, rest days
+        - **Game filters**: Home/away, playoff/regular season, opponent record, score margin
+        - **Time periods**: Quarters, halves, clutch time, overtime, specific date ranges
+        - **Situational factors**: Back-to-back games, nationally televised, referee assignments
+        - **Statistical thresholds**: Performance above/below career averages, milestone games
+        - **Team contexts**: With/without specific teammates, coaching changes, roster composition
+        
+        <RequestExample>
+        ```bash Complex Multi-Filter Analysis
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "Show me LeBron James stats in playoff games vs teams with winning records when he scored 25+ points in the 4th quarter",
+            "extra_context": "Include career totals, per-game averages, and compare to his overall playoff performance"
+          }'
+        ```
+        </RequestExample>
+        
+        <RequestExample>
+        ```bash Career Progression with Conditions
+        curl -X POST "https://blitzagent.onrender.com/analyze" \
+          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "How has Stephen Curry three-point shooting evolved by season when shooting 10+ attempts vs elite defenses?",
+            "extra_context": "Define elite defenses as top 10 in defensive rating, show progression from rookie year to present"
+          }'
+        ```
+        </RequestExample>
+        
+        **Period and timeframe analysis:**
+        - **Game periods**: By quarter, half, overtime performance splits
+        - **Season segments**: First/second half, pre/post All-Star break, final month
+        - **Career phases**: Rookie seasons, prime years, veteran performance
+        - **Custom date ranges**: Specific months, years, or arbitrary timeframes
+        - **Milestone contexts**: Before/after major achievements, contract years
+      </Accordion>
+
       <Accordion icon="play" title="Play-by-Play Deep Dives">
         Granular analysis using detailed play-by-play data with shot locations, player tracking, and game flow insights.
         
@@ -132,50 +194,7 @@ Discover the full power of Blitz through comprehensive examples that showcase ou
         - **Schedule analysis**: Back-to-back impact, rest day advantages
       </Accordion>
 
-      <Accordion icon="filter" title="Multi-Conditional Statistical Analysis">
-        Advanced conditional queries with unlimited filters across any combination of player, team, game, and situational variables.
-        
-        <RequestExample>
-        ```bash Complex Multi-Filter Analysis
-        curl -X POST "https://blitzagent.onrender.com/analyze" \
-          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "query": "Show me LeBron James stats in playoff games vs teams with winning records when he scored 25+ points in the 4th quarter",
-            "extra_context": "Include career totals, per-game averages, and compare to his overall playoff performance"
-          }'
-        ```
-        </RequestExample>
-        
-        **Unlimited conditional analysis capabilities:**
-        - **Player conditionals**: Age, team, position, injury status, rest days
-        - **Game filters**: Home/away, playoff/regular season, opponent record, score margin
-        - **Time periods**: Quarters, halves, clutch time, overtime, specific date ranges
-        - **Situational factors**: Back-to-back games, nationally televised, referee assignments
-        - **Statistical thresholds**: Performance above/below career averages, milestone games
-        - **Team contexts**: With/without specific teammates, coaching changes, roster composition
-        
-        <RequestExample>
-        ```bash Career Progression with Conditions
-        curl -X POST "https://blitzagent.onrender.com/analyze" \
-          -H "Authorization: Bearer YOUR_BLITZ_API_KEY" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "query": "How has Stephen Curry three-point shooting evolved by season when shooting 10+ attempts vs elite defenses?",
-            "extra_context": "Define elite defenses as top 10 in defensive rating, show progression from rookie year to present"
-          }'
-        ```
-        </RequestExample>
-        
-        **Period and timeframe analysis:**
-        - **Game periods**: By quarter, half, overtime performance splits
-        - **Season segments**: First/second half, pre/post All-Star break, final month
-        - **Career phases**: Rookie seasons, prime years, veteran performance
-        - **Custom date ranges**: Specific months, years, or arbitrary timeframes
-        - **Milestone contexts**: Before/after major achievements, contract years
-      </Accordion>
-
-      <Accordion icon="scale" title="Cross-Era Comparisons">
+      <Accordion icon="clock-arrow-up" title="Cross-Era Comparisons">
         Compare players, teams, and strategies across different eras from BAA (1946) through modern NBA with proper context.
         
         <RequestExample>
